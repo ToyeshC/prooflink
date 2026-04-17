@@ -1,138 +1,147 @@
 # Proof of Talent
 
-Proof of Talent is a hackathon MVP for a decentralized talent oracle on Solana.  
-It analyzes developer evidence (currently GitHub), infers market-ready skills with an LLM, and exposes attestations through a recruiter-facing API with an x402 micropayment gate.
+Proof of Talent is a talent verification infrastructure layer for AI-native hiring.
+It converts public developer work into machine-readable skill attestations, anchors proof on Solana, and exposes a programmable verification API priced for agentic workflows.
 
-## What this MVP includes
+## Vision
 
-- GitHub evidence ingestion and summarization
-- LLM-based skill inference
-- On-chain proof transaction per qualifying skill (devnet, memo-based)
-- Oracle API for:
-  - profile lookups (`/api/profile/:wallet`)
-  - paid skill verification (`/api/verify?wallet=...&skill=...`)
-- Demo frontend at `/` for end-to-end walkthrough
+Resumes and transcripts are unstructured trust signals.  
+Proof of Talent aims to become the trust rail for verifiable human capital: identity-bound, portable, and queryable by recruiting software and autonomous hiring agents.
 
-## Tech stack
+## Problem
 
-- TypeScript + Node.js
-- Hono (`@hono/node-server`) for API and static demo page
-- Solana Web3 + Solana kit (devnet)
-- AI SDK + Anthropic/OpenRouter providers
+Modern hiring systems face a validity gap:
 
-## Prerequisites
+- static credentials are weak proxies for skill
+- claims are hard to verify programmatically
+- traditional checks are too expensive for machine-scale screening
+- AI recruiters need low-latency, low-cost trust primitives
 
-- Node.js 20+
-- npm
-- A devnet-funded Solana keypair for the oracle signer
-- At least one AI provider key:
-  - `ANTHROPIC_API_KEY`, or
-  - `OPENAI_API_KEY` (used with OpenRouter provider path in this repo)
+## Solution
 
-## Environment variables
+Proof of Talent delivers four core capabilities:
 
-Create a `.env` file in repo root:
+- Evidence ingestion from developer artifacts (currently GitHub-first)
+- LLM-based skill inference with confidence and evidence summaries
+- On-chain proof anchoring on Solana (memo-based in current MVP)
+- Paid verification API (`x402` pattern) for machine-to-machine lookups
 
-```bash
-SOLANA_RPC_URL=https://api.devnet.solana.com
-SOLANA_PRIVATE_KEY=<base58_private_key_for_oracle_wallet>
+## Product flow
 
-# Choose one inference path
-ANTHROPIC_API_KEY=<optional>
-OPENAI_API_KEY=<optional>
-INFERENCE_MODEL=openai/gpt-4o-mini
+1. Student submits GitHub username + Solana wallet
+2. Oracle analyzes evidence and infers skill claims
+3. Qualifying claims are anchored in Solana transactions
+4. Claims are indexed for low-latency API access
+5. Recruiters and bots query profile and verification endpoints
 
-# Optional, helps GitHub API limits
-GITHUB_TOKEN=<optional>
-```
+## API surface
 
-## Install
+- **Profile lookup (free):** `GET /api/profile/:wallet`
+- **Skill verify (paid):** `GET /api/verify?wallet=<wallet>&skill=<slug>`
+  - no proof -> `402 Payment Required`
+  - valid proof -> `verified: true` + attestation metadata
 
-```bash
-npm install
-```
-
-## Run the oracle + demo UI
-
-```bash
-npm run oracle
-```
-
-Then open:
-
-- `http://localhost:3000` (demo frontend)
-- `http://localhost:3000/health` (health check)
-
-## API usage
-
-### 1) Full profile lookup (free)
+### Example
 
 ```bash
 curl "http://localhost:3000/api/profile/<wallet>"
 ```
 
-Returns all attested skills for that wallet plus stored attestation metadata.
-
-### 2) Skill verification (x402-gated)
-
-Request without payment proof:
-
 ```bash
 curl -i "http://localhost:3000/api/verify?wallet=<wallet>&skill=<skill-slug>"
 ```
-
-You should receive `402 Payment Required` with payment instructions.
-
-Request with payment proof header:
 
 ```bash
 curl -H "X-Payment-Proof: <tx-signature>" \
   "http://localhost:3000/api/verify?wallet=<wallet>&skill=<skill-slug>"
 ```
 
-If proof is valid and skill exists, response returns:
+## Architecture (current MVP)
 
-- `verified: true`
-- attestation metadata
-- optional Solana explorer verification URL
+- **Frontend:** static demo UI (`public/index.html`)
+- **API/Oracle:** Hono server (`src/api/oracle.ts`)
+- **Inference:** AI SDK + Anthropic/OpenRouter providers
+- **On-chain anchor:** Solana memo transactions per qualifying skill
+- **Index layer:** file-based store (`attestation-index.json`) for fast profile/verify reads
 
-## Demo flow (recommended for judges)
+## Why Solana
 
-1. Start server: `npm run oracle`
-2. Open UI: `http://localhost:3000`
-3. Submit a GitHub username (optionally set a specific wallet)
-4. Wait for analysis + attestation minting
-5. Show:
-   - skill cards
-   - explorer links
-   - API snippets
-6. Click **Live verify test** to show:
-   - unpaid 402 response
-   - paid verification response (when tx proof is available)
+- low transaction costs enable micropayments (`~$0.00025` target lookup fee)
+- fast finality supports realtime verification UX
+- composable public state enables interoperability with future attestation standards
 
-## Project structure
+## Business model (early)
 
-- `src/api/oracle.ts` - API server and demo routes
-- `src/pipeline/parseGitHub.ts` - GitHub evidence ingestion
-- `src/pipeline/inferSkills.ts` - LLM skill inference schema + call
-- `src/pipeline/mintAttestation.ts` - Solana memo-based attestation minting
-- `public/index.html` - demo frontend
-- `attestation-index.json` - local indexed attestation store
+- **Usage-based:** per-lookup micropayments for automated agents
+- **B2B SaaS:** recruiter/team plans with API quotas and analytics
+- **Issuer tooling:** institutions/bootcamps issuing high-trust attestations
 
-## Notes and current limitations
+## Getting started
 
-- This is an MVP; attestation index is file-based (`attestation-index.json`), not a DB.
-- Verify endpoint currently validates payment proof existence via transaction lookup.
-- "Attestation address" in this MVP is a deterministic id used for indexing; on-chain proof is represented by tx signature.
-- Canvas ZIP ingestion exists (`src/pipeline/parseCanvas.ts`) but current UI flow is GitHub-first for demos.
+### Prerequisites
+
+- Node.js 20+
+- npm
+- devnet-funded Solana keypair for oracle signing
+- at least one inference key (`ANTHROPIC_API_KEY` or `OPENAI_API_KEY`)
+
+### Environment
+
+Create `.env`:
+
+```bash
+SOLANA_RPC_URL=https://api.devnet.solana.com
+SOLANA_PRIVATE_KEY=<base58_private_key_for_oracle_wallet>
+
+# inference provider
+ANTHROPIC_API_KEY=<optional>
+OPENAI_API_KEY=<optional>
+INFERENCE_MODEL=openai/gpt-4o-mini
+
+# optional GitHub API headroom
+GITHUB_TOKEN=<optional>
+```
+
+### Install and run
+
+```bash
+npm install
+npm run oracle
+```
+
+Open:
+
+- `http://localhost:3000` (demo UI)
+- `http://localhost:3000/health` (service status)
+
+## Repository map
+
+- `src/api/oracle.ts` - API, payment gating, profile/verify routes
+- `src/pipeline/parseGitHub.ts` - evidence collection from GitHub
+- `src/pipeline/inferSkills.ts` - skill inference schema + model calls
+- `src/pipeline/mintAttestation.ts` - on-chain proof transactions
+- `public/index.html` - end-to-end demo interface
+- `attestation-index.json` - local indexed claim store
+
+## Known limitations and roadmap
+
+Current build is an MVP and intentionally pragmatic:
+
+- file-based indexing (not production database)
+- simplified payment-proof validation
+- memo-based proof anchoring (not full SAS-native issuance pipeline yet)
+
+Next milestone priorities:
+
+1. Full SAS schema/credential/attestation lifecycle integration
+2. Production indexing (Postgres + chain/event indexer)
+3. Revocation/supersession and dispute workflows
+4. Stronger identity binding and policy controls
+5. Recruiter bot reference integration
 
 ## Troubleshooting
 
-- `EADDRINUSE: 3000`:
-  - another server is already running on port 3000; stop it and restart.
-- `402 Payment Required`:
-  - expected for `/api/verify` without `X-Payment-Proof`.
-- GitHub API errors / rate limits:
-  - set `GITHUB_TOKEN` in `.env`.
-- Inference errors:
-  - ensure at least one valid provider key is set.
+- `EADDRINUSE: 3000` -> stop existing process and restart
+- `402 Payment Required` -> expected when `X-Payment-Proof` is missing
+- GitHub rate-limit errors -> set `GITHUB_TOKEN`
+- inference failures -> verify provider keys and model config

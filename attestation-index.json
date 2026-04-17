@@ -46,45 +46,45 @@
   "FLkqg6fUP39vWkcxV9ZzLKWrBjRoX2YmccLcEkobZyEZ": {
     "natural-language-processing": {
       "attestationAddress": "9508700cbe857194",
-      "txSignature": "45G3KX2PP4azFxogoVNyXJ9QEsALoP1tVWiHjsTwYHyfNPEJwb437rMky2LbzGDXHBhBADSgE5WLXEYktBt4oDYM",
+      "txSignature": "2VUqQGuv8dJgX48nbxfVXzYGrJDR26T2izc5sbYMQw6v1EHo6bgvwFsaCrB2Ec4F9MwGNPywgs5hmHTC7fmMBKMb",
       "confidence": 80,
-      "evidence": "The BSc thesis specifically focuses on summarizing forum comments using NLP techniques.",
-      "indexedAt": "2026-04-17T12:09:45.435Z"
+      "evidence": "Demonstrated through a BSc thesis that involves summarizing forum comments and analyzing subjectivity and objectivity.",
+      "indexedAt": "2026-04-17T14:17:33.599Z"
     },
     "data-analysis": {
       "attestationAddress": "0cf93c86cbc99bd4",
-      "txSignature": "",
-      "confidence": 0,
-      "evidence": "",
-      "indexedAt": "2026-04-17T12:08:33.967Z"
+      "txSignature": "2u8t4t4LqWNmmAeo7SEWTHVydoztpuYJXP72yp7khegmn5eUEHwGZwszXEzmDJ9X9kcJXs8eaKKRMsuLaZpZp3Vt",
+      "confidence": 70,
+      "evidence": "Conducted exploratory data analysis on food production and carbon emission datasets in the Project-Big-Data repository.",
+      "indexedAt": "2026-04-17T14:17:33.602Z"
     },
     "python": {
       "attestationAddress": "77bb659472268da0",
-      "txSignature": "",
-      "confidence": 0,
-      "evidence": "",
-      "indexedAt": "2026-04-17T12:08:33.967Z"
+      "txSignature": "3MDfCEs1DM9C7T6ACwQSsc9Y4JnFst2sTXS6YXbSqcGPTyRNBBJDJMLu1hBgN6ayHLvJenRU2QMo8BQPAhFFeBb4",
+      "confidence": 70,
+      "evidence": "Contributed to multiple Python repositories indicating proficient coding skills and familiarity with Python-based libraries.",
+      "indexedAt": "2026-04-17T14:10:38.404Z"
     },
     "machine-learning": {
       "attestationAddress": "832d61425f23e31c",
-      "txSignature": "5dUu98iANuNefT1jWkov2cth68cJ1BxJXvzMSYKcTVjGV1BPCe2mSav3M5GAm8ijS5eK2mhJJhWYwMy5mmEpzzvF",
+      "txSignature": "4ob4VuLusEAqPU9osaXmn6NMpF7HfSSPKaPhr4FvDJUJzs5Fb5nQCS6P3p37P28uSedRc9UqLUqRir6rr8Rmy733",
       "confidence": 70,
-      "evidence": "Development of AI systems such as player detection and GTP-based application drafting showcase ML application skills.",
-      "indexedAt": "2026-04-17T12:09:45.439Z"
+      "evidence": "Developed AI systems, including an LLM architecture and player detection system, showcasing competence in machine learning techniques.",
+      "indexedAt": "2026-04-17T14:10:38.403Z"
     },
     "api-development": {
       "attestationAddress": "81eca4f2fc35638a",
-      "txSignature": "",
-      "confidence": 0,
-      "evidence": "",
-      "indexedAt": "2026-04-17T12:08:33.967Z"
+      "txSignature": "3ij9fLTLo66PgXs2iS8gND8bGbBt7k4jgro69174pkLxowJ5t5k3VtWa3LLHZ3eU9amgu52ARni6zEeFMBUdMQmG",
+      "confidence": 60,
+      "evidence": "Developed a backend API system for the multi-modal_fact_detection repository, indicating exposure to API design and implementation.",
+      "indexedAt": "2026-04-17T14:17:33.603Z"
     },
     "jupyter-notebook": {
       "attestationAddress": "3053293b96b769a3",
-      "txSignature": "",
-      "confidence": 0,
-      "evidence": "",
-      "indexedAt": "2026-04-17T12:08:33.967Z"
+      "txSignature": "4yPT3qoPydK7bzCuipucZU8ivTYtaLt5hjWfjEqVytv2NyjS71CWZ1JoJHA9QmdaguLCMkcYTVWBMpHh6XGfEyZY",
+      "confidence": 70,
+      "evidence": "95% of the code is in Jupyter Notebooks, indicating practical knowledge of interactive coding for data science and presentations.",
+      "indexedAt": "2026-04-17T14:10:38.404Z"
     },
     "exploratory-data-analysis": {
       "attestationAddress": "af459fbf7c0c82bb",
@@ -99,6 +99,20 @@
       "confidence": 70,
       "evidence": "The active use of Python in multiple repositories, including backend systems and AI applications, indicates competence.",
       "indexedAt": "2026-04-17T12:09:45.438Z"
+    },
+    "video-processing": {
+      "attestationAddress": "dc3c95abccd1172b",
+      "txSignature": "4gDSq9b9r1CAcU9cjPpQbjmwbmujXmawDVdYpxJnB71QCa9JvE3bhgmKMTvKLng34n7Sozb26NmhrPYLnziyLsYZ",
+      "confidence": 70,
+      "evidence": "Implemented AI-powered player detection in the player-detector repository that processes video inputs and outputs annotated videos.",
+      "indexedAt": "2026-04-17T14:17:33.602Z"
+    },
+    "jupyter-notebooks": {
+      "attestationAddress": "ef0a772da1322443",
+      "txSignature": "3jsHAeoMSnzGKQpJXTEWCiPawLaNTnr8GLvN2G6T9cgvZinG9o6c5xwec7vjhc9psRqzj3mztbhWsDryf6bteGeF",
+      "confidence": 70,
+      "evidence": "Used Jupyter Notebooks extensively (90% of repositories) for various projects, indicating competency in a popular data science tool.",
+      "indexedAt": "2026-04-17T14:17:33.604Z"
     }
   },
   "AZf4opaZh319MRbm38whE1QD5ZFX27Ttg8UToK4669Ep": {
@@ -203,6 +217,80 @@
       "confidence": 50,
       "evidence": "The multi-modal_fact_detection project includes backend API development.",
       "indexedAt": "2026-04-17T13:00:17.718Z"
+    }
+  },
+  "8bcF5EJAH6zb7k3J1ZdQxyn6xUXEWVqsjCwSUuPxQViw": {
+    "natural-language-processing": {
+      "attestationAddress": "b406a8596818ce7e",
+      "txSignature": "2dyhSZqpRTv3oXr14udPMJG7YK2QfHSyAjAvkH6qHtWE7DU8Ek7tmxhTDxhbFqKq4mexLJS2xRK1wdTvqt2qi7sQ",
+      "confidence": 80,
+      "evidence": "Developed a BSc thesis focused on NLP and summarizing discussion comments based on subjectivity and objectivity.",
+      "indexedAt": "2026-04-17T13:59:38.423Z"
+    },
+    "exploratory-data-analysis": {
+      "attestationAddress": "4e7f0d4fd36d6aad",
+      "txSignature": "kDdNcPgydwp6SrPkdBuWKKsmbEZCTNSrwgPaReEMDQySCaULz2sN3NzpsP1xkvtm5RmpKbXbCxqXbR9UWxDzAur",
+      "confidence": 70,
+      "evidence": "Performed exploratory data analysis on food production and carbon emission datasets in the Project-Big-Data repository.",
+      "indexedAt": "2026-04-17T13:59:38.426Z"
+    },
+    "python": {
+      "attestationAddress": "49cc3a56335e1830",
+      "txSignature": "4QhesJrENH5RjuySv24PoH2DfDaBFPxWzKHxggLWtE67kQ5gwZhcmiTL1oDKHcWFt9zBY586uYtbnTmePyTvfPwn",
+      "confidence": 60,
+      "evidence": "The majority of projects involve Python coding, including multi-modal analysis systems and AI-powered applications, but quality and complexity of code are not assessed.",
+      "indexedAt": "2026-04-17T13:59:38.428Z"
+    },
+    "artificial-intelligence": {
+      "attestationAddress": "4c81ebd3a937df55",
+      "txSignature": "wZ8Kt2UhqQixZ6N5MdnH8eCdRkWC4sZpn5GgArFULhBaJKBhAkYQq2NyvUNUGbH5q9Z8Tvmtii8kzRTb4LveyBk",
+      "confidence": 70,
+      "evidence": "Contributed to projects involving AI elements, such as an AI Job-Search CRM and player detection systems utilizing video input.",
+      "indexedAt": "2026-04-17T13:59:38.428Z"
+    },
+    "machine-learning": {
+      "attestationAddress": "d38be5f5341f77a1",
+      "txSignature": "56HsNZyq7dfrNSY4EA3R6J9hRKyF88pLTr3mq3EhdfZz69zt3kkxVgUE3qXbLZEQiqPwfsjmYqYLrJiAsB15Qw5s",
+      "confidence": 60,
+      "evidence": "Implemented aspects of machine learning in projects such as multi-modal fact detection and player detection.",
+      "indexedAt": "2026-04-17T13:59:38.429Z"
+    }
+  },
+  "ABL6qLDEaRDQ1wfdoothQCg17AiwVZQkXAvQUSkHSsWj": {
+    "typescript": {
+      "attestationAddress": "a2ab81b1ee18d1d5",
+      "txSignature": "48G93gYBiCJKX2gWHFfsWwujtB2R9Xt2N4kyLFTJkwo63GZsbw6unz9czrsW64nPSNqK8sZoxiXUYJi1N6ev124A",
+      "confidence": 90,
+      "evidence": "The majority of code repositories (87%) are in TypeScript, demonstrating strong usage of this language in various projects.",
+      "indexedAt": "2026-04-17T14:01:08.201Z"
+    },
+    "rust": {
+      "attestationAddress": "0100eebbf746d48c",
+      "txSignature": "2nKSLTQSF5ECMD5KJJNeCXvUKoQA5VKYjmZgGboPxoREhxb4XdRmrdSh1mbJYfbUy6t8Z58BXmUMDLZERmGUT2Mv",
+      "confidence": 70,
+      "evidence": "Multiple repositories contain Rust code, indicating competence in using Rust for development.",
+      "indexedAt": "2026-04-17T14:01:08.204Z"
+    },
+    "web-scraping": {
+      "attestationAddress": "ad247bc194f2bd4e",
+      "txSignature": "t86BRXvFeURvscH8eMpyYprL4kRGbqnoUv5J9yiMAZG1NgcQ5ykvrBkNkLMj77Sk6idMqPuGxGKJ2DxA3oTjjd2",
+      "confidence": 70,
+      "evidence": "The project wScout mentions scraping data for odds aggregation, showcasing skills in web scraping techniques.",
+      "indexedAt": "2026-04-17T14:01:08.206Z"
+    },
+    "documentation-development": {
+      "attestationAddress": "b7257317b8989204",
+      "txSignature": "51LC9zAYakunnuDN7wvx7edwCoVSUYJGsJ7zdgorAc1SGwdf5Ads1spPdUKefVie6NgjwT8sJuynm455CHKCJBaL",
+      "confidence": 80,
+      "evidence": "The mintlify-docs repository includes a starter kit for documentation, illustrating familiarity with documentation practices and workflows.",
+      "indexedAt": "2026-04-17T14:01:08.207Z"
+    },
+    "agile-scrum": {
+      "attestationAddress": "e377c632b5d579a2",
+      "txSignature": "2t5x4qcAFNPXMWQGxLuBv49vub3LZuUzLs74Ux5KkdfiQbUt5M8KmhgS2ZJQdTpYTF3LdyssFTAjoF9awaHm2TAk",
+      "confidence": 60,
+      "evidence": "Working on a capstone project like wScout suggests exposure to structured project methodologies, although not explicitly detailed in the repositories.",
+      "indexedAt": "2026-04-17T14:01:08.208Z"
     }
   }
 }

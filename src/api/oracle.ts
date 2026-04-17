@@ -3,7 +3,7 @@ import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors';
 import { createSolanaRpc } from '@solana/kit';
 import bs58 from 'bs58';
-import { Keypair } from '@solana/web3.js';
+import { Keypair, PublicKey } from '@solana/web3.js';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -111,7 +111,7 @@ app.get('/health', c => c.json({ status: 'ok', oracle: ORACLE_WALLET }));
 
 // GitHub-based attestation pipeline — the main demo endpoint
 app.post('/api/analyze-github', async c => {
-  let body: { githubUsername: string; studentWallet?: string };
+  let body: { githubUsername: string; studentWallet: string };
   try {
     body = await c.req.json();
   } catch {
@@ -120,8 +120,16 @@ app.post('/api/analyze-github', async c => {
 
   const { githubUsername, studentWallet } = body;
   if (!githubUsername) return c.json({ error: 'githubUsername required' }, 400);
+  if (!studentWallet) return c.json({ error: 'studentWallet required' }, 400);
 
-  const walletAddress = studentWallet ?? Keypair.generate().publicKey.toBase58();
+  const walletAddress = studentWallet.trim();
+  try {
+    // Validate base58 wallet address format.
+    // eslint-disable-next-line no-new
+    new PublicKey(walletAddress);
+  } catch {
+    return c.json({ error: 'studentWallet must be a valid Solana wallet address' }, 400);
+  }
 
   try {
     // Step 1: Fetch GitHub profile
