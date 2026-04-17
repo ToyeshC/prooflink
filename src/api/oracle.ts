@@ -1,10 +1,7 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors';
-import { createSolanaRpc, address } from '@solana/kit';
-import {
-  fetchMaybeAttestation,
-} from '@dankelleher/solana-attestation-service-client';
+import { createSolanaRpc } from '@solana/kit';
 import bs58 from 'bs58';
 import { Keypair } from '@solana/web3.js';
 import fs from 'fs';
@@ -27,23 +24,76 @@ const ORACLE_WALLET = process.env.SOLANA_PRIVATE_KEY
     })()
   : null;
 
-// In-memory attestation index: wallet → skill → attestation address
-// In production, this would be a real database or indexed from on-chain
-type AttestationIndex = Record<string, Record<string, string>>;
+type IndexedAttestation = {
+  attestationAddress: string;
+  txSignature: string;
+  confidence: number;
+  evidence: string;
+  indexedAt: string;
+};
+
+// In-memory attestation index: wallet -> skill -> attestation details
+type AttestationIndex = Record<string, Record<string, IndexedAttestation>>;
 let attestationIndex: AttestationIndex = {};
 
 const ATTESTATION_DB_PATH = path.join(process.cwd(), 'attestation-index.json');
 
 function loadAttestationIndex() {
   if (fs.existsSync(ATTESTATION_DB_PATH)) {
-    attestationIndex = JSON.parse(fs.readFileSync(ATTESTATION_DB_PATH, 'utf8'));
+    const raw = JSON.parse(fs.readFileSync(ATTESTATION_DB_PATH, 'utf8'));
+    attestationIndex = normalizeAttestationIndex(raw);
   }
 }
 
 export function indexAttestation(studentWallet: string, skill: string, attestationAddress: string) {
   if (!attestationIndex[studentWallet]) attestationIndex[studentWallet] = {};
-  attestationIndex[studentWallet][skill] = attestationAddress;
+  attestationIndex[studentWallet][skill] = {
+    attestationAddress,
+    txSignature: '',
+    confidence: 0,
+    evidence: '',
+    indexedAt: new Date().toISOString(),
+  };
   fs.writeFileSync(ATTESTATION_DB_PATH, JSON.stringify(attestationIndex, null, 2));
+}
+
+function indexAttestationRecord(studentWallet: string, skill: string, record: IndexedAttestation) {
+  if (!attestationIndex[studentWallet]) attestationIndex[studentWallet] = {};
+  attestationIndex[studentWallet][skill] = record;
+  fs.writeFileSync(ATTESTATION_DB_PATH, JSON.stringify(attestationIndex, null, 2));
+}
+
+function normalizeAttestationIndex(raw: unknown): AttestationIndex {
+  const normalized: AttestationIndex = {};
+  if (!raw || typeof raw !== 'object') return normalized;
+
+  for (const [wallet, maybeSkills] of Object.entries(raw as Record<string, unknown>)) {
+    if (!maybeSkills || typeof maybeSkills !== 'object') continue;
+    normalized[wallet] = {};
+    for (const [skill, value] of Object.entries(maybeSkills as Record<string, unknown>)) {
+      if (typeof value === 'string') {
+        normalized[wallet][skill] = {
+          attestationAddress: value,
+          txSignature: '',
+          confidence: 0,
+          evidence: '',
+          indexedAt: new Date().toISOString(),
+        };
+      } else if (value && typeof value === 'object') {
+        const record = value as Partial<IndexedAttestation>;
+        if (typeof record.attestationAddress !== 'string') continue;
+        normalized[wallet][skill] = {
+          attestationAddress: record.attestationAddress,
+          txSignature: typeof record.txSignature === 'string' ? record.txSignature : '',
+          confidence: typeof record.confidence === 'number' ? record.confidence : 0,
+          evidence: typeof record.evidence === 'string' ? record.evidence : '',
+          indexedAt: typeof record.indexedAt === 'string' ? record.indexedAt : new Date().toISOString(),
+        };
+      }
+    }
+  }
+
+  return normalized;
 }
 
 const app = new Hono();
@@ -93,7 +143,14 @@ app.post('/api/analyze-github', async c => {
 
     // Step 4: Index
     for (const att of attestations) {
-      indexAttestation(walletAddress, att.skill, att.attestationAddress);
+      const inferred = qualifyingSkills.find(s => s.slug === att.skill);
+      indexAttestationRecord(walletAddress, att.skill, {
+        attestationAddress: att.attestationAddress,
+        txSignature: att.txSignature,
+        confidence: Math.round(att.confidence * 100),
+        evidence: inferred?.evidenceSummary ?? '',
+        indexedAt: new Date().toISOString(),
+      });
     }
 
     const topSkills = [...inferredSkills.skills]
@@ -117,6 +174,8 @@ app.post('/api/analyze-github', async c => {
         skill: a.skill,
         address: a.attestationAddress,
         txSignature: a.txSignature,
+        confidence: Math.round(a.confidence * 100),
+        evidence: qualifyingSkills.find(s => s.slug === a.skill)?.evidenceSummary ?? '',
         explorerUrl: `https://explorer.solana.com/tx/${a.txSignature}?cluster=devnet`,
       })),
       attestationCount: attestations.length,
@@ -132,11 +191,23 @@ app.post('/api/analyze-github', async c => {
 app.post('/api/submit', async c => {
   const body = await c.req.json() as {
     studentWallet: string;
-    attestations: Array<{ skill: string; attestationAddress: string }>;
+    attestations: Array<{
+      skill: string;
+      attestationAddress: string;
+      txSignature?: string;
+      confidence?: number;
+      evidence?: string;
+    }>;
   };
 
-  for (const { skill, attestationAddress } of body.attestations) {
-    indexAttestation(body.studentWallet, skill, attestationAddress);
+  for (const attestation of body.attestations) {
+    indexAttestationRecord(body.studentWallet, attestation.skill, {
+      attestationAddress: attestation.attestationAddress,
+      txSignature: attestation.txSignature ?? '',
+      confidence: attestation.confidence ?? 0,
+      evidence: attestation.evidence ?? '',
+      indexedAt: new Date().toISOString(),
+    });
   }
 
   return c.json({
@@ -181,8 +252,8 @@ app.get('/api/verify', async c => {
   }
 
   // Look up attestation
-  const attestationAddress = attestationIndex[walletParam]?.[skill];
-  if (!attestationAddress) {
+  const record = attestationIndex[walletParam]?.[skill];
+  if (!record) {
     return c.json({
       verified: false,
       wallet: walletParam,
@@ -191,33 +262,21 @@ app.get('/api/verify', async c => {
     });
   }
 
-  // Fetch attestation from on-chain
-  try {
-    const rpc = createSolanaRpc(process.env.SOLANA_RPC_URL!);
-    const attestation = await fetchMaybeAttestation(rpc, address(attestationAddress));
-
-    if (!attestation.exists) {
-      return c.json({ verified: false, wallet: walletParam, skill, message: 'Attestation account not found on-chain' });
-    }
-
-    const decoded = new TextDecoder().decode(attestation.data.data);
-    const skillData = JSON.parse(decoded) as { skill: string; confidence: number; evidence: string };
-
-    return c.json({
-      verified: true,
-      wallet: walletParam,
-      skill,
-      attestation: {
-        address: attestationAddress,
-        confidence: skillData.confidence,
-        evidence: skillData.evidence,
-        expiry: Number(attestation.data.expiry),
-        schema: attestation.data.schema,
-      },
-    });
-  } catch (err) {
-    return c.json({ error: 'Failed to fetch attestation from chain', detail: String(err) }, 500);
-  }
+  return c.json({
+    verified: true,
+    wallet: walletParam,
+    skill,
+    attestation: {
+      address: record.attestationAddress,
+      txSignature: record.txSignature,
+      confidence: record.confidence,
+      evidence: record.evidence,
+      indexedAt: record.indexedAt,
+      verifyTxUrl: record.txSignature
+        ? `https://explorer.solana.com/tx/${record.txSignature}?cluster=devnet`
+        : null,
+    },
+  });
 });
 
 // Student profile: all attested skills for a wallet (free endpoint)
@@ -227,6 +286,7 @@ app.get('/api/profile/:wallet', c => {
   return c.json({
     wallet,
     attestedSkills: Object.keys(skills),
+    attestations: skills,
     attestationCount: Object.keys(skills).length,
     lookupEndpoint: `/api/verify?wallet=${wallet}&skill=<skill-slug>`,
   });

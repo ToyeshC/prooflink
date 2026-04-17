@@ -32,6 +32,9 @@
     .step-dot.active { background: #8b5cf6; box-shadow: 0 0 12px rgba(139, 92, 246, 0.6); }
     .step-dot.done { background: #22c55e; }
     .step-dot { background: #334155; }
+    @media (prefers-reduced-motion: reduce) {
+      .shimmer, .glow, .slide-up, .skill-bar-fill { animation: none !important; transition: none !important; }
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
@@ -71,6 +74,7 @@
     <div id="form-section" class="max-w-lg mx-auto">
       <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl">
         <label class="block text-sm font-medium text-slate-300 mb-3 text-left">GitHub Username</label>
+        <label for="wallet-input" class="sr-only">Optional student wallet</label>
         <div class="flex gap-3">
           <div class="relative flex-1">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">github.com/</span>
@@ -81,14 +85,13 @@
               class="w-full bg-slate-800 border border-slate-600 rounded-xl pl-24 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 mono text-sm"
             />
           </div>
-          <button
-            id="analyze-btn"
-            onclick="startAnalysis()"
-            class="bg-violet-600 hover:bg-violet-500 text-white px-5 py-3 rounded-xl font-medium text-sm transition-colors flex items-center gap-2 whitespace-nowrap"
-          >
+          <button id="analyze-btn" class="bg-violet-600 hover:bg-violet-500 text-white px-5 py-3 rounded-xl font-medium text-sm transition-colors flex items-center gap-2 whitespace-nowrap">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             Analyze
           </button>
+        </div>
+        <div class="mt-3">
+          <input id="wallet-input" type="text" placeholder="Optional: your Solana wallet (devnet)" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 mono text-sm" />
         </div>
         <p class="text-xs text-slate-500 mt-3 text-left">Uses your public repos. No login required.</p>
       </div>
@@ -199,6 +202,13 @@
             <pre id="curl-profile" class="mono text-xs text-cyan-300 whitespace-pre-wrap overflow-x-auto"></pre>
           </div>
         </div>
+        <div>
+          <p class="text-xs text-slate-500 mb-2 uppercase tracking-wide font-medium">Live verify test</p>
+          <button id="run-verify-btn" class="bg-cyan-700 hover:bg-cyan-600 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors">Run x402 verify flow</button>
+          <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 mt-2">
+            <pre id="verify-output" class="mono text-xs text-slate-300 whitespace-pre-wrap overflow-x-auto">Run after analysis to preview 402 + paid verification responses.</pre>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -216,6 +226,20 @@
       <svg class="w-8 h-8 text-red-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       <p id="error-message" class="text-red-300 text-sm mb-4"></p>
       <button onclick="resetForm()" class="text-slate-400 hover:text-slate-200 text-sm transition-colors">← Try again</button>
+    </div>
+  </div>
+
+  <!-- Beginner explainer -->
+  <div id="proof-explainer-section" class="hidden max-w-4xl mx-auto px-6 pb-12">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
+      <div class="border-b border-slate-700 px-6 py-4">
+        <h3 class="font-semibold text-white text-sm">One-click proof explainer</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Beginner mode: what happened on-chain in plain English</p>
+      </div>
+      <div class="p-6 space-y-4">
+        <div id="proof-selector-row" class="flex flex-wrap gap-2"></div>
+        <div id="proof-explainer-content" class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-slate-300"></div>
+      </div>
     </div>
   </div>
 
@@ -247,6 +271,7 @@
 
   <script>
     const API_BASE = '';
+    let lastResult = null;
 
     function show(id) { document.getElementById(id).classList.remove('hidden'); }
     function hide(id) { document.getElementById(id).classList.add('hidden'); }
@@ -269,6 +294,7 @@
 
     async function startAnalysis() {
       const username = document.getElementById('github-input').value.trim();
+      const wallet = document.getElementById('wallet-input').value.trim();
       if (!username) {
         document.getElementById('github-input').focus();
         return;
@@ -292,7 +318,7 @@
         const res = await fetch(`${API_BASE}/api/analyze-github`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ githubUsername: username }),
+          body: JSON.stringify({ githubUsername: username, studentWallet: wallet || undefined }),
         });
 
         setStep(2, 'done');
@@ -308,6 +334,7 @@
         }
 
         hide('loading-section');
+        lastResult = data;
         renderResult(data, username);
         show('result-section');
 
@@ -330,8 +357,20 @@
       // Skills
       const skillsEl = document.getElementById('skills-list');
       skillsEl.innerHTML = '';
-      const colors = ['violet', 'cyan', 'green', 'blue', 'purple'];
-      (data.topSkills ?? []).forEach((skill, i) => {
+      const colors = [
+        { text: 'text-violet-400', bar: 'bg-violet-500' },
+        { text: 'text-cyan-400', bar: 'bg-cyan-500' },
+        { text: 'text-green-400', bar: 'bg-green-500' },
+        { text: 'text-blue-400', bar: 'bg-blue-500' },
+        { text: 'text-purple-400', bar: 'bg-purple-500' },
+      ];
+      const topSkills = data.topSkills ?? [];
+
+      if (topSkills.length === 0) {
+        skillsEl.innerHTML = `<p class="text-sm text-slate-400">No high-confidence skills yet. Try a profile with more public repositories.</p>`;
+      }
+
+      topSkills.forEach((skill, i) => {
         const color = colors[i % colors.length];
         const el = document.createElement('div');
         el.innerHTML = `
@@ -340,10 +379,10 @@
               <span class="text-sm font-medium text-slate-200">${skill.name}</span>
               <span class="text-xs bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded mono">${skill.category.replace('_', ' ')}</span>
             </div>
-            <span class="text-sm font-semibold text-${color}-400">${skill.score}th %ile</span>
+            <span class="text-sm font-semibold ${color.text}">${skill.score}th %ile</span>
           </div>
           <div class="h-2 bg-slate-800 rounded-full overflow-hidden mb-1">
-            <div class="h-full bg-${color}-500 rounded-full skill-bar-fill" style="width: 0%" data-target="${skill.score}%"></div>
+            <div class="h-full ${color.bar} rounded-full skill-bar-fill" style="width: 0%" data-target="${skill.score}%"></div>
           </div>
           <p class="text-xs text-slate-500">${skill.evidence}</p>
         `;
@@ -369,25 +408,31 @@
         linksEl.appendChild(a);
       });
 
+      renderProofExplainer(data);
+
       // Wallet
       const w = data.wallet ?? '';
-      document.getElementById('wallet-display').textContent = w.slice(0, 8) + '...' + w.slice(-8);
+      document.getElementById('wallet-display').textContent = w ? `${w.slice(0, 8)}...${w.slice(-8)}` : 'n/a';
 
       // API demo
       const firstSkill = data.topSkills?.[0]?.slug ?? 'rust';
       const host = window.location.host;
       document.getElementById('curl-verify').textContent =
-        `curl -H "X-Payment-Proof: <tx-sig>" \\\n  "http://${host}/api/verify?wallet=${w.slice(0,8)}...&skill=${firstSkill}"`;
+        `curl -H "X-Payment-Proof: <tx-sig>" \\\n  "http://${host}/api/verify?wallet=${w}&skill=${firstSkill}"`;
       document.getElementById('curl-profile').textContent =
-        `curl "http://${host}/api/profile/${w.slice(0,8)}..."`;
+        `curl "http://${host}/api/profile/${w}"`;
     }
 
     function resetForm() {
       hide('result-section');
       hide('error-section');
       hide('loading-section');
+      hide('proof-explainer-section');
       show('form-section');
       document.getElementById('github-input').value = '';
+      document.getElementById('wallet-input').value = '';
+      document.getElementById('verify-output').textContent = 'Run after analysis to preview 402 + paid verification responses.';
+      lastResult = null;
     }
 
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -395,6 +440,117 @@
     document.getElementById('github-input').addEventListener('keydown', e => {
       if (e.key === 'Enter') startAnalysis();
     });
+    document.getElementById('analyze-btn').addEventListener('click', startAnalysis);
+    document.getElementById('run-verify-btn').addEventListener('click', runVerifyFlow);
+
+    async function runVerifyFlow() {
+      const output = document.getElementById('verify-output');
+      if (!lastResult?.wallet || !lastResult?.topSkills?.length) {
+        output.textContent = 'Analyze a profile first.';
+        return;
+      }
+
+      const wallet = lastResult.wallet;
+      const skill = lastResult.topSkills[0].slug;
+      const sampleProof = lastResult.attestations?.[0]?.txSignature ?? '';
+      output.textContent = 'Step 1: requesting unpaid verify...';
+
+      try {
+        const unpaid = await fetch(`${API_BASE}/api/verify?wallet=${encodeURIComponent(wallet)}&skill=${encodeURIComponent(skill)}`);
+        const unpaidJson = await unpaid.json();
+
+        if (!sampleProof) {
+          output.textContent = `402 response (no payment proof):\n${JSON.stringify(unpaidJson, null, 2)}\n\nNo sample tx signature found; complete a real x402 payment to continue.`;
+          return;
+        }
+
+        output.textContent = 'Step 2: requesting paid verify with sample tx proof...';
+        const paid = await fetch(`${API_BASE}/api/verify?wallet=${encodeURIComponent(wallet)}&skill=${encodeURIComponent(skill)}`, {
+          headers: { 'X-Payment-Proof': sampleProof },
+        });
+        const paidJson = await paid.json();
+
+        output.textContent =
+          `402 response (no payment proof):\n${JSON.stringify(unpaidJson, null, 2)}\n\n` +
+          `Paid verify response:\n${JSON.stringify(paidJson, null, 2)}`;
+      } catch (error) {
+        output.textContent = `Verify flow failed: ${error?.message ?? 'Unknown error'}`;
+      }
+    }
+
+    function renderProofExplainer(data) {
+      const section = document.getElementById('proof-explainer-section');
+      const selectorRow = document.getElementById('proof-selector-row');
+      const content = document.getElementById('proof-explainer-content');
+      const attestations = data.attestations ?? [];
+
+      if (attestations.length === 0) {
+        hide('proof-explainer-section');
+        return;
+      }
+
+      selectorRow.innerHTML = '';
+      attestations.slice(0, 5).forEach((att, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs mono transition-colors';
+        btn.textContent = att.skill;
+        btn.addEventListener('click', () => renderSingleProofExplanation(att, data.wallet));
+        selectorRow.appendChild(btn);
+        if (index === 0) renderSingleProofExplanation(att, data.wallet);
+      });
+
+      show('proof-explainer-section');
+
+      function renderSingleProofExplanation(attestation, wallet) {
+        const shortWallet = wallet ? `${wallet.slice(0, 8)}...${wallet.slice(-8)}` : 'unknown';
+        const shortTx = attestation.txSignature
+          ? `${attestation.txSignature.slice(0, 10)}...${attestation.txSignature.slice(-10)}`
+          : 'not available';
+        const confidence = typeof attestation.confidence === 'number' ? attestation.confidence : 'n/a';
+        const evidence = attestation.evidence || 'No evidence summary was saved for this older record.';
+
+        content.innerHTML = `
+          <div class="space-y-3">
+            <p class="text-slate-200 font-medium">Skill selected: <span class="mono">${attestation.skill}</span></p>
+            <div class="grid md:grid-cols-3 gap-3 text-xs">
+              <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+                <p class="text-slate-400 mb-1">1) Who wrote it?</p>
+                <p class="mono text-slate-200">${shortWallet}</p>
+                <p class="text-slate-500 mt-1">This wallet signed and paid the network fee.</p>
+              </div>
+              <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+                <p class="text-slate-400 mb-1">2) What was written?</p>
+                <p class="text-slate-200">A memo payload with skill + confidence + evidence</p>
+                <p class="text-slate-500 mt-1">Confidence: <span class="mono">${confidence}</span></p>
+              </div>
+              <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+                <p class="text-slate-400 mb-1">3) Where is proof?</p>
+                <p class="mono text-slate-200">${shortTx}</p>
+                <p class="text-slate-500 mt-1">Any recruiter can open this tx on Solana Explorer.</p>
+              </div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs">
+              <p class="text-slate-400 mb-1">Visual flow</p>
+              <p class="mono text-slate-200">GitHub evidence -> AI score -> Solana Memo tx -> Recruiter verify API</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs">
+              <p class="text-slate-400 mb-1">Evidence (human-readable)</p>
+              <p class="text-slate-200">${escapeHtml(evidence)}</p>
+            </div>
+            ${attestation.explorerUrl ? `<a href="${attestation.explorerUrl}" target="_blank" class="inline-flex items-center gap-2 text-xs bg-cyan-900/40 hover:bg-cyan-900/60 border border-cyan-700/50 text-cyan-300 px-3 py-2 rounded-lg transition-colors">Open full transaction on Solana Explorer</a>` : ''}
+          </div>
+        `;
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
   </script>
 </body>
 </html>

@@ -1,10 +1,208 @@
 {
   "4wTmQ57mgcNVdrBzAEkpMSozANReARXP2Xsf4qMKvugS": {
-    "html": "2e77d4939ebb5df2",
-    "css": "694c27e9e4ebf1fe",
-    "javascript": "3226bfa95f665909",
-    "rust": "69b78d5dd972a307",
-    "git": "b4f85807f8f3d1de",
-    "webassembly": "2952fc9ef94c60e0"
+    "html": {
+      "attestationAddress": "2e77d4939ebb5df2",
+      "txSignature": "",
+      "confidence": 0,
+      "evidence": "",
+      "indexedAt": "2026-04-17T12:08:33.964Z"
+    },
+    "css": {
+      "attestationAddress": "694c27e9e4ebf1fe",
+      "txSignature": "",
+      "confidence": 0,
+      "evidence": "",
+      "indexedAt": "2026-04-17T12:08:33.967Z"
+    },
+    "javascript": {
+      "attestationAddress": "3226bfa95f665909",
+      "txSignature": "",
+      "confidence": 0,
+      "evidence": "",
+      "indexedAt": "2026-04-17T12:08:33.967Z"
+    },
+    "rust": {
+      "attestationAddress": "69b78d5dd972a307",
+      "txSignature": "",
+      "confidence": 0,
+      "evidence": "",
+      "indexedAt": "2026-04-17T12:08:33.967Z"
+    },
+    "git": {
+      "attestationAddress": "b4f85807f8f3d1de",
+      "txSignature": "",
+      "confidence": 0,
+      "evidence": "",
+      "indexedAt": "2026-04-17T12:08:33.967Z"
+    },
+    "webassembly": {
+      "attestationAddress": "2952fc9ef94c60e0",
+      "txSignature": "",
+      "confidence": 0,
+      "evidence": "",
+      "indexedAt": "2026-04-17T12:08:33.967Z"
+    }
+  },
+  "FLkqg6fUP39vWkcxV9ZzLKWrBjRoX2YmccLcEkobZyEZ": {
+    "natural-language-processing": {
+      "attestationAddress": "9508700cbe857194",
+      "txSignature": "45G3KX2PP4azFxogoVNyXJ9QEsALoP1tVWiHjsTwYHyfNPEJwb437rMky2LbzGDXHBhBADSgE5WLXEYktBt4oDYM",
+      "confidence": 80,
+      "evidence": "The BSc thesis specifically focuses on summarizing forum comments using NLP techniques.",
+      "indexedAt": "2026-04-17T12:09:45.435Z"
+    },
+    "data-analysis": {
+      "attestationAddress": "0cf93c86cbc99bd4",
+      "txSignature": "",
+      "confidence": 0,
+      "evidence": "",
+      "indexedAt": "2026-04-17T12:08:33.967Z"
+    },
+    "python": {
+      "attestationAddress": "77bb659472268da0",
+      "txSignature": "",
+      "confidence": 0,
+      "evidence": "",
+      "indexedAt": "2026-04-17T12:08:33.967Z"
+    },
+    "machine-learning": {
+      "attestationAddress": "832d61425f23e31c",
+      "txSignature": "5dUu98iANuNefT1jWkov2cth68cJ1BxJXvzMSYKcTVjGV1BPCe2mSav3M5GAm8ijS5eK2mhJJhWYwMy5mmEpzzvF",
+      "confidence": 70,
+      "evidence": "Development of AI systems such as player detection and GTP-based application drafting showcase ML application skills.",
+      "indexedAt": "2026-04-17T12:09:45.439Z"
+    },
+    "api-development": {
+      "attestationAddress": "81eca4f2fc35638a",
+      "txSignature": "",
+      "confidence": 0,
+      "evidence": "",
+      "indexedAt": "2026-04-17T12:08:33.967Z"
+    },
+    "jupyter-notebook": {
+      "attestationAddress": "3053293b96b769a3",
+      "txSignature": "",
+      "confidence": 0,
+      "evidence": "",
+      "indexedAt": "2026-04-17T12:08:33.967Z"
+    },
+    "exploratory-data-analysis": {
+      "attestationAddress": "af459fbf7c0c82bb",
+      "txSignature": "57HSqbV6daqCyztZCaCskpxYNCuszJyZnqm88qeUiFQyFExQ18ocssuyFBEKgTL9wUVQG9Xst4hzY26Hieritsci",
+      "confidence": 70,
+      "evidence": "The Project-Big-Data repository demonstrates EDA on relevant datasets, showing understanding of data analysis techniques.",
+      "indexedAt": "2026-04-17T12:09:45.437Z"
+    },
+    "python-programming": {
+      "attestationAddress": "5c7261b2170f7d16",
+      "txSignature": "3VXUirBdeQ5bhBMsVajw79kDbenSsGe8a5etK8xmvDzdYahAYjy4M3D8g24jRnbGwAYbhJHvTWn5bPH7iBx5U53r",
+      "confidence": 70,
+      "evidence": "The active use of Python in multiple repositories, including backend systems and AI applications, indicates competence.",
+      "indexedAt": "2026-04-17T12:09:45.438Z"
+    }
+  },
+  "AZf4opaZh319MRbm38whE1QD5ZFX27Ttg8UToK4669Ep": {
+    "machine-learning": {
+      "attestationAddress": "4248b54d98e7a716",
+      "txSignature": "5d9Ccye1yfi8N7HJfG2DPCg7V3ym1ixRH4TYM1rGZrRfmfNEJQAoQUpJSefk98FRRzNPpMuB33BH9vfR6Zmd8HQy",
+      "confidence": 80,
+      "evidence": "Developed a novel multimodal Prototype-Based Network for food classification in a Master's thesis project, demonstrating a strong understanding of machine learning concepts and techniques.",
+      "indexedAt": "2026-04-17T12:33:38.324Z"
+    },
+    "natural-language-processing": {
+      "attestationAddress": "3ff0456fb40986c5",
+      "txSignature": "47iqRdkWHxUHSNYKaWptMuyUxTVp7Yi4KYvoasHyohxFMX42mefYhAQqf4fhLeeGetvcQVShCDUf1gxxzTKLVZ4A",
+      "confidence": 70,
+      "evidence": "Engaged in sentiment analysis and topic modeling projects, showcasing practical NLP skills and methodologies.",
+      "indexedAt": "2026-04-17T12:33:38.327Z"
+    },
+    "data-visualization": {
+      "attestationAddress": "11f20f6f1efdef09",
+      "txSignature": "2DBbAAt2jCPtLhY7VtwxhNdysZ564QwRLQghFa7jxPnkW1r1FMX7Yj91mTkP5tdvNpzQ4W82ditvEHgKiTQQRtKr",
+      "confidence": 60,
+      "evidence": "Involved in projects that likely include data analysis and presentation, as indicated by project structures and the nature of the output (e.g., sentiment analysis visualizations).",
+      "indexedAt": "2026-04-17T12:33:38.327Z"
+    },
+    "prototypical-networks": {
+      "attestationAddress": "534d415f4ac9cf8e",
+      "txSignature": "5ecCvMQnqjqmmpEjALRmKyi5wKApB4NRRvWoCudaGQpLrHMPoJZyvdeWSPdiF8sJwhtAVKWAfbKUB2F1znuhTMBi",
+      "confidence": 70,
+      "evidence": "Research and implementation of Prototype-Based Networks in food classification project, reflecting competency in advanced neural network architectures.",
+      "indexedAt": "2026-04-17T12:33:38.328Z"
+    }
+  },
+  "Gtm3Uvu1x8b8EQ7d5HmFvBWWbdNgUThkVpwqmzw6xVBp": {
+    "natural-language-processing": {
+      "attestationAddress": "8aee5144b162796f",
+      "txSignature": "4hDgwMd76HMFekNdqmPzSomk5yihsQutJdJvrFuEWtE71qLqJ4ePPNuQwNwPmFvrqpbvEYomjDzn65R9KPfEzRxu",
+      "confidence": 80,
+      "evidence": "The BSc thesis specifically focused on summarizing discussion forum comments through NLP techniques.",
+      "indexedAt": "2026-04-17T12:56:35.471Z"
+    },
+    "exploratory-data-analysis": {
+      "attestationAddress": "110f5f3e3c6aab11",
+      "txSignature": "3pbSew4BXVCXkyUvwtqRuGtPTL6ijPVT1Th3yDTevj6comyBkfiJdkpzZ6EZMbj8ZmweSy7Wcy55yQKRPJiwygt1",
+      "confidence": 70,
+      "evidence": "Conducted exploratory data analysis on food production and carbon emissions data as part of the Project-Big-Data repository.",
+      "indexedAt": "2026-04-17T12:56:35.474Z"
+    },
+    "python-programming": {
+      "attestationAddress": "287986c0a645c5f3",
+      "txSignature": "2EKPuwBNevadbHNpVvnSadUktydPbkgsxE1MfEmgVTwN6fkKgJozdwtDKoDBgBTdNidKMntnH2cjAKSm44J9vkrw",
+      "confidence": 70,
+      "evidence": "Multiple repositories including coding projects demonstrate the use of Python as the primary programming language.",
+      "indexedAt": "2026-04-17T12:56:35.474Z"
+    },
+    "machine-learning": {
+      "attestationAddress": "7c9cde8686c6a1c0",
+      "txSignature": "vZ4tSVefBqZcPYFhWanATbehaKUVhxC41AxVWjgioyDWVDzPjrynSgpwa8td2VdDKzjjzd7AWeHrWwsU8qRnboA",
+      "confidence": 60,
+      "evidence": "The player-detector project indicates the use of AI and machine learning for player detection.",
+      "indexedAt": "2026-04-17T12:56:35.475Z"
+    },
+    "jupyter-notebooks": {
+      "attestationAddress": "60f2de887696f088",
+      "txSignature": "3vcUUmCB5yj1YoUizeNYeiq95mZvk367uXeHHd8TAgU4LQaUWRdypfsAmauumgpXY1iw9MarcUVaPea9A47HhK25",
+      "confidence": 80,
+      "evidence": "90% of the repositories are in Jupyter Notebook format, indicating proficiency in using this tool for data analysis and documentation.",
+      "indexedAt": "2026-04-17T12:56:35.475Z"
+    }
+  },
+  "8cVruvxpGJzPL9JMwK2mbmK7RJjLZmorSEMAY4bvRAPN": {
+    "natural-language-processing": {
+      "attestationAddress": "31bf7f3544d9bc7a",
+      "txSignature": "5j7YHEGZfzeQdX9Eg3EwbCChYxfjGM75zxzVZWwQJkkDUfBEr4j7Rf7xAMVuc3NEmVH7n9XaUBsXe3VL1Gv3FqTu",
+      "confidence": 80,
+      "evidence": "The BSc thesis focuses on summarizing comments in a discussion forum using NLP techniques.",
+      "indexedAt": "2026-04-17T13:00:17.713Z"
+    },
+    "exploratory-data-analysis": {
+      "attestationAddress": "564c491c7ca45ac6",
+      "txSignature": "ha9MAmrKKtan4CQmuTQjFuBgmF2ESopH9hDXhVJPjFYWvuewnsryJBZyHj9qXp76GrwdG29ceLMVujCpjqP1zMY",
+      "confidence": 70,
+      "evidence": "The Project-Big-Data repository showcases exploratory analysis on food production and carbon emissions data.",
+      "indexedAt": "2026-04-17T13:00:17.715Z"
+    },
+    "python-programming": {
+      "attestationAddress": "2df85c52bfc6684c",
+      "txSignature": "2aAjVfiUkWz8Qa664YWYapPa623qNoSV1yHoorDuqMUpbzEQDsx7nQnANuTBomZRC1NtZcaEeWo6qPv3x3ckVf4D",
+      "confidence": 70,
+      "evidence": "Multiple projects, including NLI_LSTM and player-detector, demonstrate Python programming skills.",
+      "indexedAt": "2026-04-17T13:00:17.716Z"
+    },
+    "machine-learning": {
+      "attestationAddress": "63f9622cf87792e8",
+      "txSignature": "44bPSGuHjcyPMTQGuNNYWyukcTwG8DrBc2jT2Au5jz4pZoiCCQV9G5fTCXfXfXzpcCfAexunCtquLKykPzuPzjEj",
+      "confidence": 60,
+      "evidence": "The player-detector project likely involves machine learning techniques for video analysis.",
+      "indexedAt": "2026-04-17T13:00:17.717Z"
+    },
+    "api-development": {
+      "attestationAddress": "000fd6c750222c7d",
+      "txSignature": "5Sfg31qcSemDuKFLM9sVsE2rJ7SdLQgUqnvT4TqeKoAwreGqRk74eKUvPTSojwUCWdrpZNao3myxGWzE83Hi8gJ9",
+      "confidence": 50,
+      "evidence": "The multi-modal_fact_detection project includes backend API development.",
+      "indexedAt": "2026-04-17T13:00:17.718Z"
+    }
   }
 }
