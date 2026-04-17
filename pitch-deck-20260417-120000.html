@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proof of Talent — Pitch Deck</title>
+<style>
+/* ============================================================
+   DARK PREMIUM — design-taste pitch deck style
+   Near-black bg, white text, single accent, monospace metrics
+   ============================================================ */
+
+:root {
+  --bg:        #0B0C14;
+  --bg-alt:    #0F1019;
+  --bg-card:   #141520;
+  --bg-raised: #1A1B2E;
+  --border:    rgba(255,255,255,0.055);
+  --border-lit: rgba(255,255,255,0.12);
+
+  --blue:      #5B8EF8;
+  --blue-dim:  rgba(91,142,248,0.12);
+  --blue-glow: rgba(91,142,248,0.08);
+  --teal:      #00C896;
+  --teal-dim:  rgba(0,200,150,0.10);
+  --red:       #F15B5B;
+  --amber:     #F59E0B;
+
+  --text:      #EEF0FF;
+  --text-b:    rgba(238,240,255,0.58);
+  --text-c:    rgba(238,240,255,0.32);
+
+  --font:  'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono:  'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+
+  /* easing */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font); }
+
+/* ── SLIDE ENGINE ── */
+.deck { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 68px 92px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.4s var(--ease-out);
+  background: var(--bg);
+}
+.slide.bg-alt { background: var(--bg-alt); }
+.slide.active { opacity: 1; pointer-events: auto; }
+
+/* staggered entrance */
+.slide.active .a { animation: up 0.55s var(--ease-out) both; }
+.slide.active .a:nth-child(1)  { animation-delay: 0s; }
+.slide.active .a:nth-child(2)  { animation-delay: .06s; }
+.slide.active .a:nth-child(3)  { animation-delay: .12s; }
+.slide.active .a:nth-child(4)  { animation-delay: .18s; }
+.slide.active .a:nth-child(5)  { animation-delay: .24s; }
+.slide.active .a:nth-child(6)  { animation-delay: .30s; }
+.slide.active .a:nth-child(7)  { animation-delay: .36s; }
+.slide.active .a:nth-child(8)  { animation-delay: .42s; }
+@keyframes up { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+
+/* ── TYPOGRAPHY ── */
+.t-hero  { font-size: clamp(60px, 7.5vw, 96px); font-weight: 900; letter-spacing: -0.04em; line-height: 1.0; }
+.t-h1    { font-size: clamp(40px, 4.5vw, 58px);  font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+.t-h2    { font-size: clamp(28px, 3.2vw, 40px);  font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+.t-h3    { font-size: clamp(20px, 2.4vw, 30px);  font-weight: 600; line-height: 1.3; }
+.t-body  { font-size: clamp(17px, 1.8vw, 22px);  font-weight: 400; line-height: 1.6; color: var(--text-b); }
+.t-small { font-size: clamp(14px, 1.5vw, 18px);  font-weight: 400; line-height: 1.55; color: var(--text-b); }
+.t-label { font-size: clamp(11px, 1.1vw, 14px);  font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--text-c); }
+.mono    { font-family: var(--mono); }
+
+.c-blue  { color: var(--blue); }
+.c-teal  { color: var(--teal); }
+.c-red   { color: var(--red); }
+.c-amber { color: var(--amber); }
+.c-muted { color: var(--text-c); }
+
+/* ── LAYOUT ── */
+.flex    { display: flex; }
+.col     { flex-direction: column; }
+.row     { flex-direction: row; }
+.center  { align-items: center; justify-content: center; }
+.between { justify-content: space-between; }
+.items-c { align-items: center; }
+.items-e { align-items: flex-end; }
+.g2  { gap: 8px; }
+.g3  { gap: 12px; }
+.g4  { gap: 16px; }
+.g5  { gap: 20px; }
+.g6  { gap: 24px; }
+.g8  { gap: 32px; }
+.g10 { gap: 40px; }
+.g12 { gap: 48px; }
+.f1  { flex: 1; }
+.w100 { width: 100%; }
+.text-c { text-align: center; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+
+/* ── COMPONENTS ── */
+
+/* Card */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px 26px;
+}
+.card-blue {
+  background: var(--bg-card);
+  border: 1px solid rgba(91,142,248,0.22);
+  border-radius: 12px;
+  padding: 22px 26px;
+  box-shadow: 0 0 24px var(--blue-glow);
+}
+.card-teal {
+  background: var(--bg-card);
+  border: 1px solid rgba(0,200,150,0.22);
+  border-radius: 12px;
+  padding: 22px 26px;
+}
+.card-red {
+  background: var(--bg-card);
+  border: 1px solid rgba(241,91,91,0.18);
+  border-radius: 12px;
+  padding: 22px 26px;
+}
+
+/* Divider */
+.divider { width: 40px; height: 2px; background: var(--blue); opacity: 0.5; border-radius: 2px; flex-shrink: 0; }
+
+/* Badge */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 5px 14px; border-radius: 100px;
+  font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+}
+.badge-blue  { background: var(--blue-dim); color: var(--blue); }
+.badge-teal  { background: var(--teal-dim); color: var(--teal); }
+.badge-ghost { border: 1px solid var(--border-lit); color: var(--text-c); }
+
+/* Bullet list */
+.blist { list-style: none; }
+.blist li {
+  padding: 10px 0 10px 22px;
+  position: relative;
+  font-size: clamp(16px,1.7vw,21px);
+  color: var(--text-b);
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
+.blist li:last-child { border-bottom: none; }
+.blist li::before {
+  content:''; position:absolute; left:0; top:50%;
+  width:6px; height:6px; border-radius:50%;
+  background: var(--blue); transform:translateY(-50%);
+}
+
+/* Large stat */
+.stat-num {
+  font-size: clamp(52px,6vw,80px);
+  font-weight: 900; letter-spacing: -0.04em; line-height: 1;
+  font-family: var(--mono);
+  color: var(--teal);
+}
+.stat-label { font-size: clamp(12px,1.2vw,16px); color: var(--text-c); margin-top: 6px; font-weight: 500; letter-spacing: .05em; text-transform: uppercase; }
+
+/* Code block */
+.code {
+  background: #07080F;
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 10px;
+  padding: 18px 22px;
+  font-family: var(--mono);
+  font-size: clamp(12px,1.2vw,15px);
+  color: #7B8EC8;
+  line-height: 1.8;
+  white-space: pre;
+}
+.k  { color: #7CB9F5; } /* keys */
+.s  { color: #86EFAC; } /* strings */
+.n  { color: #FCA5A5; } /* numbers */
+.cm { color: #3D4B5C; } /* comments */
+.p  { color: #485468; } /* punctuation */
+
+/* Progress bar */
+.pbar-wrap { width:100%; height:5px; border-radius:3px; background:rgba(255,255,255,0.05); overflow:hidden; }
+.pbar-fill  { height:100%; border-radius:3px; background:var(--blue); }
+
+/* Check / cross */
+.chk { color: var(--teal); font-weight: 700; font-size: 18px; }
+.xmk { color: var(--text-c); font-size: 18px; }
+
+/* Subtle dot-grid background */
+.dot-bg {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ── PIPELINE (slide 1) ── */
+.pipeline {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  margin-top: 44px;
+}
+.pipeline::before {
+  content: '';
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  right: 22px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--blue) 0%, var(--teal) 100%);
+  opacity: 0.3;
+}
+.pipe-node {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.pipe-dot {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--bg-card);
+  border: 2px solid var(--border-lit);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  margin-bottom: 14px;
+  position: relative;
+}
+.pipe-dot.active-node {
+  border-color: var(--teal);
+  box-shadow: 0 0 20px rgba(0,200,150,0.2);
+}
+.pipe-dot.mid-node { border-color: var(--blue); box-shadow: 0 0 16px rgba(91,142,248,0.15); }
+.pipe-label  { font-size: clamp(13px,1.3vw,17px); font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.pipe-sub    { font-size: clamp(11px,1.1vw,14px); color: var(--text-c); line-height: 1.4; max-width: 140px; }
+
+/* ── SWIMLANE (slide 5) ── */
+.lane-wrap { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 16px; margin-top: 20px; }
+.lane {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.lane-head {
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--border);
+  font-size: clamp(11px,1.1vw,13px);
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.lane-body { padding: 14px; display: flex; flex-direction: column; gap: 9px; }
+.lane-step {
+  padding: 9px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: clamp(12px,1.25vw,15px);
+  color: var(--text-b);
+  line-height: 1.45;
+}
+.lane-step.s-blue  { border-color: rgba(91,142,248,0.3); background: var(--blue-dim); color: var(--text); }
+.lane-step.s-teal  { border-color: rgba(0,200,150,0.3); background: var(--teal-dim); color: var(--text); }
+.lane-step.s-red   { border-color: rgba(241,91,91,0.3); background: rgba(241,91,91,0.06); color: var(--text); }
+.lane-step.s-muted { color: var(--text-c); font-style: italic; font-size: 12px; }
+
+/* ── REVENUE TABLE (slide 6) ── */
+.rev-table { width: 100%; border-collapse: collapse; }
+.rev-table thead tr { border-bottom: 1px solid var(--border-lit); }
+.rev-table th { padding: 10px 16px; text-align: right; font-size: clamp(11px,1.1vw,13px); font-weight: 600; color: var(--text-c); letter-spacing: .1em; text-transform: uppercase; }
+.rev-table th:first-child { text-align: left; }
+.rev-table td { padding: 14px 16px; text-align: right; font-size: clamp(14px,1.5vw,18px); font-family: var(--mono); color: var(--text-b); border-bottom: 1px solid var(--border); }
+.rev-table td:first-child { text-align: left; font-family: var(--font); color: var(--text); font-weight: 600; }
+.rev-table tr.highlight td { background: var(--blue-dim); color: var(--text); }
+.rev-table tr.highlight td:first-child { border-radius: 8px 0 0 8px; }
+.rev-table tr.highlight td:last-child { border-radius: 0 8px 8px 0; color: var(--teal); font-weight: 800; }
+
+/* ── NAVIGATION ── */
+.nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 36px;
+  background: linear-gradient(0deg, rgba(7,8,15,0.97) 0%, transparent 100%);
+  z-index: 100; opacity: 0; transition: opacity 0.25s;
+}
+.deck:hover .nav { opacity: 1; }
+.nav-ctr { font-size: 13px; font-family: var(--mono); color: var(--text-c); }
+.nav-bar { flex: 1; max-width: 160px; height: 2px; border-radius: 2px; background: rgba(255,255,255,0.08); margin: 0 18px; }
+.nav-fill { height: 100%; border-radius: 2px; background: var(--blue); transition: width 0.3s var(--ease-out); }
+.nav-btn {
+  background: none; border: 1px solid var(--border); color: var(--text-c);
+  padding: 7px 15px; border-radius: 7px; cursor: pointer; font-size: 13px; font-family: var(--font);
+  transition: border-color 100ms, color 100ms;
+}
+.nav-btn:hover { border-color: var(--blue); color: var(--text); }
+
+/* ── PRESENTER NOTES ── */
+.notes {
+  display: none; position: fixed; bottom: 52px; left: 36px; right: 36px;
+  background: rgba(4,5,10,0.95); border: 1px solid var(--border-lit); border-radius: 10px;
+  padding: 16px 22px; font-size: 14px; color: var(--text-b); line-height: 1.65;
+  z-index: 200; max-height: 170px; overflow-y: auto;
+}
+.notes.visible { display: block; }
+.n-label { font-size: 11px; text-transform: uppercase; letter-spacing: .2em; color: var(--text-c); margin-bottom: 6px; font-weight: 600; }
+
+/* ── PRINT ── */
+@media print {
+  .deck { overflow: visible; }
+  .slide { position: relative; opacity:1; pointer-events:auto; page-break-after:always; height:100vh; }
+  .nav, .notes { display: none !important; }
+  .a { animation: none !important; opacity:1 !important; transform:none !important; }
+}
+
+/* ── REDUCED MOTION ── */
+@media (prefers-reduced-motion: reduce) {
+  .slide { transition: none; }
+  .a { animation: none !important; opacity: 1 !important; transform: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 1 — TITLE
+═══════════════════════════════════════════════════════════ -->
+<div class="slide dot-bg" style="justify-content:center; align-items:center; text-align:center;">
+
+  <div class="flex row items-c center g3 a" style="margin-bottom:20px;">
+    <span class="badge badge-ghost">Solana · SAS · x402</span>
+    <span class="badge badge-teal">LIVE MVP</span>
+  </div>
+
+  <h1 class="t-hero a" style="max-width:900px;">
+    <span class="c-blue">Proof</span> of Talent
+  </h1>
+
+  <p class="t-h3 a" style="color:var(--text-b); margin-top:18px; max-width:680px; font-weight:400;">
+    The decentralized oracle for verifiable human capital
+  </p>
+
+  <p class="t-body a" style="margin-top:10px; max-width:600px; font-size:clamp(15px,1.6vw,19px);">
+    AI audits raw developer evidence → SAS anchors skill attestations → agents pay <span class="c-teal mono">$0.001</span> per lookup
+  </p>
+
+  <!-- Demo link -->
+  <a class="a" href="https://proof-of-talent.vercel.app" target="_blank" rel="noopener"
+     style="display:inline-flex; align-items:center; gap:8px; margin-top:24px;
+            padding:12px 28px; border-radius:8px;
+            background:var(--blue-dim); border:1px solid rgba(91,142,248,0.35);
+            color:var(--blue); font-weight:700; font-size:clamp(14px,1.4vw,17px);
+            text-decoration:none; letter-spacing:.03em;
+            transition: background 120ms, border-color 120ms;">
+    <span style="font-size:16px;">▶</span> Live Demo — proof-of-talent.vercel.app
+  </a>
+
+  <!-- Pipeline row -->
+  <div class="pipeline a" style="max-width:900px; margin-top:52px;">
+    <div class="pipe-node">
+      <div class="pipe-dot"><span style="font-size:20px;">🎓</span></div>
+      <div class="pipe-label">Evidence</div>
+      <div class="pipe-sub">GitHub + Canvas ZIP exports</div>
+    </div>
+    <div class="pipe-node">
+      <div class="pipe-dot mid-node"><span style="font-size:20px;">🧠</span></div>
+      <div class="pipe-label">AI Oracle</div>
+      <div class="pipe-sub">Skill inference, confidence, evidence summary</div>
+    </div>
+    <div class="pipe-node">
+      <div class="pipe-dot mid-node"><span style="font-size:20px;">🔐</span></div>
+      <div class="pipe-label">SAS + ZK</div>
+      <div class="pipe-sub">On-chain attestation, ZK-privacy layer</div>
+    </div>
+    <div class="pipe-node">
+      <div class="pipe-dot active-node"><span style="font-size:20px;">⚡</span></div>
+      <div class="pipe-label">x402 API</div>
+      <div class="pipe-sub">Machine-readable, micropayment-gated</div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="n-label">Slide 1 — Title (~10s)</div>
+    "Proof of Talent is a decentralized oracle for human capital. We turn raw developer work — GitHub repos, Canvas course submissions — into verifiable skill attestations anchored on Solana, queryable by AI recruiting agents for $0.001 per lookup — 75% gross margin, 30,000x cheaper than a Checkr background check. This is DePIN for your resume."
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 2 — PROBLEM: THE VALIDITY PROBLEM
+═══════════════════════════════════════════════════════════ -->
+<div class="slide bg-alt">
+
+  <span class="t-label a">The Problem</span>
+
+  <h1 class="t-h1 a" style="margin-top:12px; max-width:860px; line-height:1.05;">
+    Academic signals are <span class="c-red">noisy, unstandardized</span><br>proxies for actual skill.
+  </h1>
+
+  <div class="divider a" style="margin:22px 0;"></div>
+
+  <div class="grid-2 a" style="max-width:1040px; align-items:start; gap:24px;">
+    <div class="card-red">
+      <p class="t-label" style="color:var(--red); margin-bottom:14px;">The Validity Problem Today</p>
+      <ul class="blist">
+        <li>Degrees and GPAs measure compliance, not competence</li>
+        <li>Credentials are locked inside institutional silos — not portable</li>
+        <li>Verification is manual, slow, and costs $40–$200 per check</li>
+        <li>AI agents screening at scale can't trust unstructured claims</li>
+        <li>No cheap API-native trust primitive exists</li>
+      </ul>
+    </div>
+    <div class="flex col g4">
+      <div class="card-blue">
+        <p class="t-label" style="color:var(--blue); margin-bottom:12px;">The Scale Gap</p>
+        <div class="flex row items-e g4" style="margin-top:4px;">
+          <div>
+            <div class="stat-num" style="color:var(--red); font-size:clamp(40px,4.5vw,60px);">$40–200</div>
+            <div class="stat-label">cost per background check</div>
+          </div>
+          <div style="width:1px; height:60px; background:var(--border-lit);"></div>
+          <div>
+            <div class="stat-num" style="color:var(--teal); font-size:clamp(40px,4.5vw,60px);">$0.001</div>
+            <div class="stat-label">our API lookup fee · 75% gross margin</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <p class="t-label" style="margin-bottom:10px;">The Machine Screening Problem</p>
+        <p class="t-small">AI recruiting agents can evaluate 100,000 candidates overnight — but cannot trust any claim they read. There is no structured, machine-readable skill primitive they can query programmatically.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="n-label">Slide 2 — Problem (~20s)</div>
+    "This is what we call the validity problem. Academic credentials are proxies for skill — noisy, expensive to verify, and locked inside institutional databases. A human HR team can check 10 candidates a day. An AI agent needs to check 10,000. But there is no API for verified skill. That gap is where we live."
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 3 — WHY NOW
+═══════════════════════════════════════════════════════════ -->
+<div class="slide dot-bg">
+
+  <span class="t-label a">Why Now</span>
+
+  <h1 class="t-h1 a" style="margin-top:12px; max-width:900px;">
+    Four forces converged. <span class="c-blue">The window is this year.</span>
+  </h1>
+
+  <div class="divider a" style="margin:22px 0;"></div>
+
+  <div class="grid-2 a" style="gap:16px; margin-top:4px;">
+    <div class="card" style="display:flex; flex-direction:row; gap:18px; align-items:flex-start; padding:20px 22px;">
+      <div style="font-size:32px; line-height:1; flex-shrink:0; padding-top:2px;">01</div>
+      <div>
+        <p class="t-h3" style="font-size:clamp(16px,1.8vw,22px);">AI agents now handle hiring at scale</p>
+        <p class="t-small" style="margin-top:6px;">Automated screening went from "nice to have" to default in 2025. Agent-to-agent hiring is becoming real. They need trust primitives that machines can query.</p>
+      </div>
+    </div>
+    <div class="card" style="display:flex; flex-direction:row; gap:18px; align-items:flex-start; padding:20px 22px;">
+      <div style="font-size:32px; line-height:1; flex-shrink:0; padding-top:2px;">02</div>
+      <div>
+        <p class="t-h3" style="font-size:clamp(16px,1.8vw,22px);">Solana Attestation Service launched</p>
+        <p class="t-small" style="margin-top:6px;">SAS gives us a native, interoperable on-chain credential layer. Portable attestations with composable schema — the infrastructure didn't exist 18 months ago.</p>
+      </div>
+    </div>
+    <div class="card" style="display:flex; flex-direction:row; gap:18px; align-items:flex-start; padding:20px 22px;">
+      <div style="font-size:32px; line-height:1; flex-shrink:0; padding-top:2px;">03</div>
+      <div>
+        <p class="t-h3" style="font-size:clamp(16px,1.8vw,22px);">Micropayments at machine scale are viable</p>
+        <p class="t-small" style="margin-top:6px;">Solana's parallel tx engine makes $0.001-per-lookup viable at 75% gross margin — $0.00025 tx cost, $0.00075 profit per call. The x402 standard brings HTTP-native monetization to APIs.</p>
+      </div>
+    </div>
+    <div class="card" style="display:flex; flex-direction:row; gap:18px; align-items:flex-start; padding:20px 22px;">
+      <div style="font-size:32px; line-height:1; flex-shrink:0; padding-top:2px;">04</div>
+      <div>
+        <p class="t-h3" style="font-size:clamp(16px,1.8vw,22px);">Public artifacts are now primary signals</p>
+        <p class="t-small" style="margin-top:6px;">GitHub history and Canvas course submissions are the most honest technical evidence available — and they're queryable. We bypass institutional gatekeeping entirely.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="n-label">Slide 3 — Why Now (~17s)</div>
+    "Three infrastructure pieces just became available simultaneously: AI agents doing hiring at scale, SAS providing a native on-chain credential layer, and x402 making $0.001-per-call micropayments practical at 75% gross margin. The market just crossed a threshold where machine-scale trust verification is both needed and technically feasible — not in theory, today."
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 4 — SOLUTION
+═══════════════════════════════════════════════════════════ -->
+<div class="slide bg-alt">
+
+  <span class="t-label a">The Solution</span>
+
+  <h1 class="t-h1 a" style="margin-top:12px; max-width:920px; line-height:1.05;">
+    Raw artifacts → <span class="c-teal">sovereign, verifiable,</span><br>machine-readable skill proof.
+  </h1>
+
+  <div class="divider a" style="margin:20px 0;"></div>
+
+  <div class="grid-4 a" style="gap:14px; margin-top:4px;">
+    <div class="card" style="padding:18px 20px; border-top: 2px solid var(--blue);">
+      <p class="t-label" style="color:var(--blue); margin-bottom:12px;">01 / Ingest</p>
+      <p class="t-h3" style="font-size:clamp(16px,1.7vw,20px); margin-bottom:8px;">Multi-source evidence</p>
+      <p class="t-small" style="font-size:clamp(12px,1.2vw,15px);">GitHub repos, PRs, commit history. Canvas ZIP course exports. Any structured artifact a student initiates.</p>
+    </div>
+    <div class="card" style="padding:18px 20px; border-top: 2px solid var(--blue);">
+      <p class="t-label" style="color:var(--blue); margin-bottom:12px;">02 / Infer</p>
+      <p class="t-h3" style="font-size:clamp(16px,1.7vw,20px); margin-bottom:8px;">AI skill oracle</p>
+      <p class="t-small" style="font-size:clamp(12px,1.2vw,15px);">LLM interprets raw evidence. Outputs skill slug, confidence score, evidence summary. Bypasses institutional single points of failure.</p>
+    </div>
+    <div class="card" style="padding:18px 20px; border-top: 2px solid var(--teal);">
+      <p class="t-label" style="color:var(--teal); margin-bottom:12px;">03 / Anchor</p>
+      <p class="t-h3" style="font-size:clamp(16px,1.7vw,20px); margin-bottom:8px;">SAS + ZK-privacy</p>
+      <p class="t-small" style="font-size:clamp(12px,1.2vw,15px);">Qualifying claims written via Solana Attestation Service. ZK-privacy layer protects raw evidence. Optimistic dispute mechanism with staked proofs.</p>
+    </div>
+    <div class="card-teal" style="padding:18px 20px; border-top: 2px solid var(--teal);">
+      <p class="t-label" style="color:var(--teal); margin-bottom:12px;">04 / Serve</p>
+      <p class="t-h3" style="font-size:clamp(16px,1.7vw,20px); margin-bottom:8px;">x402 verification API</p>
+      <p class="t-small" style="font-size:clamp(12px,1.2vw,15px);">Profile lookup (free). Basic verify ($0.001). Premium verify with ZK proof ($0.005). Payment-gated via x402 stablecoin — works natively with AI agents.</p>
+    </div>
+  </div>
+
+  <!-- JSON attestation sample -->
+  <div class="a" style="margin-top:18px;">
+    <div class="code">
+<span class="p">{</span>  <span class="k">"skill"</span><span class="p">:</span> <span class="s">"rust"</span><span class="p">,</span>  <span class="k">"confidence"</span><span class="p">:</span> <span class="n">0.91</span><span class="p">,</span>  <span class="k">"evidence"</span><span class="p">:</span> <span class="s">"14 Rust repos · Anchor framework · 847 commits"</span><span class="p">,</span>
+  <span class="k">"sasAttestation"</span><span class="p">:</span> <span class="s">"3xY8...k9mP"</span><span class="p">,</span>  <span class="k">"zkProof"</span><span class="p">:</span> <span class="s">"groth16:Ax7B..."</span><span class="p">,</span>  <span class="k">"sovereign"</span><span class="p">:</span> <span class="n">true</span>  <span class="cm">// wallet-bound, portable</span>
+<span class="p">}</span></div>
+  </div>
+
+  <div class="notes">
+    <div class="n-label">Slide 4 — Solution (~22s)</div>
+    "Four steps. Ingest: we pull from GitHub repos and Canvas ZIP course exports — any artifact the student initiates, not what an institution certifies. Infer: our AI oracle interprets raw evidence and produces a structured skill object — confidence score, evidence summary. Anchor: qualifying claims go through Solana Attestation Service with a ZK-privacy layer protecting raw data. Serve: one free profile endpoint, one paid verify endpoint at $0.00025 per call. The JSON is the actual attestation payload an agent receives."
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 5 — USER FLOW
+═══════════════════════════════════════════════════════════ -->
+<div class="slide dot-bg">
+
+  <span class="t-label a">How It Works</span>
+
+  <h1 class="t-h1 a" style="margin-top:12px; max-width:880px;">
+    One endpoint for breadth. <span class="c-teal">Paid depth on demand.</span>
+  </h1>
+
+  <div class="divider a" style="margin:18px 0;"></div>
+
+  <div class="lane-wrap a">
+    <!-- Lane 1: Student -->
+    <div class="lane">
+      <div class="lane-head" style="color:var(--text-b);">👤 Student / Developer</div>
+      <div class="lane-body">
+        <div class="lane-step s-blue">Submit GitHub + wallet address</div>
+        <div class="lane-step s-muted">Oracle processes in background…</div>
+        <div class="lane-step s-blue">Receive SAS attestation + explorer link</div>
+        <div class="lane-step s-muted">Profile is now queryable. Sovereign. Portable.</div>
+        <div class="lane-step" style="border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.05); color:var(--text);">Dispute: stake SOL to challenge a claim</div>
+      </div>
+    </div>
+
+    <!-- Lane 2: Oracle (center, wider) -->
+    <div class="lane" style="border-color:rgba(91,142,248,0.2);">
+      <div class="lane-head" style="color:var(--blue);">⚙️ Proof of Talent Oracle</div>
+      <div class="lane-body">
+        <div class="lane-step s-blue">Fetch GitHub repos · PRs · commits</div>
+        <div class="lane-step s-blue">Fetch Canvas ZIP exports (if provided)</div>
+        <div class="lane-step s-blue">LLM scores skill · confidence · evidence</div>
+        <div class="lane-step s-blue">Write SAS attestation to Solana</div>
+        <div class="lane-step s-blue">ZK-proof generated, raw data not exposed</div>
+        <div class="lane-step" style="border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.05); color:var(--text);">Optimistic dispute: re-evaluate on stake</div>
+      </div>
+    </div>
+
+    <!-- Lane 3: Recruiter -->
+    <div class="lane" style="border-color:rgba(0,200,150,0.18);">
+      <div class="lane-head" style="color:var(--teal);">🤖 Recruiter / AI Agent</div>
+      <div class="lane-body">
+        <div class="lane-step s-teal">GET /api/profile/:wallet → skill map</div>
+        <div class="lane-step s-muted">Free. Filter candidates at breadth.</div>
+        <div class="lane-step s-red">GET /api/verify → 402 Payment Required</div>
+        <div class="lane-step s-muted">x402: $0.001 basic · $0.005 premium (ZK-backed)</div>
+        <div class="lane-step s-teal">verified: true + evidence + SAS tx link</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="n-label">Slide 5 — User Flow (~22s)</div>
+    "The student submits, oracle processes, they get a sovereign on-chain attestation they own. Recruiters hit the free profile endpoint to filter broadly, then pay per depth — $0.001 for basic, $0.005 for ZK-backed premium — to get structured evidence and the Solana attestation hash. The 402 pattern means AI agents pay each other without a human in the loop. The dispute mechanism is a key differentiator: anyone who doubts a claim can stake SOL to trigger re-evaluation — arbitrage creates honest signal and a protocol revenue stream."
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 6 — BUSINESS MODEL
+═══════════════════════════════════════════════════════════ -->
+<div class="slide bg-alt">
+
+  <span class="t-label a">Business Model</span>
+
+  <h1 class="t-h1 a" style="margin-top:12px; max-width:900px;">
+    Infrastructure economics: <span class="c-teal">revenue scales with AI adoption.</span>
+  </h1>
+
+  <div class="divider a" style="margin:18px 0;"></div>
+
+  <div class="grid-2 a" style="gap:20px; align-items:start;">
+    <!-- Revenue streams -->
+    <div class="flex col g3">
+      <div class="card" style="padding:14px 18px;">
+        <div class="flex row items-c between">
+          <div>
+            <p class="t-h3" style="font-size:clamp(15px,1.6vw,20px);">Basic Verify · x402</p>
+            <p class="t-small" style="margin-top:3px; font-size:clamp(11px,1.15vw,14px);">Per-call stablecoin · 75% gross margin · $0.00025 tx cost</p>
+          </div>
+          <div style="text-align:right; margin-left:12px; flex-shrink:0;">
+            <span class="mono" style="font-size:clamp(16px,1.8vw,22px); color:var(--teal); font-weight:800; white-space:nowrap;">$0.001</span>
+            <div style="font-size:10px; color:var(--text-c); margin-top:2px; white-space:nowrap;">30,000× cheaper than Checkr</div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="padding:14px 18px; border-color:rgba(0,200,150,0.2);">
+        <div class="flex row items-c between">
+          <div>
+            <p class="t-h3" style="font-size:clamp(15px,1.6vw,20px);">Premium Verify · ZK-backed</p>
+            <p class="t-small" style="margin-top:3px; font-size:clamp(11px,1.15vw,14px);">Full evidence chain + ZK proof + dispute guarantee · 95% margin</p>
+          </div>
+          <span class="mono" style="font-size:clamp(16px,1.8vw,22px); color:var(--teal); font-weight:800; white-space:nowrap; margin-left:12px;">$0.005</span>
+        </div>
+      </div>
+      <div class="card" style="padding:14px 18px;">
+        <div class="flex row items-c between">
+          <div>
+            <p class="t-h3" style="font-size:clamp(15px,1.6vw,20px);">Recruiter SaaS</p>
+            <p class="t-small" style="margin-top:3px; font-size:clamp(11px,1.15vw,14px);">Team quotas · ATS integrations · analytics · enterprise schemas</p>
+          </div>
+          <span style="font-size:clamp(14px,1.5vw,18px); color:var(--blue); font-weight:800; white-space:nowrap; margin-left:12px;">$499–$9,999/mo</span>
+        </div>
+      </div>
+      <div class="card" style="padding:14px 18px;">
+        <div class="flex row items-c between">
+          <div>
+            <p class="t-h3" style="font-size:clamp(15px,1.6vw,20px);">Issuer Plans + Dispute Fees</p>
+            <p class="t-small" style="margin-top:3px; font-size:clamp(11px,1.15vw,14px);">Bootcamps/universities issue attestations · 10% protocol cut on disputes</p>
+          </div>
+          <div style="text-align:right; margin-left:12px; flex-shrink:0;">
+            <span style="font-size:clamp(13px,1.4vw,16px); color:var(--amber); font-weight:700; white-space:nowrap;">$999/mo</span>
+            <div style="font-size:10px; color:var(--text-c); margin-top:2px;">+ protocol %</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Revenue scale table -->
+    <div class="card-blue" style="padding:20px 22px;">
+      <div class="flex row items-c between" style="margin-bottom:14px;">
+        <p class="t-h3" style="font-size:clamp(15px,1.7vw,20px);">Revenue at Machine Scale</p>
+        <span class="t-label" style="font-size:10px;">@ $0.001 base · 75% gross margin</span>
+      </div>
+      <table class="rev-table">
+        <thead>
+          <tr>
+            <th>Verifications/Day</th>
+            <th>API Revenue</th>
+            <th>+ SaaS</th>
+            <th>ARR</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1,000</td>
+            <td>$365K</td>
+            <td>$240K</td>
+            <td>$605K</td>
+          </tr>
+          <tr class="highlight">
+            <td>10,000</td>
+            <td>$3.65M</td>
+            <td>$960K</td>
+            <td>~$4.6M</td>
+          </tr>
+          <tr>
+            <td>100,000</td>
+            <td>$36.5M</td>
+            <td>$3.6M</td>
+            <td>~$40M</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:14px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--teal);"></div>
+          <span style="font-size:11px; color:var(--text-c);">Gross margin: 75% basic · 95% premium</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--blue);"></div>
+          <span style="font-size:11px; color:var(--text-c);">Checkr: $29.99/check · we're 30,000× cheaper</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="n-label">Slide 6 — Business Model (~17s)</div>
+    "We have four revenue levers. Basic verification at $0.001 — that's 75% gross margin with $0.00025 Solana tx cost. Premium ZK-backed verification at $0.005 — 95% margin. Recruiter SaaS from $499 to $9,999 per month for teams who need throughput and ATS integrations. And issuer plans for bootcamps and universities at $999/month. The math: at 10,000 verifications per day we're at $4.6M ARR. At 100,000 — and AI agents routinely process that — we hit $40M. We're 30,000 times cheaper than Checkr, but we make money because machines do millions of lookups."
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 7 — STATUS + ROADMAP
+═══════════════════════════════════════════════════════════ -->
+<div class="slide dot-bg">
+
+  <span class="t-label a">Product Status</span>
+
+  <h1 class="t-h1 a" style="margin-top:12px; max-width:860px;">
+    Core loop <span class="c-teal">works today.</span> Roadmap upgrades trust guarantees.
+  </h1>
+
+  <div class="divider a" style="margin:18px 0;"></div>
+
+  <div class="grid-2 a" style="gap:20px; align-items:start; margin-top:4px;">
+    <!-- NOW -->
+    <div>
+      <div class="flex row items-c g3" style="margin-bottom:16px;">
+        <span class="badge badge-teal">● Live MVP — Devnet</span>
+      </div>
+      <div class="flex col g2">
+        <div class="card" style="padding:12px 18px; border-left: 3px solid var(--teal); border-radius: 0 10px 10px 0;">
+          <div class="flex row items-c g3">
+            <span class="chk">✓</span>
+            <span class="t-small" style="font-size:clamp(13px,1.4vw,17px); color:var(--text);">GitHub evidence ingestion + parsing</span>
+          </div>
+        </div>
+        <div class="card" style="padding:12px 18px; border-left: 3px solid var(--teal); border-radius: 0 10px 10px 0;">
+          <div class="flex row items-c g3">
+            <span class="chk">✓</span>
+            <span class="t-small" style="font-size:clamp(13px,1.4vw,17px); color:var(--text);">AI skill inference (Anthropic / OpenRouter)</span>
+          </div>
+        </div>
+        <div class="card" style="padding:12px 18px; border-left: 3px solid var(--teal); border-radius: 0 10px 10px 0;">
+          <div class="flex row items-c g3">
+            <span class="chk">✓</span>
+            <span class="t-small" style="font-size:clamp(13px,1.4vw,17px); color:var(--text);">On-chain proof anchor (Solana memo tx)</span>
+          </div>
+        </div>
+        <div class="card" style="padding:12px 18px; border-left: 3px solid var(--teal); border-radius: 0 10px 10px 0;">
+          <div class="flex row items-c g3">
+            <span class="chk">✓</span>
+            <span class="t-small" style="font-size:clamp(13px,1.4vw,17px); color:var(--text);">Profile + verify API endpoints live</span>
+          </div>
+        </div>
+        <div class="card" style="padding:12px 18px; border-left: 3px solid var(--teal); border-radius: 0 10px 10px 0;">
+          <div class="flex row items-c g3">
+            <span class="chk">✓</span>
+            <span class="t-small" style="font-size:clamp(13px,1.4vw,17px); color:var(--text);">402 payment-gated flow in demo UI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEXT -->
+    <div>
+      <div class="flex row items-c g3" style="margin-bottom:16px;">
+        <span class="badge badge-blue">→ Next Milestones</span>
+      </div>
+      <div class="flex col g2">
+        <div class="card" style="padding:12px 18px; border-left: 3px solid var(--blue); border-radius: 0 10px 10px 0;">
+          <p class="t-h3" style="font-size:clamp(14px,1.5vw,19px);">Full SAS issuance lifecycle</p>
+          <p class="t-label" style="margin-top:4px; font-size:10px; letter-spacing:.12em;">Schema · Credential · Attestation — interoperable</p>
+        </div>
+        <div class="card" style="padding:12px 18px; border-left: 3px solid var(--blue); border-radius: 0 10px 10px 0;">
+          <p class="t-h3" style="font-size:clamp(14px,1.5vw,19px);">Canvas ZIP ingestion pipeline</p>
+          <p class="t-label" style="margin-top:4px; font-size:10px; letter-spacing:.12em;">Course submissions · grades · institutional artifacts</p>
+        </div>
+        <div class="card" style="padding:12px 18px; border-left: 3px solid var(--blue); border-radius: 0 10px 10px 0;">
+          <p class="t-h3" style="font-size:clamp(14px,1.5vw,19px);">ZK-privacy layer + dispute mechanism</p>
+          <p class="t-label" style="margin-top:4px; font-size:10px; letter-spacing:.12em;">Raw evidence protected · staked proofs for re-evaluation</p>
+        </div>
+        <div class="card" style="padding:12px 18px; border-left: 3px solid var(--blue); border-radius: 0 10px 10px 0;">
+          <p class="t-h3" style="font-size:clamp(14px,1.5vw,19px);">Production indexer + hardened x402</p>
+          <p class="t-label" style="margin-top:4px; font-size:10px; letter-spacing:.12em;">Postgres · chain indexer · amount/recipient validation</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="n-label">Slide 7 — Status + Roadmap (~22s)</div>
+    "Everything on the left is running on devnet today — you can submit a GitHub handle, get an AI-scored attestation, and see the Solana transaction in the explorer. The roadmap on the right upgrades trust guarantees: we move from memo-based anchoring to full SAS issuance, add Canvas ZIP ingestion to expand beyond developers to any student with course artifacts, and ship the ZK-privacy layer and dispute mechanism that make this production-grade for enterprise. The core loop is proven. Now we make it trustworthy at scale."
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     NAVIGATION
+═══════════════════════════════════════════════════════════ -->
+<div class="nav">
+  <button class="nav-btn" onclick="prev()">← Prev</button>
+  <span class="nav-ctr"><span id="cur">1</span> / <span id="tot"></span></span>
+  <div class="nav-bar"><div class="nav-fill" id="prog"></div></div>
+  <button class="nav-btn" onclick="next()">Next →</button>
+</div>
+
+</div><!-- /deck -->
+
+<script>
+let cur = 0;
+const slides = document.querySelectorAll('.slide');
+const total  = slides.length;
+let notesOn  = false;
+
+document.getElementById('tot').textContent = total;
+
+function show(i) {
+  slides.forEach(s => s.classList.remove('active'));
+  cur = Math.max(0, Math.min(i, total - 1));
+  slides[cur].classList.add('active');
+  document.getElementById('cur').textContent  = cur + 1;
+  document.getElementById('prog').style.width = ((cur + 1) / total * 100) + '%';
+  document.querySelectorAll('.notes').forEach(n => n.classList.remove('visible'));
+  const note = slides[cur].querySelector('.notes');
+  if (note && notesOn) note.classList.add('visible');
+}
+
+const next = () => show(cur + 1);
+const prev = () => show(cur - 1);
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+  if (e.key === 'ArrowLeft')                    { e.preventDefault(); prev(); }
+  if (e.key === 'n' || e.key === 'N') {
+    notesOn = !notesOn;
+    document.querySelectorAll('.notes').forEach(n => {
+      n.classList.toggle('visible', notesOn && n.closest('.slide').classList.contains('active'));
+    });
+  }
+});
+
+document.getElementById('deck').addEventListener('click', e => {
+  if (e.target.closest('.nav')) return;
+  e.clientX > window.innerWidth / 2 ? next() : prev();
+});
+
+show(0);
+</script>
+</body>
+</html>

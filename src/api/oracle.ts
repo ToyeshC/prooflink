@@ -35,13 +35,26 @@ type IndexedAttestation = {
 // In-memory attestation index: wallet -> skill -> attestation details
 type AttestationIndex = Record<string, Record<string, IndexedAttestation>>;
 let attestationIndex: AttestationIndex = {};
+let hasLoadedAttestationIndex = false;
 
 const ATTESTATION_DB_PATH = path.join(process.cwd(), 'attestation-index.json');
 
 function loadAttestationIndex() {
+  if (hasLoadedAttestationIndex) return;
+  hasLoadedAttestationIndex = true;
   if (fs.existsSync(ATTESTATION_DB_PATH)) {
     const raw = JSON.parse(fs.readFileSync(ATTESTATION_DB_PATH, 'utf8'));
     attestationIndex = normalizeAttestationIndex(raw);
+  }
+}
+
+function persistAttestationIndex() {
+  try {
+    fs.writeFileSync(ATTESTATION_DB_PATH, JSON.stringify(attestationIndex, null, 2));
+  } catch (error) {
+    // On serverless platforms (e.g. Vercel), local filesystem writes are not persistent.
+    // We keep data in memory for this instance so demo flows continue to work.
+    console.warn('Attestation index persistence unavailable; using in-memory store only.', error);
   }
 }
 
@@ -54,13 +67,13 @@ export function indexAttestation(studentWallet: string, skill: string, attestati
     evidence: '',
     indexedAt: new Date().toISOString(),
   };
-  fs.writeFileSync(ATTESTATION_DB_PATH, JSON.stringify(attestationIndex, null, 2));
+  persistAttestationIndex();
 }
 
 function indexAttestationRecord(studentWallet: string, skill: string, record: IndexedAttestation) {
   if (!attestationIndex[studentWallet]) attestationIndex[studentWallet] = {};
   attestationIndex[studentWallet][skill] = record;
-  fs.writeFileSync(ATTESTATION_DB_PATH, JSON.stringify(attestationIndex, null, 2));
+  persistAttestationIndex();
 }
 
 function normalizeAttestationIndex(raw: unknown): AttestationIndex {
@@ -96,9 +109,13 @@ function normalizeAttestationIndex(raw: unknown): AttestationIndex {
   return normalized;
 }
 
-const app = new Hono();
+export const app = new Hono();
 
 app.use('*', cors());
+app.use('*', async (c, next) => {
+  loadAttestationIndex();
+  await next();
+});
 
 // Serve index.html for root
 app.get('/', c => {

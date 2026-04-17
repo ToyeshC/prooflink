@@ -114,6 +114,39 @@ Open:
 - `http://localhost:3000` (demo UI)
 - `http://localhost:3000/health` (service status)
 
+## Deploy on Vercel (demo mode, no database)
+
+This repository is configured to run on Vercel serverless functions without adding a database.
+
+### What works
+
+- demo UI at `/`
+- profile and verify APIs under `/api/*`
+- on-chain proof creation and lookup flows
+
+### Important limitation
+
+- `attestation-index.json` writes are not persistent on Vercel instances.
+- data is kept in memory per running instance and may reset on cold starts/redeploys.
+
+This is acceptable for a hackathon demo, but not for production.
+
+### Steps
+
+1. Push this repository to GitHub.
+2. Import the repo into Vercel.
+3. Set these environment variables in Vercel project settings:
+   - `SOLANA_RPC_URL`
+   - `SOLANA_PRIVATE_KEY`
+   - `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`
+   - optional: `INFERENCE_MODEL`
+   - optional: `GITHUB_TOKEN`
+4. Deploy.
+5. Test:
+   - `/health`
+   - `/api/profile/:wallet`
+   - `/api/verify?wallet=<wallet>&skill=<slug>`
+
 ## Repository map
 
 - `src/api/oracle.ts` - API, payment gating, profile/verify routes

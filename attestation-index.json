@@ -46,31 +46,31 @@
   "FLkqg6fUP39vWkcxV9ZzLKWrBjRoX2YmccLcEkobZyEZ": {
     "natural-language-processing": {
       "attestationAddress": "9508700cbe857194",
-      "txSignature": "2VUqQGuv8dJgX48nbxfVXzYGrJDR26T2izc5sbYMQw6v1EHo6bgvwFsaCrB2Ec4F9MwGNPywgs5hmHTC7fmMBKMb",
+      "txSignature": "5D4GojUsHWjjLu3gPpcVPVyVy1Zz8BVzgESTHRexkd4La2PdsXZ9AjwYZ2bPGmsoXBan7dGRin7npA3pyZBayeN4",
       "confidence": 80,
-      "evidence": "Demonstrated through a BSc thesis that involves summarizing forum comments and analyzing subjectivity and objectivity.",
-      "indexedAt": "2026-04-17T14:17:33.599Z"
+      "evidence": "The BSc thesis specifically focuses on summarizing comments in a discussion forum using NLP techniques.",
+      "indexedAt": "2026-04-17T15:54:05.583Z"
     },
     "data-analysis": {
       "attestationAddress": "0cf93c86cbc99bd4",
-      "txSignature": "2u8t4t4LqWNmmAeo7SEWTHVydoztpuYJXP72yp7khegmn5eUEHwGZwszXEzmDJ9X9kcJXs8eaKKRMsuLaZpZp3Vt",
+      "txSignature": "5hhpRreEq4zcW8fiJercAyBPRCRUTLAeXqzRUhTq8HB2g3zEbVLZwxVimVWA5ma6CKDd5RETU3Ejx9JvvbWvLNWP",
       "confidence": 70,
-      "evidence": "Conducted exploratory data analysis on food production and carbon emission datasets in the Project-Big-Data repository.",
-      "indexedAt": "2026-04-17T14:17:33.602Z"
+      "evidence": "Conducted exploratory data analysis on a dataset regarding food production and carbon emissions.",
+      "indexedAt": "2026-04-17T15:23:29.837Z"
     },
     "python": {
       "attestationAddress": "77bb659472268da0",
-      "txSignature": "3MDfCEs1DM9C7T6ACwQSsc9Y4JnFst2sTXS6YXbSqcGPTyRNBBJDJMLu1hBgN6ayHLvJenRU2QMo8BQPAhFFeBb4",
+      "txSignature": "65znrRoDTPdmbLvor6bHrFcy2wTNZAtoXw2GwjYuLP5T6tmRvbE2wuVQJAWLPUnsvFQHiMci5G3QWB8btv1rMLVR",
       "confidence": 70,
-      "evidence": "Contributed to multiple Python repositories indicating proficient coding skills and familiarity with Python-based libraries.",
-      "indexedAt": "2026-04-17T14:10:38.404Z"
+      "evidence": "Multiple repositories exhibit Python usage, notably in projects like player-detector and NLI_LSTM.",
+      "indexedAt": "2026-04-17T15:54:05.586Z"
     },
     "machine-learning": {
       "attestationAddress": "832d61425f23e31c",
-      "txSignature": "4ob4VuLusEAqPU9osaXmn6NMpF7HfSSPKaPhr4FvDJUJzs5Fb5nQCS6P3p37P28uSedRc9UqLUqRir6rr8Rmy733",
+      "txSignature": "62figRMaEkQBspNUb7kA69AAGx2uF6moydfxUc9TB5idfcKZzGRDJDUcjLNfZRhCLRkbsHtVKv46rfV9x6zNTx3R",
       "confidence": 70,
-      "evidence": "Developed AI systems, including an LLM architecture and player detection system, showcasing competence in machine learning techniques.",
-      "indexedAt": "2026-04-17T14:10:38.403Z"
+      "evidence": "Developed AI-powered systems, including player detection and fact-checking applications, indicating the use of machine learning algorithms.",
+      "indexedAt": "2026-04-17T15:23:29.857Z"
     },
     "api-development": {
       "attestationAddress": "81eca4f2fc35638a",
@@ -88,17 +88,17 @@
     },
     "exploratory-data-analysis": {
       "attestationAddress": "af459fbf7c0c82bb",
-      "txSignature": "57HSqbV6daqCyztZCaCskpxYNCuszJyZnqm88qeUiFQyFExQ18ocssuyFBEKgTL9wUVQG9Xst4hzY26Hieritsci",
+      "txSignature": "3t5RCqk6Y6DSCDCWKbKCSXrmk45GGTNU4v91aGAE72FgkciBQFZWzwduQz9vUHHUssdUHFGNmPeAyuqdE9hVeGbn",
       "confidence": 70,
-      "evidence": "The Project-Big-Data repository demonstrates EDA on relevant datasets, showing understanding of data analysis techniques.",
-      "indexedAt": "2026-04-17T12:09:45.437Z"
+      "evidence": "The Project-Big-Data repository showcases exploratory data analysis on food production and carbon emissions data.",
+      "indexedAt": "2026-04-17T15:54:05.585Z"
     },
     "python-programming": {
       "attestationAddress": "5c7261b2170f7d16",
-      "txSignature": "3VXUirBdeQ5bhBMsVajw79kDbenSsGe8a5etK8xmvDzdYahAYjy4M3D8g24jRnbGwAYbhJHvTWn5bPH7iBx5U53r",
+      "txSignature": "MVSEtccfmy5RNKgcPtv1QZgCisPUiAzeKZZSsBZo5n2RdRwK8bwYp8EakA2nU3q4UKLeqUDKLZuTAUc4wgjTW4p",
       "confidence": 70,
-      "evidence": "The active use of Python in multiple repositories, including backend systems and AI applications, indicates competence.",
-      "indexedAt": "2026-04-17T12:09:45.438Z"
+      "evidence": "The majority of repositories include Python implementations for various projects, such as a browser extension and AI systems.",
+      "indexedAt": "2026-04-17T15:23:29.855Z"
     },
     "video-processing": {
       "attestationAddress": "dc3c95abccd1172b",
@@ -113,6 +113,13 @@
       "confidence": 70,
       "evidence": "Used Jupyter Notebooks extensively (90% of repositories) for various projects, indicating competency in a popular data science tool.",
       "indexedAt": "2026-04-17T14:17:33.604Z"
+    },
+    "ai-and-machine-learning": {
+      "attestationAddress": "623b1338103ea5e8",
+      "txSignature": "3kQwQayq7nSQ2LJtKBKkZ6u3ifuV6uBSA3e71AeqrtkQuoDrsNzW1WGdTJ2KSJMrYpe5Rbx1HC2Qn6hNrLBUP5ye",
+      "confidence": 70,
+      "evidence": "The openclaw-job-crm and player-detector repositories demonstrate applications of AI in automated systems and image processing.",
+      "indexedAt": "2026-04-17T15:54:05.587Z"
     }
   },
   "AZf4opaZh319MRbm38whE1QD5ZFX27Ttg8UToK4669Ep": {
