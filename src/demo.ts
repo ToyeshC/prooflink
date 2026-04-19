@@ -17,7 +17,7 @@ dotenv.config({ path: path.join(__dirname_compat, '../.env') });
 import { parseCanvasExport, summarizeExport } from './pipeline/parseCanvas.js';
 import { inferSkillsFromExport, formatSkillsReport } from './pipeline/inferSkills.js';
 import { mintAllSkillAttestations } from './pipeline/mintAttestation.js';
-import { indexAttestation, startOracleServer } from './api/oracle.js';
+import { upsertAttestation, startOracleServer } from './api/oracle.js';
 
 async function runPipeline(zipPathOrMock: string, studentWallet: string, skipMint = false) {
   console.log('\n=== PROOF OF TALENT ORACLE ===');
@@ -63,7 +63,15 @@ async function runPipeline(zipPathOrMock: string, studentWallet: string, skipMin
   // Step 4: Index in oracle
   console.log('\nStep 4: Indexing attestations in oracle...');
   for (const att of attestations) {
-    indexAttestation(studentWallet, att.skill, att.attestationAddress);
+    const inferred = qualifyingSkills.find(s => s.slug === att.skill);
+    await upsertAttestation(
+      studentWallet,
+      att.skill,
+      att.attestationAddress,
+      att.txSignature,
+      Math.round(att.confidence * 100),
+      inferred?.evidenceSummary ?? ''
+    );
     console.log(`  ✓ ${att.skill}: ${att.attestationAddress}`);
   }
 

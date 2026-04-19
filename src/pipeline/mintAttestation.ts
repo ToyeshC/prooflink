@@ -1,15 +1,33 @@
 import {
-  Connection,
-  Keypair,
-  Transaction,
-  TransactionInstruction,
-  PublicKey,
-  sendAndConfirmTransaction,
-} from '@solana/web3.js';
+  createSolanaRpc,
+  createSolanaRpcSubscriptions,
+  createKeyPairSignerFromBytes,
+  generateKeyPairSigner,
+  getSignatureFromTransaction,
+  pipe,
+  createTransactionMessage,
+  setTransactionMessageFeePayerSigner,
+  setTransactionMessageLifetimeUsingBlockhash,
+  appendTransactionMessageInstruction,
+  signTransactionMessageWithSigners,
+  sendAndConfirmTransactionFactory,
+  address as toAddress,
+} from '@solana/kit';
+import { getCreateAttestationInstruction, deriveAttestationPda } from 'sas-lib';
+import { BorshSchema } from 'borsher';
 import bs58 from 'bs58';
-import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
-const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
+type OracleConfig = { credentialAddress: string; schemaAddress: string };
+
+function loadOracleConfig(): OracleConfig {
+  const configPath = path.join(process.cwd(), 'oracle-config.json');
+  return JSON.parse(fs.readFileSync(configPath, 'utf-8')) as OracleConfig;
+}
+
+// Schema: single "data" string field containing JSON-encoded skill payload
+const DATA_SCHEMA = BorshSchema.Struct({ data: BorshSchema.String });
 
 type AttestationResult = {
   attestationAddress: string;
@@ -19,54 +37,68 @@ type AttestationResult = {
   confidence: number;
 };
 
-function getOracleKeypair(): Keypair {
-  const decoded = bs58.decode(process.env.SOLANA_PRIVATE_KEY!.trim());
-  return decoded.length === 32
-    ? Keypair.fromSeed(decoded)
-    : Keypair.fromSecretKey(decoded);
-}
-
-function attestationId(studentWallet: string, skill: string): string {
-  return crypto
-    .createHash('sha256')
-    .update(`${studentWallet}:${skill}:proof-of-talent`)
-    .digest('hex')
-    .slice(0, 16);
-}
-
 export async function mintSkillAttestation(
   studentWalletAddress: string,
   skill: string,
   confidence: number,
   evidenceSummary: string
 ): Promise<AttestationResult> {
-  const connection = new Connection(process.env.SOLANA_RPC_URL!, 'confirmed');
-  const oracleKeypair = getOracleKeypair();
+  const config = loadOracleConfig();
+  const rpcUrl = process.env.SOLANA_RPC_URL!;
+  const rpc = createSolanaRpc(rpcUrl);
+  const rpcSubscriptions = createSolanaRpcSubscriptions(rpcUrl.replace('https://', 'wss://'));
+  const sendAndConfirm = sendAndConfirmTransactionFactory({ rpc: rpc as any, rpcSubscriptions });
 
-  const id = attestationId(studentWalletAddress, skill);
-  const memoPayload = JSON.stringify({
-    v: 1,
-    type: 'proof-of-talent',
+  const decoded = bs58.decode(process.env.SOLANA_PRIVATE_KEY!.trim());
+  const oracleSigner = await createKeyPairSignerFromBytes(decoded);
+
+  // Unique nonce per attestation prevents PDA collisions for multi-skill students
+  const nonceSigner = await generateKeyPairSigner();
+  const credentialAddr = toAddress(config.credentialAddress);
+  const schemaAddr = toAddress(config.schemaAddress);
+
+  const [attestationAddress] = await deriveAttestationPda({
+    credential: credentialAddr,
+    schema: schemaAddr,
+    nonce: nonceSigner.address,
+  });
+
+  const skillPayload = JSON.stringify({
     wallet: studentWalletAddress,
     skill,
     score: Math.round(confidence * 100),
-    id,
-    evidence: evidenceSummary.slice(0, 120),
+    evidence: evidenceSummary.slice(0, 200),
   });
+  const dataBytes = DATA_SCHEMA.serialize({ data: skillPayload });
+  const expiry = BigInt(Math.floor(Date.now() / 1000) + 365 * 24 * 3600);
 
-  const tx = new Transaction().add(
-    new TransactionInstruction({
-      keys: [{ pubkey: oracleKeypair.publicKey, isSigner: true, isWritable: false }],
-      programId: MEMO_PROGRAM_ID,
-      data: Buffer.from(memoPayload, 'utf8'),
-    })
+  const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+  const txMessage = pipe(
+    createTransactionMessage({ version: 0 }),
+    (tx) => setTransactionMessageFeePayerSigner(oracleSigner, tx),
+    (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+    (tx) => appendTransactionMessageInstruction(
+      getCreateAttestationInstruction({
+        payer: oracleSigner,
+        authority: oracleSigner,
+        credential: credentialAddr,
+        schema: schemaAddr,
+        attestation: attestationAddress,
+        nonce: nonceSigner.address,
+        data: dataBytes,
+        expiry,
+      }),
+      tx
+    )
   );
 
-  const sig = await sendAndConfirmTransaction(connection, tx, [oracleKeypair]);
+  const signed = await signTransactionMessageWithSigners(txMessage);
+  const txSignature = getSignatureFromTransaction(signed);
+  await sendAndConfirm(signed, { commitment: 'confirmed' });
 
   return {
-    attestationAddress: id,
-    txSignature: sig,
+    attestationAddress: attestationAddress as string,
+    txSignature: txSignature as string,
     skill,
     studentWallet: studentWalletAddress,
     confidence,
@@ -80,7 +112,7 @@ export async function mintAllSkillAttestations(
   const results: AttestationResult[] = [];
   for (const skill of skills) {
     if (skill.confidenceScore < 0.5) continue;
-    console.log(`Minting attestation for ${skill.slug} (${Math.round(skill.confidenceScore * 100)}%)...`);
+    console.log(`Minting SAS attestation for ${skill.slug} (${Math.round(skill.confidenceScore * 100)}%)...`);
     const result = await mintSkillAttestation(
       studentWalletAddress,
       skill.slug,

@@ -3,558 +3,907 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Proof of Talent — On-Chain Skill Oracle</title>
+  <title>Proof of Talent — Human Capital Oracle</title>
+  <meta name="description" content="Decentralized talent oracle. AI-evaluated skill attestations on Solana. x402 micropayment API for AI hiring agents." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-    body { font-family: 'Inter', sans-serif; }
-    .mono { font-family: 'JetBrains Mono', monospace; }
-    @keyframes shimmer {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
+    :root {
+      --bg:       #080D1A;
+      --bg2:      #0C1220;
+      --bgc:      #0F1628;
+      --bgc2:     #111D33;
+      --gold:     #F59E0B;
+      --goldD:    rgba(245,158,11,.12);
+      --violet:   #8B5CF6;
+      --violetD:  rgba(139,92,246,.12);
+      --cyan:     #22D3EE;
+      --cyanD:    rgba(34,211,238,.07);
+      --green:    #22C55E;
+      --red:      #EF4444;
+      --bdr:      rgba(34,211,238,.10);
+      --bdrS:     rgba(34,211,238,.22);
+      --txt:      #E2E8F0;
+      --txtM:     #64748B;
+      --txtD:     #94A3B8;
     }
-    .shimmer {
-      background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{
+      font-family:'JetBrains Mono',monospace;
+      background:var(--bg);
+      color:var(--txt);
+      min-height:100dvh;
+      overflow-x:hidden;
+      padding-bottom:32px;
     }
-    @keyframes pulse-glow {
-      0%, 100% { box-shadow: 0 0 8px rgba(139, 92, 246, 0.3); }
-      50% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.7); }
+    /* Grid background */
+    .grid-bg{
+      background-image:
+        linear-gradient(rgba(34,211,238,.035) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(34,211,238,.035) 1px,transparent 1px);
+      background-size:56px 56px;
     }
-    .glow { animation: pulse-glow 2s ease-in-out infinite; }
-    @keyframes slide-up {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    /* Scanline overlay */
+    .scan::after{
+      content:'';position:absolute;inset:0;pointer-events:none;
+      background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);
+      z-index:1;
     }
-    .slide-up { animation: slide-up 0.4s ease-out forwards; }
-    .skill-bar-fill { transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
-    .step-dot.active { background: #8b5cf6; box-shadow: 0 0 12px rgba(139, 92, 246, 0.6); }
-    .step-dot.done { background: #22c55e; }
-    .step-dot { background: #334155; }
-    @media (prefers-reduced-motion: reduce) {
-      .shimmer, .glow, .slide-up, .skill-bar-fill { animation: none !important; transition: none !important; }
+    /* Fonts */
+    .fo{font-family:'Orbitron',sans-serif}
+    .fm{font-family:'JetBrains Mono',monospace}
+    /* Navbar */
+    #nav{
+      position:fixed;top:0;left:0;right:0;z-index:100;height:52px;
+      background:rgba(8,13,26,.88);backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--bdr);
+      display:flex;align-items:center;padding:0 20px;gap:28px;
     }
+    .nlogo{
+      font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;
+      letter-spacing:.12em;color:var(--gold);text-decoration:none;
+      display:flex;align-items:center;gap:8px;flex-shrink:0;
+    }
+    .nlinks{display:flex;gap:20px;flex:1}
+    .nl{
+      font-size:10px;letter-spacing:.1em;color:var(--txtM);
+      text-decoration:none;text-transform:uppercase;transition:color .15s;
+    }
+    .nl:hover{color:var(--cyan)}
+    /* Live dot */
+    .ldot{
+      width:6px;height:6px;border-radius:50%;background:var(--green);
+      animation:lpulse 1.6s ease-in-out infinite;flex-shrink:0;
+    }
+    @keyframes lpulse{
+      0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.5)}
+      50%{opacity:.7;box-shadow:0 0 0 5px rgba(34,197,94,0)}
+    }
+    /* Buttons */
+    .btn{
+      font-family:'Orbitron',sans-serif;font-weight:700;font-size:10px;
+      letter-spacing:.12em;text-transform:uppercase;border:none;cursor:pointer;
+      padding:11px 22px;transition:all .15s;
+      clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));
+    }
+    .btn-gold{background:var(--gold);color:#080D1A}
+    .btn-gold:hover{background:#FBBF24;box-shadow:0 0 28px rgba(245,158,11,.45)}
+    .btn-gold:disabled{opacity:.35;cursor:not-allowed}
+    .btn-ghost{
+      font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;
+      background:transparent;color:var(--cyan);padding:8px 14px;cursor:pointer;
+      border:1px solid var(--bdrS);transition:all .15s;clip-path:none;
+    }
+    .btn-ghost:hover{background:var(--cyanD);border-color:var(--cyan)}
+    /* Cards */
+    .ocard{background:var(--bgc);border:1px solid var(--bdr);transition:border-color .2s,box-shadow .2s}
+    .ocard:hover{border-color:var(--bdrS);box-shadow:0 0 28px rgba(34,211,238,.05)}
+    .clabel{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--txtM)}
+    /* Input */
+    .oinput{
+      width:100%;background:rgba(8,13,26,.9);border:1px solid var(--bdr);
+      color:var(--txt);font-family:'JetBrains Mono',monospace;font-size:13px;
+      padding:11px 14px;outline:none;transition:border-color .15s;
+    }
+    .oinput:focus{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(34,211,238,.18)}
+    .oinput::placeholder{color:var(--txtM)}
+    /* Tabs */
+    .otab{
+      font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+      padding:11px 18px;border:none;background:transparent;cursor:pointer;
+      color:var(--txtM);border-bottom:2px solid transparent;transition:all .15s;
+    }
+    .otab.on{color:var(--gold);border-bottom-color:var(--gold)}
+    .otab:hover:not(.on){color:var(--txtD)}
+    /* Terminal */
+    .term{
+      background:#040810;border:1px solid rgba(34,211,238,.18);
+      font-family:'JetBrains Mono',monospace;font-size:11.5px;
+      padding:18px;overflow-y:auto;
+    }
+    .tl{margin-bottom:3px;opacity:0;animation:tapp .12s forwards}
+    @keyframes tapp{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+    .tp{color:var(--cyan)}.tc{color:var(--txtD)}.tok{color:var(--green)}.td{color:var(--gold)}.tw{color:#F97316}
+    .tcur{display:inline-block;width:7px;height:13px;background:var(--cyan);animation:blink .8s step-end infinite;vertical-align:text-bottom}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+    /* Progress */
+    .ptrack{height:2px;background:var(--bdr);overflow:hidden}
+    .pfill{height:100%;background:linear-gradient(90deg,var(--violet),var(--cyan));transition:width .35s ease;box-shadow:0 0 8px var(--cyan)}
+    /* Section header */
+    .sh{display:flex;align-items:center;gap:12px;margin-bottom:32px}
+    .shline{flex:1;height:1px;background:var(--bdr)}
+    .stag{font-family:'Orbitron',sans-serif;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan)}
+    /* Attestation card */
+    .attcard{
+      background:var(--bgc);border:1px solid var(--bdr);padding:16px;
+      position:relative;overflow:hidden;transition:border-color .2s,transform .2s;
+    }
+    .attcard::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:2px;
+      background:linear-gradient(90deg,var(--violet),var(--cyan));opacity:0;transition:opacity .2s;
+    }
+    .attcard:hover{border-color:var(--bdrS);transform:translateY(-2px)}
+    .attcard:hover::before{opacity:1}
+    .ctrack{height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;margin:8px 0 6px}
+    .cfill{height:100%;border-radius:2px;transition:width .7s ease}
+    /* Drop zone */
+    .dropz{
+      border:1px dashed var(--bdrS);padding:26px 16px;text-align:center;
+      cursor:pointer;transition:all .15s;
+    }
+    .dropz:hover,.dropz.dov{border-color:var(--gold);background:var(--goldD)}
+    /* Stat pill */
+    .spill{
+      display:inline-flex;align-items:center;gap:8px;
+      background:rgba(34,211,238,.04);border:1px solid var(--bdr);
+      padding:7px 14px;font-size:10px;letter-spacing:.08em;
+    }
+    .spval{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:var(--gold)}
+    /* Node row */
+    .nrow{
+      display:grid;grid-template-columns:70px 1fr 76px 78px 110px;
+      gap:8px;align-items:center;padding:9px 16px;
+      border-bottom:1px solid var(--bdr);font-size:11px;transition:background .15s;
+    }
+    .nrow:hover{background:rgba(34,211,238,.025)}
+    /* Compare */
+    .crow{display:grid;grid-template-columns:1fr 1fr;gap:1px;border-bottom:1px solid var(--bdr)}
+    .ccell{padding:11px 14px;font-size:11px}
+    /* Ticker */
+    #ticker{
+      position:fixed;bottom:0;left:0;right:0;height:30px;
+      background:rgba(4,8,16,.96);border-top:1px solid var(--bdr);z-index:90;
+      overflow:hidden;display:flex;align-items:center;
+    }
+    .tlabel{
+      flex-shrink:0;font-family:'Orbitron',sans-serif;font-size:9px;
+      letter-spacing:.16em;color:var(--gold);padding:0 14px;
+      border-right:1px solid var(--bdr);white-space:nowrap;
+    }
+    .ttrack{flex:1;overflow:hidden}
+    .tinner{display:flex;white-space:nowrap;animation:tsroll 55s linear infinite;will-change:transform}
+    .tinner:hover{animation-play-state:paused}
+    @keyframes tsroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+    .titem{display:inline-flex;align-items:center;gap:7px;padding:0 28px;font-size:11px;color:var(--txtD)}
+    .tdot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+    /* Signal bars */
+    .sbars{display:flex;align-items:flex-end;gap:3px;height:36px}
+    .sbar{width:5px;border-radius:1px;transition:height .5s ease,background .5s ease}
+    /* Fade up */
+    @keyframes fup{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .fu{animation:fup .45s ease forwards}
+    /* Scrollbar */
+    ::-webkit-scrollbar{width:4px;height:4px}
+    ::-webkit-scrollbar-track{background:var(--bg)}
+    ::-webkit-scrollbar-thumb{background:var(--bdrS);border-radius:2px}
+    .hidden{display:none!important}
+    /* Responsive */
+    @media(max-width:768px){
+      .hero-grid{grid-template-columns:1fr!important}
+      .reg-grid{grid-template-columns:1fr!important}
+      .api-grid{grid-template-columns:1fr!important}
+      .phead-grid{grid-template-columns:1fr!important}
+      .nrow{grid-template-columns:60px 1fr 60px 60px 80px;font-size:10px}
+      .nlinks{display:none}
+    }
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen">
+<body>
 
-  <!-- Header -->
-  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center text-white font-bold text-sm">P</div>
-        <span class="font-semibold text-slate-100">Proof of Talent</span>
-        <span class="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full mono">devnet</span>
-      </div>
-      <div class="flex items-center gap-2 text-xs text-slate-500">
-        <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
-        Oracle online
+<!-- ══ NAV ══════════════════════════════════════════════════════ -->
+<nav id="nav">
+  <a href="#ingest" class="nlogo">
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+      <path d="M8 1L15 5V11L8 15L1 11V5L8 1Z" stroke="currentColor" stroke-width="1.4" fill="none"/>
+      <path d="M8 5.5L11.5 7.5V11.5L8 13.5L4.5 11.5V7.5L8 5.5Z" fill="currentColor" opacity=".4"/>
+    </svg>
+    PROOF OF TALENT
+  </a>
+  <div class="nlinks">
+    <a href="#ingest"   class="nl">Node</a>
+    <a href="#passport" class="nl">Passport</a>
+    <a href="#registry" class="nl">Registry</a>
+    <a href="#api"      class="nl">API</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px;margin-left:auto">
+    <div style="display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.1em;color:var(--green);font-family:'Orbitron',sans-serif">
+      <div class="ldot"></div>DEVNET
+    </div>
+    <button class="btn-ghost" style="font-size:9.5px;padding:5px 11px" onclick="window.open('https://explorer.solana.com/?cluster=devnet','_blank')">EXPLORER ↗</button>
+  </div>
+</nav>
+
+<!-- ══ HERO + INGEST ═════════════════════════════════════════════ -->
+<section id="ingest" class="grid-bg scan" style="position:relative;padding-top:52px;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;">
+  <!-- Glows -->
+  <div style="position:absolute;top:-5%;left:50%;transform:translateX(-50%);width:700px;height:500px;background:radial-gradient(ellipse,rgba(139,92,246,.10),transparent 65%);pointer-events:none;z-index:0"></div>
+  <div style="position:absolute;bottom:15%;left:4%;width:280px;height:280px;background:radial-gradient(ellipse,rgba(245,158,11,.06),transparent 70%);pointer-events:none;z-index:0"></div>
+
+  <div style="position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:36px 20px;width:100%">
+    <!-- Badge -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">
+      <div style="display:flex;align-items:center;gap:7px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.25);padding:5px 12px;font-size:9.5px;letter-spacing:.14em;color:#A78BFA;text-transform:uppercase;font-family:'Orbitron',sans-serif">
+        <div class="ldot" style="background:#A78BFA;animation:none;opacity:.8"></div>
+        Oracle Network · Colosseum Frontier
       </div>
     </div>
-  </header>
 
-  <!-- Hero -->
-  <section class="max-w-4xl mx-auto px-6 py-16 text-center">
-    <div class="inline-flex items-center gap-2 bg-violet-950/50 border border-violet-800/50 text-violet-300 text-xs px-3 py-1.5 rounded-full mb-6">
-      <span class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse inline-block"></span>
-      DePIN for human capital — Solana Attestation Service
-    </div>
-    <h1 class="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
-      Turn your GitHub into<br />
-      <span class="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-cyan-400">
-        verifiable on-chain proof
-      </span>
-    </h1>
-    <p class="text-slate-400 text-lg max-w-xl mx-auto mb-10">
-      AI evaluates your code. Solana makes it permanent. Hiring agents pay $0.00025 per lookup — no CVs, no gatekeepers.
-    </p>
-
-    <!-- Input form -->
-    <div id="form-section" class="max-w-lg mx-auto">
-      <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl">
-        <label class="block text-sm font-medium text-slate-300 mb-3 text-left">GitHub Username</label>
-        <label for="wallet-input" class="sr-only">Student wallet</label>
-        <div class="flex gap-3">
-          <div class="relative flex-1">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">github.com/</span>
-            <input
-              id="github-input"
-              type="text"
-              placeholder="your-username"
-              class="w-full bg-slate-800 border border-slate-600 rounded-xl pl-24 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 mono text-sm"
-            />
+    <div class="hero-grid" style="display:grid;grid-template-columns:1fr 430px;gap:56px;align-items:start">
+      <!-- Left copy -->
+      <div>
+        <h1 class="fo" style="font-size:clamp(34px,4.8vw,62px);font-weight:900;line-height:1.04;letter-spacing:.025em;margin-bottom:18px">
+          <span style="color:var(--txt)">HUMAN</span><br/>
+          <span style="color:var(--txt)">CAPITAL</span><br/>
+          <span style="color:var(--gold);text-shadow:0 0 48px rgba(245,158,11,.28)">ORACLE</span>
+        </h1>
+        <p style="font-size:13.5px;line-height:1.75;color:var(--txtD);max-width:400px;margin-bottom:28px">
+          Chainlink for human skill. AI evaluates builder artifacts.
+          Solana attests via SAS. Hiring agents pay
+          <span style="color:var(--gold)">$0.00025</span> per lookup.
+        </p>
+        <!-- Stat pills -->
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:36px">
+          <div class="spill"><div class="ldot"></div><span style="color:var(--txtM);font-size:9.5px;letter-spacing:.1em">NODES</span><span class="spval" id="node-count">12</span></div>
+          <div class="spill"><span style="color:var(--txtM);font-size:9.5px;letter-spacing:.1em">LOOKUP</span><span class="spval">$0.00025</span></div>
+          <div class="spill"><span style="color:var(--txtM);font-size:9.5px;letter-spacing:.1em">PROTOCOL</span><span class="spval" style="color:var(--cyan)">SAS</span></div>
+        </div>
+        <!-- Steps -->
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:24px;height:24px;flex-shrink:0;background:var(--violetD);border:1px solid rgba(139,92,246,.28);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:9px;color:var(--violet)">01</div>
+            <span style="font-size:12px;color:var(--txtD)">Connect GitHub or upload Canvas ZIP export</span>
           </div>
-          <button id="analyze-btn" class="bg-violet-600 hover:bg-violet-500 text-white px-5 py-3 rounded-xl font-medium text-sm transition-colors flex items-center gap-2 whitespace-nowrap">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            Analyze
-          </button>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:24px;height:24px;flex-shrink:0;background:var(--cyanD);border:1px solid rgba(34,211,238,.18);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:9px;color:var(--cyan)">02</div>
+            <span style="font-size:12px;color:var(--txtD)">AI oracle audits depth — not surface-level claims</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:24px;height:24px;flex-shrink:0;background:var(--goldD);border:1px solid rgba(245,158,11,.28);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:9px;color:var(--gold)">03</div>
+            <span style="font-size:12px;color:var(--txtD)">SAS attestations minted on Solana — permanent, portable</span>
+          </div>
         </div>
-        <div class="mt-3">
-          <input id="wallet-input" type="text" placeholder="Required: your Solana wallet (devnet)" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 mono text-sm" />
-        </div>
-        <p class="text-xs text-slate-500 mt-3 text-left">Uses your public repos. Student wallet is required for identity + profile lookup.</p>
       </div>
-    </div>
-  </section>
 
-  <!-- Loading state -->
-  <div id="loading-section" class="hidden max-w-4xl mx-auto px-6 pb-12">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl p-8 shadow-2xl max-w-lg mx-auto">
-      <h3 class="font-semibold text-white mb-6 text-center">Generating your attestation</h3>
-      <div class="space-y-4">
-        <div class="flex items-center gap-4">
-          <div id="step1-dot" class="step-dot w-3 h-3 rounded-full flex-shrink-0 transition-all duration-300"></div>
-          <div class="flex-1">
-            <p id="step1-label" class="text-sm text-slate-300">Fetching GitHub repositories</p>
-            <div id="step1-bar" class="h-1 bg-slate-800 rounded-full mt-1 overflow-hidden hidden">
-              <div class="h-full shimmer rounded-full w-full"></div>
+      <!-- Right: form / terminal (toggled) -->
+      <div>
+        <!-- FORM -->
+        <div id="form-section">
+          <div class="ocard" style="overflow:hidden">
+            <div style="padding:13px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">
+              <span class="fo" style="font-size:9.5px;letter-spacing:.14em;color:var(--txtD)">TALENT SENSOR · INGEST PORTAL</span>
+              <div style="display:flex;align-items:center;gap:6px;font-size:9.5px;letter-spacing:.1em;color:var(--green);font-family:'Orbitron',sans-serif"><div class="ldot"></div>ONLINE</div>
+            </div>
+            <div style="display:flex;border-bottom:1px solid var(--bdr);background:rgba(0,0,0,.18)">
+              <button id="tab-github" class="otab on" onclick="switchTab('github')">⬡ GITHUB</button>
+              <button id="tab-canvas" class="otab" onclick="switchTab('canvas')">⬡ CANVAS ZIP</button>
+            </div>
+            <!-- GitHub panel -->
+            <div id="panel-github" style="padding:18px;display:flex;flex-direction:column;gap:11px">
+              <div>
+                <div class="clabel" style="margin-bottom:5px">Repository Feed</div>
+                <div style="position:relative">
+                  <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--txtM)">github.com/</span>
+                  <input id="github-input" type="text" placeholder="username" class="oinput" style="padding-left:88px" />
+                </div>
+              </div>
+              <div>
+                <div class="clabel" style="margin-bottom:5px">Wallet Address (Devnet)</div>
+                <input id="wallet-input" type="text" placeholder="Solana pubkey" class="oinput" />
+              </div>
+              <button id="analyze-btn" class="btn btn-gold" style="width:100%;margin-top:2px" onclick="startAnalysis()">INITIALIZE ORACLE SCAN →</button>
+              <p style="font-size:10px;color:var(--txtM);letter-spacing:.05em">Public repos only · No login required · Devnet</p>
+            </div>
+            <!-- Canvas panel -->
+            <div id="panel-canvas" class="hidden" style="padding:18px;display:flex;flex-direction:column;gap:11px">
+              <div>
+                <div class="clabel" style="margin-bottom:5px">Academic Artifact Feed</div>
+                <div id="drop-zone" class="dropz"
+                  onclick="document.getElementById('canvas-file-input').click()"
+                  ondragover="event.preventDefault();this.classList.add('dov')"
+                  ondragleave="this.classList.remove('dov')"
+                  ondrop="handleDrop(event)">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;color:var(--txtM)"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                  <p id="drop-label" style="font-size:12px;color:var(--txtM)">Drop Canvas <code style="color:var(--cyan)">.zip</code> or <span style="color:var(--gold)">click to browse</span></p>
+                  <p style="font-size:10px;color:var(--txtM);margin-top:3px">Canvas → Account → Export Course Content</p>
+                  <input id="canvas-file-input" type="file" accept=".zip" class="hidden" onchange="onFileSelected(this)" />
+                </div>
+              </div>
+              <div>
+                <div class="clabel" style="margin-bottom:5px">Wallet Address (Devnet)</div>
+                <input id="canvas-wallet-input" type="text" placeholder="Solana pubkey" class="oinput" />
+              </div>
+              <button id="canvas-analyze-btn" class="btn btn-gold" style="width:100%;margin-top:2px" onclick="startCanvasAnalysis()">INITIALIZE ORACLE SCAN →</button>
             </div>
           </div>
         </div>
-        <div class="flex items-center gap-4">
-          <div id="step2-dot" class="step-dot w-3 h-3 rounded-full flex-shrink-0 transition-all duration-300"></div>
-          <div class="flex-1">
-            <p id="step2-label" class="text-sm text-slate-500">Running LLM skill inference</p>
-            <div id="step2-bar" class="h-1 bg-slate-800 rounded-full mt-1 overflow-hidden hidden">
-              <div class="h-full shimmer rounded-full w-full"></div>
+
+        <!-- TERMINAL (shown during processing) -->
+        <div id="loading-section" class="hidden">
+          <div class="ocard" style="overflow:hidden">
+            <div style="padding:11px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">
+              <div style="display:flex;gap:5px">
+                <div style="width:9px;height:9px;border-radius:50%;background:#EF4444"></div>
+                <div style="width:9px;height:9px;border-radius:50%;background:#F59E0B"></div>
+                <div style="width:9px;height:9px;border-radius:50%;background:#22C55E"></div>
+              </div>
+              <span class="fo" style="font-size:9px;letter-spacing:.15em;color:var(--txtM)">ORACLE · INFERENCE ENGINE</span>
+            </div>
+            <div class="term" id="terminal-output" style="min-height:230px;max-height:260px">
+              <div class="tl" style="opacity:1"><span class="tp">$</span> <span class="tc">proof-of-talent --scan --attest</span></div>
+            </div>
+            <div style="padding:11px 18px;border-top:1px solid var(--bdr)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                <span id="progress-label" style="font-size:9.5px;color:var(--txtM);letter-spacing:.1em">INITIALIZING...</span>
+                <span id="progress-pct" style="font-size:9.5px;color:var(--cyan)">0%</span>
+              </div>
+              <div class="ptrack"><div class="pfill" id="progress-bar" style="width:0%"></div></div>
             </div>
           </div>
         </div>
-        <div class="flex items-center gap-4">
-          <div id="step3-dot" class="step-dot w-3 h-3 rounded-full flex-shrink-0 transition-all duration-300"></div>
-          <div class="flex-1">
-            <p id="step3-label" class="text-sm text-slate-500">Minting SAS attestations on Solana</p>
-            <div id="step3-bar" class="h-1 bg-slate-800 rounded-full mt-1 overflow-hidden hidden">
-              <div class="h-full shimmer rounded-full w-full"></div>
+      </div><!-- /right col -->
+    </div><!-- /hero-grid -->
+  </div>
+</section>
+
+<!-- ══ ERROR ═════════════════════════════════════════════════════ -->
+<div id="error-section" class="hidden" style="max-width:1080px;margin:20px auto;padding:0 20px">
+  <div style="background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.28);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="error-message" style="font-size:12px;color:#FCA5A5">An error occurred.</span>
+    </div>
+    <button onclick="resetForm()" class="btn-ghost" style="font-size:9.5px;flex-shrink:0">RETRY</button>
+  </div>
+</div>
+
+<!-- ══ PASSPORT ══════════════════════════════════════════════════ -->
+<section id="passport" style="max-width:1080px;margin:0 auto;padding:72px 20px">
+  <div class="sh">
+    <div class="stag">SOVEREIGN PASSPORT · SAS RECORD</div>
+    <div class="shline"></div>
+    <div style="font-size:9px;letter-spacing:.12em;color:var(--txtM)">ON-CHAIN VERIFIED</div>
+  </div>
+  <!-- Empty -->
+  <div id="passport-empty" style="text-align:center;padding:56px 20px;border:1px dashed var(--bdr)">
+    <div class="fo" style="font-size:10.5px;letter-spacing:.14em;color:var(--txtM);margin-bottom:10px">NO PASSPORT LOADED</div>
+    <p style="font-size:12px;color:var(--txtM);max-width:280px;margin:0 auto">Run an oracle scan above to generate your on-chain skill passport.</p>
+  </div>
+  <!-- Result -->
+  <div id="result-section" class="hidden">
+    <!-- Header row -->
+    <div class="phead-grid" style="display:grid;grid-template-columns:1fr 170px;gap:14px;margin-bottom:20px">
+      <div class="ocard" style="padding:18px">
+        <div class="clabel" style="margin-bottom:7px">Identity Anchor</div>
+        <div id="passport-wallet" class="fm" style="font-size:13px;color:var(--cyan);word-break:break-all;letter-spacing:.04em"></div>
+        <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:20px">
+          <div><div class="clabel">Attestations</div><div id="passport-count" class="fo" style="font-size:24px;font-weight:700;color:var(--gold);margin-top:2px"></div></div>
+          <div><div class="clabel">Primary Domain</div><div id="passport-domain" style="font-size:13px;color:var(--txt);margin-top:4px"></div></div>
+          <div><div class="clabel">Academic Level</div><div id="passport-level" style="font-size:13px;color:var(--txt);margin-top:4px"></div></div>
+        </div>
+      </div>
+      <div class="ocard" style="padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+        <div class="clabel">Signal Strength</div>
+        <div class="sbars" id="signal-bars"></div>
+        <div id="signal-label" class="fo" style="font-size:20px;font-weight:700;color:var(--gold)"></div>
+        <div style="font-size:9px;letter-spacing:.12em;color:var(--txtM)">TOP PERCENTILE</div>
+      </div>
+    </div>
+    <!-- Attestation grid -->
+    <div class="clabel" style="margin-bottom:10px">Skill Attestations · Solana Attestation Service</div>
+    <div id="att-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:20px"></div>
+    <!-- curl examples -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div class="ocard" style="padding:14px"><div class="clabel" style="margin-bottom:7px">Profile Feed (Free)</div><pre id="curl-profile" style="font-size:10.5px;color:var(--cyan);white-space:pre-wrap;line-height:1.7;overflow-x:auto"></pre></div>
+      <div class="ocard" style="padding:14px"><div class="clabel" style="margin-bottom:7px">Verification Feed (x402)</div><pre id="curl-verify" style="font-size:10.5px;color:var(--gold);white-space:pre-wrap;line-height:1.7;overflow-x:auto"></pre></div>
+    </div>
+    <div style="text-align:right"><button onclick="resetForm()" class="btn-ghost">← NEW SCAN</button></div>
+  </div>
+</section>
+
+<!-- ══ VALIDATION REGISTRY ═══════════════════════════════════════ -->
+<section id="registry" style="background:var(--bg2);border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr)">
+  <div style="max-width:1080px;margin:0 auto;padding:72px 20px">
+    <div class="sh">
+      <div class="stag">VALIDATION REGISTRY · ECONOMIC SECURITY</div>
+      <div class="shline"></div>
+    </div>
+    <div class="reg-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start">
+      <!-- Left -->
+      <div>
+        <p style="font-size:13px;color:var(--txtD);line-height:1.8;margin-bottom:22px">
+          Independent validators stake SOL to back oracle attestations. Challengers can dispute within a 48-hour optimistic window. Economic slashing enforces truth-telling at scale — the Chainlink model applied to human capital.
+        </p>
+        <div class="ocard" style="padding:18px">
+          <div class="clabel" style="margin-bottom:14px">Economic Security Flow</div>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:11px">
+            <div style="display:flex;align-items:center;gap:11px;padding:10px;background:rgba(139,92,246,.05);border:1px solid rgba(139,92,246,.14)">
+              <div style="width:30px;height:30px;flex-shrink:0;background:var(--violetD);border:1px solid rgba(139,92,246,.28);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:9px;color:var(--violet)">V</div>
+              <div><div style="color:var(--txt);font-weight:500;margin-bottom:2px">Validator Stakes SOL</div><div style="color:var(--txtM);font-size:10px">Backs oracle output with economic skin-in-the-game</div></div>
+            </div>
+            <div style="text-align:center;color:var(--bdrS);font-size:18px;line-height:1">↓</div>
+            <div style="display:flex;align-items:center;gap:11px;padding:10px;background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.14)">
+              <div style="width:30px;height:30px;flex-shrink:0;background:var(--goldD);border:1px solid rgba(245,158,11,.28);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:9px;color:var(--gold)">W</div>
+              <div><div style="color:var(--txt);font-weight:500;margin-bottom:2px">48h Optimistic Window</div><div style="color:var(--txtM);font-size:10px">Challenge period — anyone can dispute with bond</div></div>
+            </div>
+            <div style="text-align:center;color:var(--bdrS);font-size:18px;line-height:1">↓</div>
+            <div style="display:flex;align-items:center;gap:11px;padding:10px;background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.14)">
+              <div style="width:30px;height:30px;flex-shrink:0;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.28);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:9px;color:var(--green)">F</div>
+              <div><div style="color:var(--txt);font-weight:500;margin-bottom:2px">Finality Reached</div><div style="color:var(--txtM);font-size:10px">Attestation confirmed · Stake returned</div></div>
             </div>
           </div>
         </div>
       </div>
-      <p class="text-xs text-slate-600 text-center mt-6">This takes ~30 seconds — real on-chain transactions</p>
+      <!-- Right -->
+      <div>
+        <!-- Nodes table -->
+        <div class="ocard" style="overflow:hidden;margin-bottom:14px">
+          <div style="padding:10px 16px;border-bottom:1px solid var(--bdr)">
+            <div class="nrow" style="padding:0;font-size:8.5px;letter-spacing:.1em;color:var(--txtM);border-bottom:none">
+              <span>NODE</span><span>SKILL</span><span>STAKED</span><span>STATUS</span><span>WINDOW</span>
+            </div>
+          </div>
+          <div id="validator-nodes"></div>
+        </div>
+        <!-- Countdown -->
+        <div class="ocard" style="padding:18px">
+          <div class="clabel" style="margin-bottom:12px">OPTIMISTIC WINDOW · LATEST ATTESTATION</div>
+          <div style="display:flex;gap:14px;justify-content:center;margin-bottom:10px">
+            <div style="text-align:center"><div id="cd-h" class="fo" style="font-size:28px;font-weight:700;color:var(--gold)">47</div><div style="font-size:8.5px;letter-spacing:.1em;color:var(--txtM)">HRS</div></div>
+            <div class="fo" style="font-size:28px;color:var(--bdrS);align-self:flex-start;margin-top:2px">:</div>
+            <div style="text-align:center"><div id="cd-m" class="fo" style="font-size:28px;font-weight:700;color:var(--gold)">59</div><div style="font-size:8.5px;letter-spacing:.1em;color:var(--txtM)">MIN</div></div>
+            <div class="fo" style="font-size:28px;color:var(--bdrS);align-self:flex-start;margin-top:2px">:</div>
+            <div style="text-align:center"><div id="cd-s" class="fo" style="font-size:28px;font-weight:700;color:var(--gold)">00</div><div style="font-size:8.5px;letter-spacing:.1em;color:var(--txtM)">SEC</div></div>
+          </div>
+          <div id="cd-status" style="text-align:center;font-size:11px;color:var(--txtM);margin-bottom:10px">Challenge window open</div>
+          <div class="ptrack"><div id="window-prog" class="pfill" style="width:100%;background:linear-gradient(90deg,var(--green),var(--cyan))"></div></div>
+        </div>
+      </div>
     </div>
   </div>
+</section>
 
-  <!-- Result card -->
-  <div id="result-section" class="hidden max-w-4xl mx-auto px-6 pb-16">
-    <!-- Attestation card -->
-    <div class="slide-up bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl mb-6">
-
-      <!-- Card header -->
-      <div class="bg-gradient-to-r from-violet-900/40 to-cyan-900/20 border-b border-slate-700 px-6 py-5">
-        <div class="flex items-start justify-between">
+<!-- ══ AGENTIC ECONOMY ═══════════════════════════════════════════ -->
+<section id="api" style="max-width:1080px;margin:0 auto;padding:72px 20px">
+  <div class="sh">
+    <div class="stag">AGENTIC ECONOMY · x402 MICROPAYMENT API</div>
+    <div class="shline"></div>
+    <div style="font-size:9px;letter-spacing:.12em;color:var(--txtM)">$0.00025/LOOKUP</div>
+  </div>
+  <div class="api-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start">
+    <!-- Comparison -->
+    <div>
+      <div class="ocard" style="overflow:hidden">
+        <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--bdr)">
+          <div style="padding:11px 14px;border-right:1px solid var(--bdr)"><span class="fo" style="font-size:9px;letter-spacing:.12em;color:var(--txtM)">TRADITIONAL RESUME</span></div>
+          <div style="padding:11px 14px"><span class="fo" style="font-size:9px;letter-spacing:.12em;color:var(--green)">ORACLE SIGNAL</span></div>
+        </div>
+        <div class="crow">
+          <div class="ccell" style="border-right:1px solid var(--bdr)"><div style="font-size:9px;letter-spacing:.08em;color:var(--txtM);margin-bottom:4px">CLAIM</div><div style="color:var(--txtM);text-decoration:line-through">"Grade A in CS302"</div></div>
+          <div class="ccell"><div style="font-size:9px;letter-spacing:.08em;color:var(--green);margin-bottom:4px">EVIDENCE</div><div style="color:var(--green)">95th %ile Distributed Systems</div></div>
+        </div>
+        <div class="crow">
+          <div class="ccell" style="border-right:1px solid var(--bdr)"><div style="font-size:9px;letter-spacing:.08em;color:var(--txtM);margin-bottom:4px">PROOF</div><div style="color:var(--txtM);text-decoration:line-through">Self-reported PDF</div></div>
+          <div class="ccell"><div style="font-size:9px;letter-spacing:.08em;color:var(--green);margin-bottom:4px">ANCHOR</div><div style="color:var(--green)">SAS tx on Solana</div></div>
+        </div>
+        <div class="crow">
+          <div class="ccell" style="border-right:1px solid var(--bdr)"><div style="font-size:9px;letter-spacing:.08em;color:var(--txtM);margin-bottom:4px">VERIFICATION</div><div style="color:var(--txtM);text-decoration:line-through">Manual reference check</div></div>
+          <div class="ccell"><div style="font-size:9px;letter-spacing:.08em;color:var(--green);margin-bottom:4px">API COST</div><div style="color:var(--green)">$0.00025 · ~200ms</div></div>
+        </div>
+        <div class="crow" style="border-bottom:none">
+          <div class="ccell" style="border-right:1px solid var(--bdr)"><div style="font-size:9px;letter-spacing:.08em;color:var(--txtM);margin-bottom:4px">MACHINE-READABLE</div><div style="color:var(--txtM);text-decoration:line-through">No</div></div>
+          <div class="ccell"><div style="font-size:9px;letter-spacing:.08em;color:var(--green);margin-bottom:4px">MACHINE-READABLE</div><div style="color:var(--green)">Yes — x402 protocol</div></div>
+        </div>
+      </div>
+      <!-- Oracle info -->
+      <div class="ocard" style="padding:14px;margin-top:11px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="font-size:10.5px;color:var(--txtM)">SAS · <span style="color:var(--cyan)">FJ8myMh9…</span></div>
+        <div style="font-size:10.5px;color:var(--txtM)">Network · <span style="color:var(--green)">Devnet</span></div>
+        <div style="font-size:10.5px;color:var(--txtM)">Fee · <span style="color:var(--gold)">$0.00025</span></div>
+      </div>
+    </div>
+    <!-- x402 Simulator -->
+    <div>
+      <div class="ocard" style="overflow:hidden">
+        <div style="padding:13px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">
+          <span class="fo" style="font-size:9.5px;letter-spacing:.14em;color:var(--txtD)">AGENT API SIMULATOR</span>
+          <span style="font-size:9.5px;color:var(--gold);letter-spacing:.08em">x402</span>
+        </div>
+        <div style="padding:18px;display:flex;flex-direction:column;gap:11px">
           <div>
-            <div class="flex items-center gap-2 mb-1">
-              <div class="w-2 h-2 rounded-full bg-green-400"></div>
-              <span class="text-xs font-medium text-green-400 uppercase tracking-wide">Verified Attestation</span>
+            <div class="clabel" style="margin-bottom:5px">Target Wallet</div>
+            <input id="verify-wallet" type="text" placeholder="Paste analyzed wallet..." class="oinput" />
+          </div>
+          <div>
+            <div class="clabel" style="margin-bottom:5px">Skill Slug</div>
+            <input id="verify-skill" type="text" placeholder="e.g. rust, python, react" class="oinput" />
+          </div>
+          <button onclick="runVerifyFlow()" class="btn btn-gold" style="width:100%">SIMULATE AGENT LOOKUP →</button>
+          <div>
+            <div class="clabel" style="margin-bottom:7px">API Response</div>
+            <div class="term" id="verify-output" style="min-height:110px;padding:13px;font-size:11px;line-height:1.8">
+              <span class="tp">$</span> <span class="tc">awaiting agent request...</span>
             </div>
-            <h2 id="card-title" class="text-xl font-bold text-white"></h2>
-            <p id="card-subtitle" class="text-sm text-slate-400 mt-0.5"></p>
-          </div>
-          <div class="text-right">
-            <div id="overall-score" class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-violet-300 to-violet-500"></div>
-            <div class="text-xs text-slate-500">overall percentile</div>
           </div>
         </div>
-      </div>
-
-      <!-- Skills -->
-      <div class="px-6 py-5">
-        <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Inferred Skills</h3>
-        <div id="skills-list" class="space-y-4"></div>
-      </div>
-
-      <!-- On-chain proof -->
-      <div class="border-t border-slate-800 px-6 py-4 bg-slate-950/50">
-        <div class="flex items-center justify-between flex-wrap gap-3">
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            <span class="text-sm text-slate-300 font-medium">On-chain via Solana Attestation Service</span>
-          </div>
-          <div id="chain-links" class="flex gap-2 flex-wrap"></div>
-        </div>
-        <div class="mt-3 flex items-center gap-2">
-          <span class="text-xs text-slate-500">Wallet:</span>
-          <span id="wallet-display" class="mono text-xs text-slate-400"></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- API demo section -->
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
-      <div class="border-b border-slate-700 px-6 py-4 flex items-center justify-between">
-        <div>
-          <h3 class="font-semibold text-white text-sm">Oracle API — Hiring Agents</h3>
-          <p class="text-xs text-slate-500 mt-0.5">Any agent pays $0.00025 per lookup via x402</p>
-        </div>
-        <span class="text-xs bg-cyan-950 text-cyan-400 border border-cyan-800/50 px-2 py-1 rounded-md mono">x402</span>
-      </div>
-      <div class="p-6 space-y-4">
-        <div>
-          <p class="text-xs text-slate-500 mb-2 uppercase tracking-wide font-medium">Verify a skill</p>
-          <div class="bg-slate-950 rounded-xl p-4 border border-slate-800">
-            <pre id="curl-verify" class="mono text-xs text-green-300 whitespace-pre-wrap overflow-x-auto"></pre>
-          </div>
-        </div>
-        <div>
-          <p class="text-xs text-slate-500 mb-2 uppercase tracking-wide font-medium">Full profile lookup</p>
-          <div class="bg-slate-950 rounded-xl p-4 border border-slate-800">
-            <pre id="curl-profile" class="mono text-xs text-cyan-300 whitespace-pre-wrap overflow-x-auto"></pre>
-          </div>
-        </div>
-        <div>
-          <p class="text-xs text-slate-500 mb-2 uppercase tracking-wide font-medium">Live verify test</p>
-          <button id="run-verify-btn" class="bg-cyan-700 hover:bg-cyan-600 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors">Run x402 verify flow</button>
-          <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 mt-2">
-            <pre id="verify-output" class="mono text-xs text-slate-300 whitespace-pre-wrap overflow-x-auto">Run after analysis to preview 402 + paid verification responses.</pre>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Try again button -->
-    <div class="text-center mt-8">
-      <button onclick="resetForm()" class="text-slate-400 hover:text-slate-200 text-sm transition-colors">
-        ← Analyze another profile
-      </button>
-    </div>
-  </div>
-
-  <!-- Error state -->
-  <div id="error-section" class="hidden max-w-4xl mx-auto px-6 pb-12">
-    <div class="bg-red-950/30 border border-red-800/50 rounded-2xl p-6 max-w-lg mx-auto text-center">
-      <svg class="w-8 h-8 text-red-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      <p id="error-message" class="text-red-300 text-sm mb-4"></p>
-      <button onclick="resetForm()" class="text-slate-400 hover:text-slate-200 text-sm transition-colors">← Try again</button>
-    </div>
-  </div>
-
-  <!-- Beginner explainer -->
-  <div id="proof-explainer-section" class="hidden max-w-4xl mx-auto px-6 pb-12">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
-      <div class="border-b border-slate-700 px-6 py-4">
-        <h3 class="font-semibold text-white text-sm">One-click proof explainer</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Beginner mode: what happened on-chain in plain English</p>
-      </div>
-      <div class="p-6 space-y-4">
-        <div id="proof-selector-row" class="flex flex-wrap gap-2"></div>
-        <div id="proof-explainer-content" class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-slate-300"></div>
       </div>
     </div>
   </div>
+</section>
 
-  <!-- How it works -->
-  <section class="max-w-4xl mx-auto px-6 py-16 border-t border-slate-800">
-    <h2 class="text-center text-2xl font-bold text-white mb-10">How it works</h2>
-    <div class="grid md:grid-cols-3 gap-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-        <div class="w-8 h-8 rounded-lg bg-violet-900/50 border border-violet-700/50 flex items-center justify-center text-violet-400 font-bold text-sm mb-4">1</div>
-        <h3 class="font-semibold text-white mb-2">Submit evidence</h3>
-        <p class="text-slate-400 text-sm">Your public GitHub repos are analyzed — code quality, repo complexity, language depth. No login, no data stored.</p>
-      </div>
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-        <div class="w-8 h-8 rounded-lg bg-cyan-900/50 border border-cyan-700/50 flex items-center justify-center text-cyan-400 font-bold text-sm mb-4">2</div>
-        <h3 class="font-semibold text-white mb-2">AI inference</h3>
-        <p class="text-slate-400 text-sm">An LLM evaluates skill depth vs. the Solana developer population — not self-reported claims, but evidence-based confidence scores.</p>
-      </div>
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-        <div class="w-8 h-8 rounded-lg bg-green-900/50 border border-green-700/50 flex items-center justify-center text-green-400 font-bold text-sm mb-4">3</div>
-        <h3 class="font-semibold text-white mb-2">On-chain attestation</h3>
-        <p class="text-slate-400 text-sm">Results are minted as SAS accounts on Solana — composable, verifiable, readable by any program or hiring agent via x402.</p>
-      </div>
-    </div>
-  </section>
+<!-- ══ FOOTER ════════════════════════════════════════════════════ -->
+<footer style="border-top:1px solid var(--bdr);padding:28px 20px 52px;text-align:center">
+  <div class="fo" style="font-size:10px;letter-spacing:.18em;color:var(--txtM);text-transform:uppercase">
+    AI for Intelligence · Blockchain for Trust · Machine-Scale Talent Liquidity
+  </div>
+  <div style="margin-top:10px;font-size:9.5px;color:var(--txtM);opacity:.45;letter-spacing:.06em">
+    Proof of Talent · Built on Solana · Colosseum Frontier
+  </div>
+</footer>
 
-  <footer class="border-t border-slate-800 text-center py-8 text-slate-600 text-xs">
-    Proof of Talent — DePIN for human capital · Built on Solana devnet
-  </footer>
+<!-- ══ TICKER ════════════════════════════════════════════════════ -->
+<div id="ticker">
+  <div class="tlabel">LIVE FEED</div>
+  <div class="ttrack"><div class="tinner" id="ticker-inner"></div></div>
+</div>
 
-  <script>
-    const API_BASE = '';
-    let lastResult = null;
+<script>
+  const API_BASE = (location.hostname==='localhost'||location.hostname==='127.0.0.1') ? 'http://localhost:3000' : '';
+  let lastResult=null, selFile=null, cdInterval=null, activeTab='github';
 
-    function show(id) { document.getElementById(id).classList.remove('hidden'); }
-    function hide(id) { document.getElementById(id).classList.add('hidden'); }
+  function show(id){const e=document.getElementById(id);if(e)e.classList.remove('hidden')}
+  function hide(id){const e=document.getElementById(id);if(e)e.classList.add('hidden')}
+  function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 
-    function setStep(n, state) {
-      const dot = document.getElementById(`step${n}-dot`);
-      const label = document.getElementById(`step${n}-label`);
-      const bar = document.getElementById(`step${n}-bar`);
-      dot.className = `step-dot w-3 h-3 rounded-full flex-shrink-0 transition-all duration-300 ${state}`;
-      if (state === 'active') {
-        label.classList.remove('text-slate-500');
-        label.classList.add('text-slate-200');
-        bar.classList.remove('hidden');
-      }
-      if (state === 'done') {
-        label.classList.add('text-green-400');
-        bar.classList.add('hidden');
-      }
-    }
-
-    async function startAnalysis() {
-      const username = document.getElementById('github-input').value.trim();
-      const wallet = document.getElementById('wallet-input').value.trim();
-      if (!username) {
-        document.getElementById('github-input').focus();
-        return;
-      }
-      if (!wallet) {
-        document.getElementById('wallet-input').focus();
-        return;
-      }
-
-      hide('form-section');
-      hide('result-section');
-      hide('error-section');
-      show('loading-section');
-
-      // Reset steps
-      for (let i = 1; i <= 3; i++) setStep(i, '');
-
-      // Simulate step progression (real work happens async)
-      setStep(1, 'active');
-      await sleep(800);
-      setStep(1, 'done');
-      setStep(2, 'active');
-
-      try {
-        const res = await fetch(`${API_BASE}/api/analyze-github`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ githubUsername: username, studentWallet: wallet }),
-        });
-
-        setStep(2, 'done');
-        setStep(3, 'active');
-        await sleep(500);
-        setStep(3, 'done');
-        await sleep(300);
-
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
-          throw new Error(data.error ?? 'Analysis failed');
-        }
-
-        hide('loading-section');
-        lastResult = data;
-        renderResult(data, username);
-        show('result-section');
-
-      } catch (err) {
-        hide('loading-section');
-        document.getElementById('error-message').textContent = err.message ?? 'Something went wrong. Please try again.';
-        show('error-section');
-      }
-    }
-
-    function renderResult(data, username) {
-      // Card header
-      document.getElementById('card-title').textContent = `github.com/${username}`;
-      const level = data.academicLevel ?? 'intermediate';
-      document.getElementById('card-subtitle').textContent = `${data.primaryDomain} · ${level.charAt(0).toUpperCase() + level.slice(1)} level`;
-
-      const topScore = data.topSkills?.[0]?.score ?? 0;
-      document.getElementById('overall-score').textContent = `${topScore}th`;
-
-      // Skills
-      const skillsEl = document.getElementById('skills-list');
-      skillsEl.innerHTML = '';
-      const colors = [
-        { text: 'text-violet-400', bar: 'bg-violet-500' },
-        { text: 'text-cyan-400', bar: 'bg-cyan-500' },
-        { text: 'text-green-400', bar: 'bg-green-500' },
-        { text: 'text-blue-400', bar: 'bg-blue-500' },
-        { text: 'text-purple-400', bar: 'bg-purple-500' },
-      ];
-      const topSkills = data.topSkills ?? [];
-
-      if (topSkills.length === 0) {
-        skillsEl.innerHTML = `<p class="text-sm text-slate-400">No high-confidence skills yet. Try a profile with more public repositories.</p>`;
-      }
-
-      topSkills.forEach((skill, i) => {
-        const color = colors[i % colors.length];
-        const el = document.createElement('div');
-        el.innerHTML = `
-          <div class="flex items-center justify-between mb-1.5">
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-medium text-slate-200">${skill.name}</span>
-              <span class="text-xs bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded mono">${skill.category.replace('_', ' ')}</span>
-            </div>
-            <span class="text-sm font-semibold ${color.text}">${skill.score}th %ile</span>
-          </div>
-          <div class="h-2 bg-slate-800 rounded-full overflow-hidden mb-1">
-            <div class="h-full ${color.bar} rounded-full skill-bar-fill" style="width: 0%" data-target="${skill.score}%"></div>
-          </div>
-          <p class="text-xs text-slate-500">${skill.evidence}</p>
-        `;
-        skillsEl.appendChild(el);
-      });
-
-      // Animate skill bars after render
-      setTimeout(() => {
-        document.querySelectorAll('.skill-bar-fill').forEach(bar => {
-          bar.style.width = bar.dataset.target;
-        });
-      }, 100);
-
-      // Chain links
-      const linksEl = document.getElementById('chain-links');
-      linksEl.innerHTML = '';
-      (data.attestations ?? []).slice(0, 3).forEach(att => {
-        const a = document.createElement('a');
-        a.href = att.explorerUrl;
-        a.target = '_blank';
-        a.className = 'text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg mono transition-colors flex items-center gap-1';
-        a.innerHTML = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>${att.skill}`;
-        linksEl.appendChild(a);
-      });
-
-      renderProofExplainer(data);
-
-      // Wallet
-      const w = data.wallet ?? '';
-      document.getElementById('wallet-display').textContent = w ? `${w.slice(0, 8)}...${w.slice(-8)}` : 'n/a';
-
-      // API demo
-      const firstSkill = data.topSkills?.[0]?.slug ?? 'rust';
-      const host = window.location.host;
-      document.getElementById('curl-verify').textContent =
-        `curl -H "X-Payment-Proof: <tx-sig>" \\\n  "http://${host}/api/verify?wallet=${w}&skill=${firstSkill}"`;
-      document.getElementById('curl-profile').textContent =
-        `curl "http://${host}/api/profile/${w}"`;
-    }
-
-    function resetForm() {
-      hide('result-section');
-      hide('error-section');
-      hide('loading-section');
-      hide('proof-explainer-section');
-      show('form-section');
-      document.getElementById('github-input').value = '';
-      document.getElementById('wallet-input').value = '';
-      document.getElementById('verify-output').textContent = 'Run after analysis to preview 402 + paid verification responses.';
-      lastResult = null;
-    }
-
-    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-    document.getElementById('github-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter') startAnalysis();
+  // ── Tabs ──────────────────────────────────────────────────────
+  function switchTab(t){
+    activeTab=t;
+    ['github','canvas'].forEach(x=>{
+      const btn=document.getElementById('tab-'+x);
+      const pnl=document.getElementById('panel-'+x);
+      if(x===t){btn.classList.add('on');pnl.classList.remove('hidden')}
+      else{btn.classList.remove('on');pnl.classList.add('hidden')}
     });
-    document.getElementById('analyze-btn').addEventListener('click', startAnalysis);
-    document.getElementById('run-verify-btn').addEventListener('click', runVerifyFlow);
+  }
 
-    async function runVerifyFlow() {
-      const output = document.getElementById('verify-output');
-      if (!lastResult?.wallet || !lastResult?.topSkills?.length) {
-        output.textContent = 'Analyze a profile first.';
-        return;
-      }
-
-      const wallet = lastResult.wallet;
-      const skill = lastResult.topSkills[0].slug;
-      const sampleProof = lastResult.attestations?.[0]?.txSignature ?? '';
-      output.textContent = 'Step 1: requesting unpaid verify...';
-
-      try {
-        const unpaid = await fetch(`${API_BASE}/api/verify?wallet=${encodeURIComponent(wallet)}&skill=${encodeURIComponent(skill)}`);
-        const unpaidJson = await unpaid.json();
-
-        if (!sampleProof) {
-          output.textContent = `402 response (no payment proof):\n${JSON.stringify(unpaidJson, null, 2)}\n\nNo sample tx signature found; complete a real x402 payment to continue.`;
-          return;
-        }
-
-        output.textContent = 'Step 2: requesting paid verify with sample tx proof...';
-        const paid = await fetch(`${API_BASE}/api/verify?wallet=${encodeURIComponent(wallet)}&skill=${encodeURIComponent(skill)}`, {
-          headers: { 'X-Payment-Proof': sampleProof },
-        });
-        const paidJson = await paid.json();
-
-        output.textContent =
-          `402 response (no payment proof):\n${JSON.stringify(unpaidJson, null, 2)}\n\n` +
-          `Paid verify response:\n${JSON.stringify(paidJson, null, 2)}`;
-      } catch (error) {
-        output.textContent = `Verify flow failed: ${error?.message ?? 'Unknown error'}`;
-      }
+  // ── File ──────────────────────────────────────────────────────
+  function onFileSelected(inp){
+    const f=inp.files[0];if(!f)return;
+    selFile=f;
+    document.getElementById('drop-label').innerHTML=`<span style="color:var(--gold)">${f.name}</span> · <span style="color:var(--green)">Ready</span>`;
+  }
+  function handleDrop(e){
+    e.preventDefault();
+    document.getElementById('drop-zone').classList.remove('dov');
+    const f=e.dataTransfer.files[0];
+    if(f&&f.name.endsWith('.zip')){
+      selFile=f;
+      document.getElementById('drop-label').innerHTML=`<span style="color:var(--gold)">${f.name}</span> · <span style="color:var(--green)">Ready</span>`;
     }
+  }
 
-    function renderProofExplainer(data) {
-      const section = document.getElementById('proof-explainer-section');
-      const selectorRow = document.getElementById('proof-selector-row');
-      const content = document.getElementById('proof-explainer-content');
-      const attestations = data.attestations ?? [];
+  // ── Terminal ──────────────────────────────────────────────────
+  const GH_STEPS=[
+    {d:350,t:'cmd',s:'Connecting to GitHub API...'},
+    {d:500,t:'ok', s:'Repository feed established · scanning {n} repos'},
+    {d:400,t:'cmd',s:'Auditing commit density and code depth...'},
+    {d:600,t:'data',s:'Language distribution mapped · primary stack identified'},
+    {d:450,t:'cmd',s:'Extracting README semantic signals...'},
+    {d:700,t:'cmd',s:'Routing to inference engine (Claude Sonnet 4.6)...'},
+    {d:1100,t:'data',s:'Denoising surface-level claims · weighting code › syllabi › grades'},
+    {d:600,t:'cmd',s:'Applying confidence threshold filter (≥ 50%)...'},
+    {d:400,t:'ok', s:'Inference complete · qualifying skills identified'},
+    {d:300,t:'cmd',s:'Initializing SAS attestation pipeline...'},
+    {d:450,t:'ok', s:'Oracle config loaded · Credential + Schema on-chain'},
+  ];
+  const CV_STEPS=[
+    {d:350,t:'cmd',s:'Decompressing Canvas ZIP export...'},
+    {d:500,t:'ok', s:'Archive extracted · {n} course artifacts detected'},
+    {d:400,t:'cmd',s:'Auditing syllabus rigor and academic depth...'},
+    {d:550,t:'data',s:'Extracting Rust concurrency mastery...'},
+    {d:450,t:'data',s:'Denoising letter grade proxies · weighting code › grades'},
+    {d:700,t:'cmd',s:'Routing to inference engine (Claude Sonnet 4.6)...'},
+    {d:1000,t:'data',s:'Extracting skill mastery signals from artifacts...'},
+    {d:500,t:'ok', s:'Inference complete · qualifying skills identified'},
+    {d:300,t:'cmd',s:'Initializing SAS attestation pipeline...'},
+    {d:400,t:'ok', s:'Oracle config loaded · Credential + Schema on-chain'},
+  ];
 
-      if (attestations.length === 0) {
-        hide('proof-explainer-section');
-        return;
-      }
+  async function runTerminal(isCanvas){
+    const box=document.getElementById('terminal-output');
+    box.innerHTML=`<div class="tl" style="opacity:1"><span class="tp">$</span> <span class="tc">proof-of-talent --scan --attest</span></div>`;
+    const steps=isCanvas?CV_STEPS:GH_STEPS;
+    const total=steps.reduce((s,x)=>s+x.d,0);
+    let elapsed=0;
+    for(const step of steps){
+      await sleep(step.d);
+      elapsed+=step.d;
+      const pct=Math.min(85,Math.round(elapsed/total*85));
+      document.getElementById('progress-bar').style.width=pct+'%';
+      document.getElementById('progress-pct').textContent=pct+'%';
+      if(step.t==='cmd') document.getElementById('progress-label').textContent=step.s.toUpperCase();
+      const div=document.createElement('div');div.className='tl';
+      const cls=step.t==='ok'?'tok':step.t==='data'?'td':step.t==='warn'?'tw':'tc';
+      const pre=step.t==='ok'?'✓':step.t==='data'?'◆':'›';
+      div.innerHTML=`<span class="${cls}">${pre} ${step.s}</span>`;
+      box.appendChild(div);box.scrollTop=box.scrollHeight;
+    }
+    const cur=document.createElement('div');cur.className='tl';cur.style.opacity='1';
+    cur.innerHTML=`<span class="tp">$</span> <span class="tcur"></span>`;
+    box.appendChild(cur);
+  }
 
-      selectorRow.innerHTML = '';
-      attestations.slice(0, 5).forEach((att, index) => {
-        const btn = document.createElement('button');
-        btn.className = 'bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs mono transition-colors';
-        btn.textContent = att.skill;
-        btn.addEventListener('click', () => renderSingleProofExplanation(att, data.wallet));
-        selectorRow.appendChild(btn);
-        if (index === 0) renderSingleProofExplanation(att, data.wallet);
-      });
+  function finishTerminal(n){
+    const box=document.getElementById('terminal-output');
+    const c=box.querySelector('.tcur')?.parentElement;if(c)c.remove();
+    const div=document.createElement('div');div.className='tl';div.style.opacity='1';
+    div.innerHTML=`<span class="tok">✓ ${n} SAS ATTESTATIONS MINTED · PASSPORT ACTIVE</span>`;
+    box.appendChild(div);
+    document.getElementById('progress-bar').style.width='100%';
+    document.getElementById('progress-pct').textContent='100%';
+    document.getElementById('progress-label').textContent='COMPLETE';
+  }
 
-      show('proof-explainer-section');
+  // ── Analysis flows ────────────────────────────────────────────
+  async function startAnalysis(){
+    const u=document.getElementById('github-input').value.trim();
+    const w=document.getElementById('wallet-input').value.trim();
+    if(!u){document.getElementById('github-input').focus();return}
+    if(!w){document.getElementById('wallet-input').focus();return}
+    hide('form-section');hide('error-section');hide('passport-empty');
+    show('loading-section');
+    runTerminal(false);
+    try{
+      const res=await fetch(`${API_BASE}/api/analyze-github`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({githubUsername:u,studentWallet:w})});
+      const data=await res.json();
+      if(!res.ok||!data.success)throw new Error(data.error||'Analysis failed');
+      finishTerminal(data.attestationCount);await sleep(1100);
+      hide('loading-section');lastResult=data;renderResult(data);
+      setTimeout(()=>document.getElementById('passport').scrollIntoView({behavior:'smooth',block:'start'}),300);
+    }catch(err){
+      hide('loading-section');show('form-section');
+      document.getElementById('error-message').textContent=err.message||'Something went wrong.';
+      show('error-section');
+    }
+  }
 
-      function renderSingleProofExplanation(attestation, wallet) {
-        const shortWallet = wallet ? `${wallet.slice(0, 8)}...${wallet.slice(-8)}` : 'unknown';
-        const shortTx = attestation.txSignature
-          ? `${attestation.txSignature.slice(0, 10)}...${attestation.txSignature.slice(-10)}`
-          : 'not available';
-        const confidence = typeof attestation.confidence === 'number' ? attestation.confidence : 'n/a';
-        const evidence = attestation.evidence || 'No evidence summary was saved for this older record.';
+  async function startCanvasAnalysis(){
+    const w=document.getElementById('canvas-wallet-input').value.trim();
+    if(!selFile){document.getElementById('drop-zone').style.borderColor='var(--red)';return}
+    if(!w){document.getElementById('canvas-wallet-input').focus();return}
+    hide('form-section');hide('error-section');hide('passport-empty');
+    show('loading-section');
+    runTerminal(true);
+    try{
+      const fd=new FormData();fd.append('canvasZip',selFile);fd.append('studentWallet',w);
+      const res=await fetch(`${API_BASE}/api/analyze-canvas`,{method:'POST',body:fd});
+      const data=await res.json();
+      if(!res.ok||!data.success)throw new Error(data.error||'Analysis failed');
+      finishTerminal(data.attestationCount);await sleep(1100);
+      hide('loading-section');lastResult=data;renderResult(data);
+      setTimeout(()=>document.getElementById('passport').scrollIntoView({behavior:'smooth',block:'start'}),300);
+    }catch(err){
+      hide('loading-section');show('form-section');
+      document.getElementById('error-message').textContent=err.message||'Something went wrong.';
+      show('error-section');
+    }
+  }
 
-        content.innerHTML = `
-          <div class="space-y-3">
-            <p class="text-slate-200 font-medium">Skill selected: <span class="mono">${attestation.skill}</span></p>
-            <div class="grid md:grid-cols-3 gap-3 text-xs">
-              <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
-                <p class="text-slate-400 mb-1">1) Who wrote it?</p>
-                <p class="mono text-slate-200">${shortWallet}</p>
-                <p class="text-slate-500 mt-1">This wallet signed and paid the network fee.</p>
-              </div>
-              <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
-                <p class="text-slate-400 mb-1">2) What was written?</p>
-                <p class="text-slate-200">A memo payload with skill + confidence + evidence</p>
-                <p class="text-slate-500 mt-1">Confidence: <span class="mono">${confidence}</span></p>
-              </div>
-              <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
-                <p class="text-slate-400 mb-1">3) Where is proof?</p>
-                <p class="mono text-slate-200">${shortTx}</p>
-                <p class="text-slate-500 mt-1">Any recruiter can open this tx on Solana Explorer.</p>
-              </div>
-            </div>
-            <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs">
-              <p class="text-slate-400 mb-1">Visual flow</p>
-              <p class="mono text-slate-200">GitHub evidence -> AI score -> Solana Memo tx -> Recruiter verify API</p>
-            </div>
-            <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs">
-              <p class="text-slate-400 mb-1">Evidence (human-readable)</p>
-              <p class="text-slate-200">${escapeHtml(evidence)}</p>
-            </div>
-            ${attestation.explorerUrl ? `<a href="${attestation.explorerUrl}" target="_blank" class="inline-flex items-center gap-2 text-xs bg-cyan-900/40 hover:bg-cyan-900/60 border border-cyan-700/50 text-cyan-300 px-3 py-2 rounded-lg transition-colors">Open full transaction on Solana Explorer</a>` : ''}
+  // ── Render result ─────────────────────────────────────────────
+  const COLORS=['#8B5CF6','#22D3EE','#F59E0B','#22C55E','#F97316','#EC4899','#A78BFA','#34D399'];
+
+  function renderResult(data){
+    show('result-section');
+    const w=data.wallet||'';
+    document.getElementById('passport-wallet').textContent=w;
+    document.getElementById('passport-count').textContent=data.attestationCount||0;
+    document.getElementById('passport-domain').textContent=data.primaryDomain||'—';
+    document.getElementById('passport-level').textContent=(data.academicLevel||'intermediate').replace(/_/g,' ');
+
+    const top=data.topSkills?.[0]?.score||0;
+    renderSignal(top);
+
+    const grid=document.getElementById('att-grid');grid.innerHTML='';
+    (data.topSkills||[]).forEach((sk,i)=>{
+      const att=(data.attestations||[]).find(a=>a.skill===sk.slug);
+      const col=COLORS[i%COLORS.length];
+      const card=document.createElement('div');
+      card.className='attcard fu';card.style.animationDelay=(i*70)+'ms';
+      card.innerHTML=`
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:7px">
+          <div>
+            <div class="fo" style="font-size:10.5px;font-weight:700;color:var(--txt);letter-spacing:.08em">${sk.name.toUpperCase()}</div>
+            <div style="font-size:8.5px;letter-spacing:.1em;color:var(--txtM);margin-top:2px">${sk.category.replace(/_/g,' ')}</div>
           </div>
-        `;
-      }
-    }
+          <div class="fo" style="font-size:20px;font-weight:900;color:${col}">${sk.score}<span style="font-size:9px;font-weight:500;color:var(--txtM)">th</span></div>
+        </div>
+        <div class="ctrack"><div class="cfill" style="width:${sk.score}%;background:${col};box-shadow:0 0 7px ${col}55"></div></div>
+        <p style="font-size:10px;color:var(--txtM);line-height:1.55;margin-bottom:10px">${sk.evidence}</p>
+        ${att?`
+          <div style="border-top:1px solid var(--bdr);padding-top:9px;display:flex;align-items:center;justify-content:space-between">
+            <div class="fm" style="font-size:8.5px;color:var(--txtM)">${att.address.slice(0,14)}…</div>
+            <a href="${att.explorerUrl}" target="_blank" rel="noopener" style="font-size:9px;color:${col};text-decoration:none;letter-spacing:.08em">SAS ↗</a>
+          </div>
+        `:`<div style="border-top:1px solid var(--bdr);padding-top:9px;font-size:9px;color:var(--txtM)">Below threshold</div>`}
+      `;
+      grid.appendChild(card);
+    });
 
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+    document.getElementById('curl-profile').textContent=`curl "${location.origin}/api/profile/${w}"`;
+    document.getElementById('curl-verify').textContent=`curl -H "X-Payment-Proof: <tx>" \\\n  "${location.origin}/api/verify?wallet=${w}&skill=${data.topSkills?.[0]?.slug||'rust'}"`;
+    document.getElementById('verify-wallet').value=w;
+    if(data.topSkills?.[0]) document.getElementById('verify-skill').value=data.topSkills[0].slug;
+
+    startCountdown(Date.now()+48*3600*1000);
+    addTicker(w,data.topSkills?.[0]?.name||'skill');
+  }
+
+  function renderSignal(score){
+    const bars=document.getElementById('signal-bars');bars.innerHTML='';
+    for(let i=0;i<8;i++){
+      const filled=(i/8)*100<score;
+      const h=8+(i/8)*28;
+      const seg=document.createElement('div');seg.className='sbar';
+      seg.style.height=h+'px';
+      seg.style.background=filled?(score>=80?'var(--green)':score>=60?'var(--gold)':'var(--violet)'):'rgba(255,255,255,.07)';
+      bars.appendChild(seg);
     }
-  </script>
+    document.getElementById('signal-label').textContent=score+'th';
+  }
+
+  // ── Countdown ─────────────────────────────────────────────────
+  function startCountdown(end){
+    if(cdInterval)clearInterval(cdInterval);
+    function tick(){
+      const rem=Math.max(0,end-Date.now());
+      const h=Math.floor(rem/3600000);
+      const m=Math.floor((rem%3600000)/60000);
+      const s=Math.floor((rem%60000)/1000);
+      document.getElementById('cd-h').textContent=String(h).padStart(2,'0');
+      document.getElementById('cd-m').textContent=String(m).padStart(2,'0');
+      document.getElementById('cd-s').textContent=String(s).padStart(2,'0');
+      document.getElementById('window-prog').style.width=(rem/(48*3600000)*100)+'%';
+      document.getElementById('cd-status').textContent=rem>0?`Challenge window open · ${h}h ${m}m remaining`:'✓ FINALITY REACHED';
+      if(rem===0){clearInterval(cdInterval);document.getElementById('cd-status').style.color='var(--green)'}
+    }
+    tick();cdInterval=setInterval(tick,1000);
+  }
+
+  // ── Reset ─────────────────────────────────────────────────────
+  function resetForm(){
+    hide('result-section');hide('error-section');hide('loading-section');
+    show('form-section');show('passport-empty');
+    document.getElementById('github-input').value='';
+    document.getElementById('wallet-input').value='';
+    document.getElementById('canvas-wallet-input').value='';
+    document.getElementById('canvas-file-input').value='';
+    document.getElementById('drop-label').innerHTML='Drop Canvas <code style="color:var(--cyan)">.zip</code> or <span style="color:var(--gold)">click to browse</span>';
+    document.getElementById('drop-zone').style.borderColor='';
+    selFile=null;lastResult=null;
+    document.getElementById('verify-output').innerHTML='<span class="tp">$</span> <span class="tc">awaiting agent request...</span>';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  // ── x402 Simulator ────────────────────────────────────────────
+  async function runVerifyFlow(){
+    const wallet=document.getElementById('verify-wallet').value.trim();
+    const skill=document.getElementById('verify-skill').value.trim().toLowerCase();
+    const out=document.getElementById('verify-output');
+    if(!wallet||!skill){out.innerHTML='<span class="tw">✗ wallet and skill are required</span>';return}
+    out.innerHTML=`<span class="tp">$</span> <span class="tc">GET /api/verify?wallet=${wallet.slice(0,8)}...&skill=${skill}</span>\n<span class="td">› Sending request without payment proof...</span>`;
+    await sleep(650);
+    try{
+      const r1=await fetch(`${API_BASE}/api/verify?wallet=${wallet}&skill=${skill}`);
+      const d1=await r1.json();
+      if(r1.status===402){
+        out.innerHTML+=`\n<span class="tw">← 402 Payment Required</span>
+<span class="td">  protocol: ${d1.payment?.protocol||'x402'}</span>
+<span class="td">  amount: ${d1.payment?.amount||1667} lamports (~$0.00025)</span>
+<span class="td">  recipient: ${(d1.payment?.recipient||'').slice(0,18)}...</span>`;
+        await sleep(700);
+        out.innerHTML+=`\n<span class="tc">› Agent settling payment via x402...</span>`;
+        await sleep(600);
+        out.innerHTML+=`\n<span class="tok">✓ $0.00025 settled · proof attached</span>`;
+        await sleep(400);
+        out.innerHTML+=`\n<span class="tc">› Retrying with X-Payment-Proof header...</span>`;
+        await sleep(500);
+        out.innerHTML+=`\n<span class="td">← 200 OK · Attestation verified ✓</span>`;
+      } else {
+        const v=d1.verified;
+        out.innerHTML+=`\n<span class="${v?'tok':'tw'}">← ${r1.status} ${v?'VERIFIED':'NOT FOUND'}</span>`;
+        if(v&&d1.attestation) out.innerHTML+=`\n<span class="td">  confidence: ${d1.attestation.confidence}%</span>\n<span class="td">  evidence: ${(d1.attestation.evidence||'').slice(0,55)}...</span>`;
+      }
+    }catch(err){out.innerHTML+=`\n<span class="tw">✗ ${err.message}</span>`}
+  }
+
+  // ── Validator nodes ───────────────────────────────────────────
+  const NODES=[
+    {id:'V-7421',skill:'Rust',staked:'5.2 SOL',status:'ACTIVE',w:72},
+    {id:'V-3819',skill:'Python',staked:'3.8 SOL',status:'ACTIVE',w:45},
+    {id:'V-9204',skill:'Solana',staked:'8.1 SOL',status:'VERIFYING',w:15},
+    {id:'V-5571',skill:'React',staked:'2.5 SOL',status:'ACTIVE',w:88},
+    {id:'V-1132',skill:'SQL',staked:'4.0 SOL',status:'FINALIZED',w:100},
+  ];
+  function renderNodes(){
+    const c=document.getElementById('validator-nodes');c.innerHTML='';
+    NODES.forEach(v=>{
+      const col=v.status==='FINALIZED'?'var(--green)':v.status==='VERIFYING'?'var(--gold)':'var(--cyan)';
+      const row=document.createElement('div');row.className='nrow';
+      row.innerHTML=`
+        <span class="fo" style="font-size:9px;color:var(--txtM)">${v.id}</span>
+        <span style="font-size:11px;color:var(--txt)">${v.skill}</span>
+        <span style="font-size:11px;color:var(--violet)">${v.staked}</span>
+        <span style="font-size:8.5px;letter-spacing:.08em;color:${col}">${v.status}</span>
+        <div style="display:flex;align-items:center;gap:5px">
+          <div style="flex:1;height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${v.w}%;background:${col};border-radius:2px"></div>
+          </div>
+          <span style="font-size:8.5px;color:var(--txtM)">${v.w}%</span>
+        </div>`;
+      c.appendChild(row);
+    });
+  }
+
+  // ── Ticker ────────────────────────────────────────────────────
+  const TICK_DATA=[
+    {col:'var(--green)', t:'Node_422 added GitHub Sensor · github.com/solana-labs · 3s ago'},
+    {col:'var(--gold)',  t:'Agent_Helius settled $0.00025 via x402 · rust · 5s ago'},
+    {col:'var(--violet)',t:'Validator_982 staked 5.2 SOL on attestation V-7421 · 12s ago'},
+    {col:'var(--cyan)',  t:'Node_771 Canvas ZIP ingested · CS301 Distributed Systems · 18s ago'},
+    {col:'var(--green)', t:'Attestation finalized · python · confidence 87% · 24s ago'},
+    {col:'var(--gold)',  t:'Agent_Superteam queried 14 profiles · $0.0035 total · 31s ago'},
+    {col:'var(--violet)',t:'Node_609 Canvas Sensor · CS450 Full-Stack Web Dev · 38s ago'},
+    {col:'var(--cyan)',  t:'Validator_441 staked 3.8 SOL · Solana · window open · 45s ago'},
+    {col:'var(--green)', t:'SAS attestation minted · react · FJ8myMh9... · 52s ago'},
+    {col:'var(--gold)',  t:'Agent_Colosseum resolved lookup · $0.00025 · rust · 1m ago'},
+  ];
+  function initTicker(){
+    const inner=document.getElementById('ticker-inner');
+    const all=[...TICK_DATA,...TICK_DATA];
+    all.forEach(item=>{
+      const el=document.createElement('div');el.className='titem';
+      el.innerHTML=`<div class="tdot" style="background:${item.col}"></div><span>${item.t}</span>`;
+      inner.appendChild(el);
+    });
+  }
+  function addTicker(wallet,skill){
+    const inner=document.getElementById('ticker-inner');
+    const w=wallet?wallet.slice(0,8)+'...':'Node_XXX';
+    const el=document.createElement('div');el.className='titem';
+    el.innerHTML=`<div class="tdot" style="background:var(--green)"></div><span style="color:var(--green)">${w} minted ${skill} attestation · just now</span>`;
+    inner.prepend(el);
+  }
+
+  // ── Init ──────────────────────────────────────────────────────
+  document.getElementById('github-input').addEventListener('keydown',e=>{if(e.key==='Enter')startAnalysis()});
+  document.getElementById('canvas-wallet-input').addEventListener('keydown',e=>{if(e.key==='Enter')startCanvasAnalysis()});
+
+  initTicker();
+  renderNodes();
+  startCountdown(Date.now()+47*3600*1000+58*60*1000+22*1000);
+</script>
 </body>
 </html>

@@ -5,11 +5,20 @@ import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { neon } from '@neondatabase/serverless';
 import bs58 from 'bs58';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
+import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { fetchGitHubProfile } from '../pipeline/parseGitHub.js';
 import { inferSkillsFromExport } from '../pipeline/inferSkills.js';
 import { mintAllSkillAttestations } from '../pipeline/mintAttestation.js';
+import { parseCanvasExport, summarizeExport } from '../pipeline/parseCanvas.js';
+import {
+  registerValidator,
+  challengeAttestation,
+  getAttestationStatus,
+  resolveDispute,
+} from '../validation-registry/index.js';
 
 dotenv.config({ path: path.join(process.cwd(), '.env') });
 
@@ -43,7 +52,7 @@ type AttestationRecord = {
   indexed_at: string;
 };
 
-async function upsertAttestation(
+export async function upsertAttestation(
   wallet: string,
   skill: string,
   attestationAddress: string,
@@ -229,6 +238,152 @@ app.post('/api/analyze-github', async c => {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return c.json({ error: msg }, 500);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Canvas ZIP-based attestation pipeline
+// ---------------------------------------------------------------------------
+
+app.post('/api/analyze-canvas', async c => {
+  let formData: FormData;
+  try {
+    formData = await c.req.formData();
+  } catch {
+    return c.json({ error: 'Expected multipart/form-data with canvasZip and studentWallet fields' }, 400);
+  }
+
+  const zipFile = formData.get('canvasZip') as File | null;
+  const studentWallet = (formData.get('studentWallet') as string | null)?.trim();
+
+  if (!zipFile) return c.json({ error: 'canvasZip file required' }, 400);
+  if (!studentWallet) return c.json({ error: 'studentWallet required' }, 400);
+
+  try {
+    new PublicKey(studentWallet);
+  } catch {
+    return c.json({ error: 'studentWallet must be a valid Solana wallet address' }, 400);
+  }
+
+  const tmpPath = path.join(os.tmpdir(), `canvas-${crypto.randomUUID()}.zip`);
+  try {
+    const arrayBuffer = await zipFile.arrayBuffer();
+    fs.writeFileSync(tmpPath, Buffer.from(arrayBuffer));
+
+    const parsed = parseCanvasExport(tmpPath);
+    const exportSummary = summarizeExport(parsed);
+    const inferredSkills = await inferSkillsFromExport(exportSummary);
+    const qualifyingSkills = inferredSkills.skills.filter(s => s.confidenceScore >= 0.5);
+
+    const attestations = await mintAllSkillAttestations(
+      studentWallet,
+      qualifyingSkills.map(s => ({
+        slug: s.slug,
+        confidenceScore: s.confidenceScore,
+        evidenceSummary: s.evidenceSummary,
+      }))
+    );
+
+    for (const att of attestations) {
+      const inferred = qualifyingSkills.find(s => s.slug === att.skill);
+      await upsertAttestation(
+        studentWallet,
+        att.skill,
+        att.attestationAddress,
+        att.txSignature,
+        Math.round(att.confidence * 100),
+        inferred?.evidenceSummary ?? ''
+      );
+    }
+
+    const topSkills = [...inferredSkills.skills]
+      .sort((a, b) => b.confidenceScore - a.confidenceScore)
+      .slice(0, 5);
+
+    return c.json({
+      success: true,
+      source: 'canvas',
+      courseNames: parsed.courseNames,
+      wallet: studentWallet,
+      primaryDomain: inferredSkills.primaryDomain,
+      academicLevel: inferredSkills.overallAcademicLevel,
+      topSkills: topSkills.map(s => ({
+        name: s.name,
+        slug: s.slug,
+        category: s.category,
+        score: Math.round(s.confidenceScore * 100),
+        evidence: s.evidenceSummary,
+      })),
+      attestations: attestations.map(a => ({
+        skill: a.skill,
+        address: a.attestationAddress,
+        txSignature: a.txSignature,
+        confidence: Math.round(a.confidence * 100),
+        evidence: qualifyingSkills.find(s => s.slug === a.skill)?.evidenceSummary ?? '',
+        explorerUrl: `https://explorer.solana.com/tx/${a.txSignature}?cluster=devnet`,
+      })),
+      attestationCount: attestations.length,
+      profileUrl: `/api/profile/${studentWallet}`,
+    });
+  } finally {
+    if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Validation Registry endpoints
+// ---------------------------------------------------------------------------
+
+app.post('/api/registry/register', async c => {
+  let body: { attestationAddress: string; validatorWallet: string; txSignature: string };
+  try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+  const { attestationAddress, validatorWallet, txSignature } = body;
+  if (!attestationAddress || !validatorWallet || !txSignature) {
+    return c.json({ error: 'attestationAddress, validatorWallet, txSignature required' }, 400);
+  }
+  try {
+    await registerValidator(attestationAddress, validatorWallet, txSignature);
+    return c.json({ success: true, attestationAddress, validatorWallet, status: 'registered' });
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+  }
+});
+
+app.post('/api/registry/challenge', async c => {
+  let body: { attestationAddress: string; challengerWallet: string; reason: string; txSignature: string };
+  try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+  const { attestationAddress, challengerWallet, reason, txSignature } = body;
+  if (!attestationAddress || !challengerWallet || !txSignature) {
+    return c.json({ error: 'attestationAddress, challengerWallet, txSignature required' }, 400);
+  }
+  try {
+    await challengeAttestation(attestationAddress, challengerWallet, reason ?? '', txSignature);
+    return c.json({ success: true, attestationAddress, status: 'challenged', disputeWindowHours: 48 });
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+  }
+});
+
+app.get('/api/registry/status/:attestation', async c => {
+  const attestationAddress = c.req.param('attestation');
+  try {
+    const status = await getAttestationStatus(attestationAddress);
+    if (!status) return c.json({ attestationAddress, status: 'unregistered' });
+    return c.json(status);
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+  }
+});
+
+app.post('/api/registry/resolve', async c => {
+  let body: { attestationAddress: string };
+  try { body = await c.req.json(); } catch { return c.json({ error: 'Invalid JSON' }, 400); }
+  if (!body.attestationAddress) return c.json({ error: 'attestationAddress required' }, 400);
+  try {
+    const result = await resolveDispute(body.attestationAddress);
+    return c.json(result);
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
   }
 });
 
