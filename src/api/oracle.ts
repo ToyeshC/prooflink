@@ -1,9 +1,9 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors';
-import { createSolanaRpc } from '@solana/kit';
+import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import { neon } from '@neondatabase/serverless';
 import bs58 from 'bs58';
-import { Keypair, PublicKey } from '@solana/web3.js';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -14,7 +14,8 @@ import { mintAllSkillAttestations } from '../pipeline/mintAttestation.js';
 dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 const ORACLE_CONFIG_PATH = path.join(process.cwd(), 'oracle-config.json');
-const LOOKUP_FEE_LAMPORTS = 25; // ~$0.00025 at $10/SOL, adjustable
+const LOOKUP_FEE_LAMPORTS = 1667; // ~$0.00025 at $150/SOL
+
 const ORACLE_WALLET = process.env.SOLANA_PRIVATE_KEY
   ? (() => {
       const decoded = bs58.decode(process.env.SOLANA_PRIVATE_KEY!.trim());
@@ -24,98 +25,120 @@ const ORACLE_WALLET = process.env.SOLANA_PRIVATE_KEY
     })()
   : null;
 
-type IndexedAttestation = {
-  attestationAddress: string;
-  txSignature: string;
+// ---------------------------------------------------------------------------
+// DB helpers (Neon Postgres)
+// ---------------------------------------------------------------------------
+
+function db() {
+  return neon(process.env.DATABASE_URL!);
+}
+
+type AttestationRecord = {
+  wallet: string;
+  skill: string;
+  attestation_address: string;
+  tx_signature: string;
   confidence: number;
   evidence: string;
-  indexedAt: string;
+  indexed_at: string;
 };
 
-// In-memory attestation index: wallet -> skill -> attestation details
-type AttestationIndex = Record<string, Record<string, IndexedAttestation>>;
-let attestationIndex: AttestationIndex = {};
-let hasLoadedAttestationIndex = false;
-
-const ATTESTATION_DB_PATH = path.join(process.cwd(), 'attestation-index.json');
-
-function loadAttestationIndex() {
-  if (hasLoadedAttestationIndex) return;
-  hasLoadedAttestationIndex = true;
-  if (fs.existsSync(ATTESTATION_DB_PATH)) {
-    const raw = JSON.parse(fs.readFileSync(ATTESTATION_DB_PATH, 'utf8'));
-    attestationIndex = normalizeAttestationIndex(raw);
-  }
+async function upsertAttestation(
+  wallet: string,
+  skill: string,
+  attestationAddress: string,
+  txSignature: string,
+  confidence: number,
+  evidence: string
+): Promise<void> {
+  const sql = db();
+  await sql`
+    INSERT INTO attestations
+      (wallet, skill, attestation_address, tx_signature, confidence, evidence)
+    VALUES
+      (${wallet}, ${skill}, ${attestationAddress}, ${txSignature}, ${confidence}, ${evidence})
+    ON CONFLICT (wallet, skill) DO UPDATE SET
+      attestation_address = EXCLUDED.attestation_address,
+      tx_signature        = EXCLUDED.tx_signature,
+      confidence          = EXCLUDED.confidence,
+      evidence            = EXCLUDED.evidence,
+      indexed_at          = NOW()
+  `;
 }
 
-function persistAttestationIndex() {
+async function getWalletAttestations(wallet: string): Promise<Record<string, AttestationRecord>> {
+  const sql = db();
+  const rows = await sql`
+    SELECT * FROM attestations WHERE wallet = ${wallet}
+  ` as AttestationRecord[];
+  return Object.fromEntries(rows.map(r => [r.skill, r]));
+}
+
+async function getOneAttestation(wallet: string, skill: string): Promise<AttestationRecord | null> {
+  const sql = db();
+  const rows = await sql`
+    SELECT * FROM attestations WHERE wallet = ${wallet} AND skill = ${skill} LIMIT 1
+  ` as AttestationRecord[];
+  return rows[0] ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Payment verification
+// ---------------------------------------------------------------------------
+
+async function verifyPaymentProof(txSignature: string): Promise<boolean> {
+  if (!process.env.SOLANA_RPC_URL || !ORACLE_WALLET) return false;
+
   try {
-    fs.writeFileSync(ATTESTATION_DB_PATH, JSON.stringify(attestationIndex, null, 2));
-  } catch (error) {
-    // On serverless platforms (e.g. Vercel), local filesystem writes are not persistent.
-    // We keep data in memory for this instance so demo flows continue to work.
-    console.warn('Attestation index persistence unavailable; using in-memory store only.', error);
+    // 1. Replay protection — check DB for already-used proofs
+    const sql = db();
+    const existing = await sql`
+      SELECT tx_signature FROM used_payment_proofs WHERE tx_signature = ${txSignature}
+    `;
+    if (existing.length > 0) return false;
+
+    // 2. Fetch transaction
+    const connection = new Connection(process.env.SOLANA_RPC_URL!, 'confirmed');
+    const tx = await connection.getTransaction(txSignature, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0,
+    });
+    if (!tx || !tx.meta) return false;
+
+    // 3. Verify the oracle wallet received the expected amount
+    const accountKeys = tx.transaction.message.getAccountKeys
+      ? tx.transaction.message.getAccountKeys().staticAccountKeys
+      : (tx.transaction.message as any).accountKeys;
+
+    const oracleIndex = accountKeys.findIndex(
+      (k: { toBase58: () => string } | PublicKey) =>
+        (k instanceof PublicKey ? k : new PublicKey(k.toBase58())).toBase58() === ORACLE_WALLET
+    );
+    if (oracleIndex === -1) return false;
+
+    const received =
+      (tx.meta.postBalances[oracleIndex] ?? 0) - (tx.meta.preBalances[oracleIndex] ?? 0);
+    if (received < LOOKUP_FEE_LAMPORTS) return false;
+
+    // 4. Mark proof as consumed
+    await sql`
+      INSERT INTO used_payment_proofs (tx_signature) VALUES (${txSignature})
+      ON CONFLICT DO NOTHING
+    `;
+
+    return true;
+  } catch {
+    return false;
   }
 }
 
-export function indexAttestation(studentWallet: string, skill: string, attestationAddress: string) {
-  if (!attestationIndex[studentWallet]) attestationIndex[studentWallet] = {};
-  attestationIndex[studentWallet][skill] = {
-    attestationAddress,
-    txSignature: '',
-    confidence: 0,
-    evidence: '',
-    indexedAt: new Date().toISOString(),
-  };
-  persistAttestationIndex();
-}
-
-function indexAttestationRecord(studentWallet: string, skill: string, record: IndexedAttestation) {
-  if (!attestationIndex[studentWallet]) attestationIndex[studentWallet] = {};
-  attestationIndex[studentWallet][skill] = record;
-  persistAttestationIndex();
-}
-
-function normalizeAttestationIndex(raw: unknown): AttestationIndex {
-  const normalized: AttestationIndex = {};
-  if (!raw || typeof raw !== 'object') return normalized;
-
-  for (const [wallet, maybeSkills] of Object.entries(raw as Record<string, unknown>)) {
-    if (!maybeSkills || typeof maybeSkills !== 'object') continue;
-    normalized[wallet] = {};
-    for (const [skill, value] of Object.entries(maybeSkills as Record<string, unknown>)) {
-      if (typeof value === 'string') {
-        normalized[wallet][skill] = {
-          attestationAddress: value,
-          txSignature: '',
-          confidence: 0,
-          evidence: '',
-          indexedAt: new Date().toISOString(),
-        };
-      } else if (value && typeof value === 'object') {
-        const record = value as Partial<IndexedAttestation>;
-        if (typeof record.attestationAddress !== 'string') continue;
-        normalized[wallet][skill] = {
-          attestationAddress: record.attestationAddress,
-          txSignature: typeof record.txSignature === 'string' ? record.txSignature : '',
-          confidence: typeof record.confidence === 'number' ? record.confidence : 0,
-          evidence: typeof record.evidence === 'string' ? record.evidence : '',
-          indexedAt: typeof record.indexedAt === 'string' ? record.indexedAt : new Date().toISOString(),
-        };
-      }
-    }
-  }
-
-  return normalized;
-}
+// ---------------------------------------------------------------------------
+// App
+// ---------------------------------------------------------------------------
 
 export const app = new Hono();
 
 app.use('*', cors());
-app.use('*', async (c, next) => {
-  loadAttestationIndex();
-  await next();
-});
 
 // Serve index.html for root
 app.get('/', c => {
@@ -126,7 +149,10 @@ app.get('/', c => {
 // Health check
 app.get('/health', c => c.json({ status: 'ok', oracle: ORACLE_WALLET }));
 
-// GitHub-based attestation pipeline — the main demo endpoint
+// ---------------------------------------------------------------------------
+// GitHub-based attestation pipeline
+// ---------------------------------------------------------------------------
+
 app.post('/api/analyze-github', async c => {
   let body: { githubUsername: string; studentWallet: string };
   try {
@@ -141,22 +167,16 @@ app.post('/api/analyze-github', async c => {
 
   const walletAddress = studentWallet.trim();
   try {
-    // Validate base58 wallet address format.
-    // eslint-disable-next-line no-new
     new PublicKey(walletAddress);
   } catch {
     return c.json({ error: 'studentWallet must be a valid Solana wallet address' }, 400);
   }
 
   try {
-    // Step 1: Fetch GitHub profile
     const exportSummary = await fetchGitHubProfile(githubUsername);
-
-    // Step 2: LLM skill inference
     const inferredSkills = await inferSkillsFromExport(exportSummary);
     const qualifyingSkills = inferredSkills.skills.filter(s => s.confidenceScore >= 0.5);
 
-    // Step 3: Mint SAS attestations on devnet
     const attestations = await mintAllSkillAttestations(
       walletAddress,
       qualifyingSkills.map(s => ({
@@ -166,16 +186,16 @@ app.post('/api/analyze-github', async c => {
       }))
     );
 
-    // Step 4: Index
     for (const att of attestations) {
       const inferred = qualifyingSkills.find(s => s.slug === att.skill);
-      indexAttestationRecord(walletAddress, att.skill, {
-        attestationAddress: att.attestationAddress,
-        txSignature: att.txSignature,
-        confidence: Math.round(att.confidence * 100),
-        evidence: inferred?.evidenceSummary ?? '',
-        indexedAt: new Date().toISOString(),
-      });
+      await upsertAttestation(
+        walletAddress,
+        att.skill,
+        att.attestationAddress,
+        att.txSignature,
+        Math.round(att.confidence * 100),
+        inferred?.evidenceSummary ?? ''
+      );
     }
 
     const topSkills = [...inferredSkills.skills]
@@ -212,7 +232,10 @@ app.post('/api/analyze-github', async c => {
   }
 });
 
-// Attestation submission (called after minting pipeline completes)
+// ---------------------------------------------------------------------------
+// Manual attestation submission
+// ---------------------------------------------------------------------------
+
 app.post('/api/submit', async c => {
   const body = await c.req.json() as {
     studentWallet: string;
@@ -226,23 +249,26 @@ app.post('/api/submit', async c => {
   };
 
   for (const attestation of body.attestations) {
-    indexAttestationRecord(body.studentWallet, attestation.skill, {
-      attestationAddress: attestation.attestationAddress,
-      txSignature: attestation.txSignature ?? '',
-      confidence: attestation.confidence ?? 0,
-      evidence: attestation.evidence ?? '',
-      indexedAt: new Date().toISOString(),
-    });
+    await upsertAttestation(
+      body.studentWallet,
+      attestation.skill,
+      attestation.attestationAddress,
+      attestation.txSignature ?? '',
+      attestation.confidence ?? 0,
+      attestation.evidence ?? ''
+    );
   }
 
   return c.json({
     indexed: body.attestations.length,
-    message: 'Attestations indexed. Students can share their wallet for recruiter verification.',
+    message: 'Attestations indexed.',
   });
 });
 
-// Skill verification lookup — gated by x402 micropayment
-// Returns 402 if no payment proof, 200 with attestation if payment verified
+// ---------------------------------------------------------------------------
+// Skill verification — gated by x402 micropayment
+// ---------------------------------------------------------------------------
+
 app.get('/api/verify', async c => {
   const walletParam = c.req.query('wallet');
   const skill = c.req.query('skill');
@@ -252,7 +278,6 @@ app.get('/api/verify', async c => {
     return c.json({ error: 'wallet and skill query params required' }, 400);
   }
 
-  // x402: return payment instructions if no proof provided
   if (!paymentProof) {
     return c.json({
       error: 'Payment Required',
@@ -264,26 +289,24 @@ app.get('/api/verify', async c => {
         recipient: ORACLE_WALLET,
         network: 'solana-devnet',
         description: `Verified skill lookup: ${skill} for ${walletParam}`,
-        callbackUrl: `${c.req.url}`,
+        callbackUrl: c.req.url,
       },
-      instructions: `Send ${LOOKUP_FEE_LAMPORTS} lamports to ${ORACLE_WALLET} and include tx signature in X-Payment-Proof header`,
+      instructions: `Send ${LOOKUP_FEE_LAMPORTS} lamports to ${ORACLE_WALLET} and include the tx signature in X-Payment-Proof header`,
     }, 402);
   }
 
-  // Verify payment proof (simplified: check the tx exists on-chain)
   const paymentValid = await verifyPaymentProof(paymentProof);
   if (!paymentValid) {
-    return c.json({ error: 'Invalid or expired payment proof' }, 402);
+    return c.json({ error: 'Invalid, insufficient, or already-used payment proof' }, 402);
   }
 
-  // Look up attestation
-  const record = attestationIndex[walletParam]?.[skill];
+  const record = await getOneAttestation(walletParam, skill);
   if (!record) {
     return c.json({
       verified: false,
       wallet: walletParam,
       skill,
-      message: 'No attestation found. Student has not submitted Canvas data for this skill.',
+      message: 'No attestation found for this wallet + skill combination.',
     });
   }
 
@@ -292,22 +315,25 @@ app.get('/api/verify', async c => {
     wallet: walletParam,
     skill,
     attestation: {
-      address: record.attestationAddress,
-      txSignature: record.txSignature,
+      address: record.attestation_address,
+      txSignature: record.tx_signature,
       confidence: record.confidence,
       evidence: record.evidence,
-      indexedAt: record.indexedAt,
-      verifyTxUrl: record.txSignature
-        ? `https://explorer.solana.com/tx/${record.txSignature}?cluster=devnet`
+      indexedAt: record.indexed_at,
+      verifyTxUrl: record.tx_signature
+        ? `https://explorer.solana.com/tx/${record.tx_signature}?cluster=devnet`
         : null,
     },
   });
 });
 
-// Student profile: all attested skills for a wallet (free endpoint)
-app.get('/api/profile/:wallet', c => {
+// ---------------------------------------------------------------------------
+// Student profile — all attested skills for a wallet (free)
+// ---------------------------------------------------------------------------
+
+app.get('/api/profile/:wallet', async c => {
   const wallet = c.req.param('wallet');
-  const skills = attestationIndex[wallet] ?? {};
+  const skills = await getWalletAttestations(wallet);
   return c.json({
     wallet,
     attestedSkills: Object.keys(skills),
@@ -317,7 +343,10 @@ app.get('/api/profile/:wallet', c => {
   });
 });
 
-// Oracle info (for x402 payment negotiation)
+// ---------------------------------------------------------------------------
+// Oracle info
+// ---------------------------------------------------------------------------
+
 app.get('/api/oracle-info', c => {
   const config = fs.existsSync(ORACLE_CONFIG_PATH)
     ? JSON.parse(fs.readFileSync(ORACLE_CONFIG_PATH, 'utf8'))
@@ -332,25 +361,17 @@ app.get('/api/oracle-info', c => {
     network: process.env.SOLANA_RPC_URL?.includes('devnet') ? 'devnet' : 'mainnet',
     businessModel: {
       tier1_student: 'First attestation free, $8/year refresh',
-      tier2_recruiter: '$29-99/month subscription (see /api/subscribe)',
-      tier3_machine: `x402 micropayment: ${LOOKUP_FEE_LAMPORTS} lamports per lookup`,
+      tier2_recruiter: '$29-99/month subscription',
+      tier3_machine: `x402 micropayment: ${LOOKUP_FEE_LAMPORTS} lamports per lookup (~$0.00025)`,
     },
   });
 });
 
-async function verifyPaymentProof(txSignature: string): Promise<boolean> {
-  try {
-    const rpc = createSolanaRpc(process.env.SOLANA_RPC_URL!);
-    // @ts-ignore — getTransaction is available but typed differently in kit v2
-    const tx = await rpc.getTransaction(txSignature, { commitment: 'confirmed' }).send();
-    return tx !== null;
-  } catch {
-    return false;
-  }
-}
+// ---------------------------------------------------------------------------
+// Server entry point
+// ---------------------------------------------------------------------------
 
 export function startOracleServer(port = 3000) {
-  loadAttestationIndex();
   serve({ fetch: app.fetch, port }, info => {
     console.log(`Proof of Talent Oracle running on http://localhost:${info.port}`);
     console.log(`Oracle wallet: ${ORACLE_WALLET}`);
@@ -358,7 +379,6 @@ export function startOracleServer(port = 3000) {
   });
 }
 
-// Run directly
 if (process.argv[1]?.includes('oracle')) {
   startOracleServer();
 }

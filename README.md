@@ -61,8 +61,8 @@ curl -H "X-Payment-Proof: <tx-signature>" \
 - **Frontend:** static demo UI (`public/index.html`)
 - **API/Oracle:** Hono server (`src/api/oracle.ts`)
 - **Inference:** AI SDK + Anthropic/OpenRouter providers
-- **On-chain anchor:** Solana memo transactions per qualifying skill
-- **Index layer:** file-based store (`attestation-index.json`) for fast profile/verify reads
+- **On-chain anchor:** Solana Attestation Service (SAS) — Credential + Schema + per-skill Attestation accounts
+- **Index layer:** Neon Postgres — `attestations` table + `used_payment_proofs` replay-protection table
 
 ## Why Solana
 
@@ -160,17 +160,17 @@ This is acceptable for a hackathon demo, but not for production.
 
 Current build is an MVP and intentionally pragmatic:
 
-- file-based indexing (not production database)
-- simplified payment-proof validation
-- memo-based proof anchoring (not full SAS-native issuance pipeline yet)
+- x402 payment is SOL lamports (not USDC) — demonstrates the concept correctly for devnet
+- Validation Registry is TypeScript + SPL escrow simulation (not a full on-chain Anchor program)
+- Canvas ZIP ingestion exists in pipeline but has no HTTP endpoint yet
 
 Next milestone priorities:
 
-1. Full SAS schema/credential/attestation lifecycle integration
-2. Production indexing (Postgres + chain/event indexer)
-3. Revocation/supersession and dispute workflows
-4. Stronger identity binding and policy controls
-5. Recruiter bot reference integration
+1. Canvas ZIP ingestion endpoint (`/api/analyze-canvas`)
+2. Validation Registry — staked validator + optimistic dispute window
+3. x402 USDC upgrade (devnet USDC mint: `Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr`)
+4. Anchor partner integration (Superteam / Helius gated behind `/api/verify`)
+5. ZK privacy layer — prove skill percentile without exposing raw artifacts (post-hackathon)
 
 ## Troubleshooting
 

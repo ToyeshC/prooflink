@@ -3,3 +3,9 @@ node_modules
 .claude
 test-data
 .env
+agent-keypair.json
+attestation-index.json
+oracle-config.json
+.DS_Store
+src/debug-sas.ts
+TASKS.md
