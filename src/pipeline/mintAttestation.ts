@@ -1,16 +1,15 @@
 import {
   createSolanaRpc,
-  createSolanaRpcSubscriptions,
   createKeyPairSignerFromBytes,
   generateKeyPairSigner,
   getSignatureFromTransaction,
+  getBase64EncodedWireTransaction,
   pipe,
   createTransactionMessage,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
   appendTransactionMessageInstruction,
   signTransactionMessageWithSigners,
-  sendAndConfirmTransactionFactory,
   address as toAddress,
 } from '@solana/kit';
 import { getCreateAttestationInstruction, deriveAttestationPda } from 'sas-lib';
@@ -22,6 +21,12 @@ import path from 'path';
 type OracleConfig = { credentialAddress: string; schemaAddress: string };
 
 function loadOracleConfig(): OracleConfig {
+  if (process.env.ORACLE_CREDENTIAL_ADDRESS && process.env.ORACLE_SCHEMA_ADDRESS) {
+    return {
+      credentialAddress: process.env.ORACLE_CREDENTIAL_ADDRESS,
+      schemaAddress: process.env.ORACLE_SCHEMA_ADDRESS,
+    };
+  }
   const configPath = path.join(process.cwd(), 'oracle-config.json');
   return JSON.parse(fs.readFileSync(configPath, 'utf-8')) as OracleConfig;
 }
@@ -46,8 +51,6 @@ export async function mintSkillAttestation(
   const config = loadOracleConfig();
   const rpcUrl = process.env.SOLANA_RPC_URL!;
   const rpc = createSolanaRpc(rpcUrl);
-  const rpcSubscriptions = createSolanaRpcSubscriptions(rpcUrl.replace('https://', 'wss://'));
-  const sendAndConfirm = sendAndConfirmTransactionFactory({ rpc: rpc as any, rpcSubscriptions });
 
   const decoded = bs58.decode(process.env.SOLANA_PRIVATE_KEY!.trim());
   const oracleSigner = await createKeyPairSignerFromBytes(decoded);
@@ -94,7 +97,20 @@ export async function mintSkillAttestation(
 
   const signed = await signTransactionMessageWithSigners(txMessage);
   const txSignature = getSignatureFromTransaction(signed);
-  await sendAndConfirm(signed, { commitment: 'confirmed' });
+
+  // Send via HTTP (no WebSocket — public devnet WSS is unreliable)
+  const encoded = getBase64EncodedWireTransaction(signed);
+  await (rpc as any).sendTransaction(encoded, { encoding: 'base64', skipPreflight: false }).send();
+
+  // Poll for confirmation (up to 60s)
+  let confirmed = false;
+  for (let i = 0; i < 30; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const { value: statuses } = await (rpc as any).getSignatureStatuses([txSignature]).send();
+    const s = statuses[0]?.confirmationStatus;
+    if (s === 'confirmed' || s === 'finalized') { confirmed = true; break; }
+  }
+  if (!confirmed) throw new Error(`Attestation tx not confirmed after 60s: ${txSignature}`);
 
   return {
     attestationAddress: attestationAddress as string,

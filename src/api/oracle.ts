@@ -23,7 +23,11 @@ import {
 dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 const ORACLE_CONFIG_PATH = path.join(process.cwd(), 'oracle-config.json');
-const LOOKUP_FEE_LAMPORTS = 1667; // ~$0.00025 at $150/SOL
+const LOOKUP_FEE_LAMPORTS = 1667; // kept for reference; actual fee is USDC
+const USDC_DEVNET_MINT = 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr';
+const LOOKUP_FEE_USDC_RAW = 250; // 0.000250 USDC (6 decimals) ≈ $0.00025
+const SPL_TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+const ASSOC_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1caR');
 
 const ORACLE_WALLET = process.env.SOLANA_PRIVATE_KEY
   ? (() => {
@@ -33,6 +37,19 @@ const ORACLE_WALLET = process.env.SOLANA_PRIVATE_KEY
         : Keypair.fromSecretKey(decoded).publicKey.toBase58();
     })()
   : null;
+
+function getOracleUsdcAta(): string | null {
+  if (!ORACLE_WALLET) return null;
+  const [ata] = PublicKey.findProgramAddressSync(
+    [
+      new PublicKey(ORACLE_WALLET).toBuffer(),
+      SPL_TOKEN_PROGRAM_ID.toBuffer(),
+      new PublicKey(USDC_DEVNET_MINT).toBuffer(),
+    ],
+    ASSOC_TOKEN_PROGRAM_ID
+  );
+  return ata.toBase58();
+}
 
 // ---------------------------------------------------------------------------
 // DB helpers (Neon Postgres)
@@ -99,14 +116,14 @@ async function verifyPaymentProof(txSignature: string): Promise<boolean> {
   if (!process.env.SOLANA_RPC_URL || !ORACLE_WALLET) return false;
 
   try {
-    // 1. Replay protection — check DB for already-used proofs
+    // 1. Replay protection
     const sql = db();
     const existing = await sql`
       SELECT tx_signature FROM used_payment_proofs WHERE tx_signature = ${txSignature}
     `;
     if (existing.length > 0) return false;
 
-    // 2. Fetch transaction
+    // 2. Fetch transaction with token balance snapshots
     const connection = new Connection(process.env.SOLANA_RPC_URL!, 'confirmed');
     const tx = await connection.getTransaction(txSignature, {
       commitment: 'confirmed',
@@ -114,20 +131,17 @@ async function verifyPaymentProof(txSignature: string): Promise<boolean> {
     });
     if (!tx || !tx.meta) return false;
 
-    // 3. Verify the oracle wallet received the expected amount
-    const accountKeys = tx.transaction.message.getAccountKeys
-      ? tx.transaction.message.getAccountKeys().staticAccountKeys
-      : (tx.transaction.message as any).accountKeys;
+    // 3. Check USDC SPL token transfer to oracle wallet's ATA
+    const pre = tx.meta.preTokenBalances ?? [];
+    const post = tx.meta.postTokenBalances ?? [];
 
-    const oracleIndex = accountKeys.findIndex(
-      (k: { toBase58: () => string } | PublicKey) =>
-        (k instanceof PublicKey ? k : new PublicKey(k.toBase58())).toBase58() === ORACLE_WALLET
-    );
-    if (oracleIndex === -1) return false;
+    const oraclePost = post.find(b => b.owner === ORACLE_WALLET && b.mint === USDC_DEVNET_MINT);
+    if (!oraclePost) return false;
 
-    const received =
-      (tx.meta.postBalances[oracleIndex] ?? 0) - (tx.meta.preBalances[oracleIndex] ?? 0);
-    if (received < LOOKUP_FEE_LAMPORTS) return false;
+    const oraclePre = pre.find(b => b.owner === ORACLE_WALLET && b.mint === USDC_DEVNET_MINT);
+    const postAmt = BigInt(oraclePost.uiTokenAmount.amount);
+    const preAmt = oraclePre ? BigInt(oraclePre.uiTokenAmount.amount) : 0n;
+    if (postAmt - preAmt < BigInt(LOOKUP_FEE_USDC_RAW)) return false;
 
     // 4. Mark proof as consumed
     await sql`
@@ -152,6 +166,12 @@ app.use('*', cors());
 // Serve index.html for root
 app.get('/', c => {
   const html = fs.readFileSync(path.join(process.cwd(), 'public', 'index.html'), 'utf8');
+  return c.html(html);
+});
+
+// Shareable skill passport page
+app.get('/profile/:wallet', c => {
+  const html = fs.readFileSync(path.join(process.cwd(), 'public', 'profile.html'), 'utf8');
   return c.html(html);
 });
 
@@ -434,19 +454,24 @@ app.get('/api/verify', async c => {
   }
 
   if (!paymentProof) {
+    const oracleAta = getOracleUsdcAta();
     return c.json({
       error: 'Payment Required',
       payment: {
         protocol: 'x402',
         version: '1.0',
-        amount: LOOKUP_FEE_LAMPORTS,
-        token: 'SOL',
-        recipient: ORACLE_WALLET,
+        amount: LOOKUP_FEE_USDC_RAW,
+        humanAmount: `${(LOOKUP_FEE_USDC_RAW / 1_000_000).toFixed(6)} USDC`,
+        token: 'USDC',
+        mint: USDC_DEVNET_MINT,
+        recipient: oracleAta,
+        recipientOwner: ORACLE_WALLET,
+        decimals: 6,
         network: 'solana-devnet',
         description: `Verified skill lookup: ${skill} for ${walletParam}`,
         callbackUrl: c.req.url,
       },
-      instructions: `Send ${LOOKUP_FEE_LAMPORTS} lamports to ${ORACLE_WALLET} and include the tx signature in X-Payment-Proof header`,
+      instructions: `Send ${LOOKUP_FEE_USDC_RAW} raw USDC (${(LOOKUP_FEE_USDC_RAW / 1_000_000).toFixed(6)} USDC) to token account ${oracleAta} on devnet and include the tx signature in X-Payment-Proof header`,
     }, 402);
   }
 
@@ -512,12 +537,19 @@ app.get('/api/oracle-info', c => {
     sasProgram: 'FJ8myMh9dRcgc2n8xBrWTbCrFYAbHQZCPtMzhhmvNo4M',
     credential: config?.credentialAddress ?? null,
     schema: config?.schemaAddress ?? null,
-    lookupFeeSOL: LOOKUP_FEE_LAMPORTS / 1_000_000_000,
     network: process.env.SOLANA_RPC_URL?.includes('devnet') ? 'devnet' : 'mainnet',
+    payment: {
+      protocol: 'x402',
+      token: 'USDC',
+      mint: USDC_DEVNET_MINT,
+      oracleTokenAccount: getOracleUsdcAta(),
+      feeRaw: LOOKUP_FEE_USDC_RAW,
+      feeHuman: `${(LOOKUP_FEE_USDC_RAW / 1_000_000).toFixed(6)} USDC`,
+    },
     businessModel: {
       tier1_student: 'First attestation free, $8/year refresh',
       tier2_recruiter: '$29-99/month subscription',
-      tier3_machine: `x402 micropayment: ${LOOKUP_FEE_LAMPORTS} lamports per lookup (~$0.00025)`,
+      tier3_machine: `x402 micropayment: ${LOOKUP_FEE_USDC_RAW} raw USDC per lookup (~$0.00025)`,
     },
   });
 });

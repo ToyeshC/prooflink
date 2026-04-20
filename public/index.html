@@ -420,7 +420,13 @@
       <div class="ocard" style="padding:14px"><div class="clabel" style="margin-bottom:7px">Profile Feed (Free)</div><pre id="curl-profile" style="font-size:10.5px;color:var(--cyan);white-space:pre-wrap;line-height:1.7;overflow-x:auto"></pre></div>
       <div class="ocard" style="padding:14px"><div class="clabel" style="margin-bottom:7px">Verification Feed (x402)</div><pre id="curl-verify" style="font-size:10.5px;color:var(--gold);white-space:pre-wrap;line-height:1.7;overflow-x:auto"></pre></div>
     </div>
-    <div style="text-align:right"><button onclick="resetForm()" class="btn-ghost">← NEW SCAN</button></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <a id="passport-page-link" href="#" target="_blank" class="btn btn-gold" style="text-decoration:none;font-size:10px">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        VIEW PASSPORT PAGE ↗
+      </a>
+      <button onclick="resetForm()" class="btn-ghost">← NEW SCAN</button>
+    </div>
   </div>
 </section>
 
@@ -756,6 +762,7 @@
     document.getElementById('curl-verify').textContent=`curl -H "X-Payment-Proof: <tx>" \\\n  "${location.origin}/api/verify?wallet=${w}&skill=${data.topSkills?.[0]?.slug||'rust'}"`;
     document.getElementById('verify-wallet').value=w;
     if(data.topSkills?.[0]) document.getElementById('verify-skill').value=data.topSkills[0].slug;
+    document.getElementById('passport-page-link').href=`/profile/${w}`;
 
     startCountdown(Date.now()+48*3600*1000);
     addTicker(w,data.topSkills?.[0]?.name||'skill');
@@ -821,7 +828,7 @@
       if(r1.status===402){
         out.innerHTML+=`\n<span class="tw">← 402 Payment Required</span>
 <span class="td">  protocol: ${d1.payment?.protocol||'x402'}</span>
-<span class="td">  amount: ${d1.payment?.amount||1667} lamports (~$0.00025)</span>
+<span class="td">  token: ${d1.payment?.token||'USDC'} · ${d1.payment?.humanAmount||'0.000250 USDC'}</span>
 <span class="td">  recipient: ${(d1.payment?.recipient||'').slice(0,18)}...</span>`;
         await sleep(700);
         out.innerHTML+=`\n<span class="tc">› Agent settling payment via x402...</span>`;

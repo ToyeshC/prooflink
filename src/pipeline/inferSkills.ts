@@ -36,6 +36,11 @@ Rules:
 export async function inferSkillsFromExport(exportSummary: string): Promise<InferredSkills> {
   const useAnthropic = !!process.env.ANTHROPIC_API_KEY;
 
+  if (!useAnthropic) {
+    if (!process.env.OPENROUTER_API_KEY) throw new Error('INFERENCE ENGINE DOWN: OPENROUTER_API_KEY not set');
+    if (!process.env.INFERENCE_MODEL) throw new Error('INFERENCE ENGINE DOWN: INFERENCE_MODEL not set');
+  }
+
   const { object } = await generateObject(
     useAnthropic
       ? {
@@ -45,8 +50,8 @@ export async function inferSkillsFromExport(exportSummary: string): Promise<Infe
           prompt: `Analyze this developer's profile and infer their market-ready skills:\n\n${exportSummary}`,
         }
       : {
-          model: createOpenRouter({ apiKey: process.env.OPENAI_API_KEY! })(
-            process.env.INFERENCE_MODEL ?? 'openai/gpt-4o-mini'
+          model: createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY! })(
+            process.env.INFERENCE_MODEL!
           ),
           schema: InferredSkillsSchema,
           system: SYSTEM_PROMPT,

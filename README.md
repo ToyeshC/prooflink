@@ -1,89 +1,115 @@
 # Proof of Talent
 
-Proof of Talent is a talent verification infrastructure layer for AI-native hiring.
-It converts public developer work into machine-readable skill attestations, anchors proof on Solana, and exposes a programmable verification API priced for agentic workflows.
+Decentralized talent oracle — Chainlink for human capital, with an x402 micropayment API for AI hiring agents.
 
-## Vision
+## What it is
 
-Resumes and transcripts are unstructured trust signals.  
-Proof of Talent aims to become the trust rail for verifiable human capital: identity-bound, portable, and queryable by recruiting software and autonomous hiring agents.
+Proof of Talent converts developer artifacts (GitHub profiles, Canvas LMS exports) into on-chain skill attestations anchored on Solana via the [Solana Attestation Service (SAS)](https://explorer.solana.com/address/FJ8myMh9dRcgc2n8xBrWTbCrFYAbHQZCPtMzhhmvNo4M?cluster=devnet). Attestations are queryable via a paid verification API priced for machine-scale agentic workflows using the x402 micropayment protocol.
 
 ## Problem
 
-Modern hiring systems face a validity gap:
-
-- static credentials are weak proxies for skill
-- claims are hard to verify programmatically
-- traditional checks are too expensive for machine-scale screening
-- AI recruiters need low-latency, low-cost trust primitives
+- Resumes and transcripts are unstructured, unverifiable trust signals
+- Traditional credential checks are too slow and expensive for AI-native hiring
+- Autonomous recruiting agents need low-latency, machine-readable trust primitives at sub-cent cost
 
 ## Solution
 
-Proof of Talent delivers four core capabilities:
+| Layer | What it does |
+|---|---|
+| Evidence ingestion | GitHub profile analysis + Canvas LMS ZIP parsing |
+| Skill inference | LLM analysis → typed skill claims with confidence scores + evidence summaries |
+| On-chain anchoring | SAS Credential + Schema + per-skill Attestation accounts (owned by `FJ8myMh…`) |
+| Verification API | x402 micropayment-gated REST API (`250 raw USDC ≈ $0.00025 per lookup`) |
+| Validation registry | Optimistic staking model — validators stake SOL, challengers post bonds, 48h dispute window |
 
-- Evidence ingestion from developer artifacts (currently GitHub-first)
-- LLM-based skill inference with confidence and evidence summaries
-- On-chain proof anchoring on Solana (memo-based in current MVP)
-- Paid verification API (`x402` pattern) for machine-to-machine lookups
+## Architecture
 
-## Product flow
-
-1. Student submits GitHub username + Solana wallet
-2. Oracle analyzes evidence and infers skill claims
-3. Qualifying claims are anchored in Solana transactions
-4. Claims are indexed for low-latency API access
-5. Recruiters and bots query profile and verification endpoints
+```
+GitHub / Canvas ZIP
+        │
+        ▼
+  LLM skill inference (Anthropic / OpenAI via AI SDK)
+        │
+        ▼
+  SAS on-chain attestation (Credential → Schema → Attestation PDA)
+        │
+        ▼
+  Neon Postgres index (fast lookups, replay protection)
+        │
+        ▼
+  x402 verification API  ←  AI hiring agents / recruiters
+```
 
 ## API surface
 
-- **Profile lookup (free):** `GET /api/profile/:wallet`
-- **Skill verify (paid):** `GET /api/verify?wallet=<wallet>&skill=<slug>`
-  - no proof -> `402 Payment Required`
-  - valid proof -> `verified: true` + attestation metadata
+| Endpoint | Auth | Description |
+|---|---|---|
+| `GET /` | none | Demo UI |
+| `GET /health` | none | Oracle status + wallet |
+| `POST /api/analyze-github` | none | Ingest GitHub profile → mint attestations |
+| `POST /api/analyze-canvas` | none | Ingest Canvas ZIP → mint attestations |
+| `GET /api/profile/:wallet` | none | All attested skills for a wallet (free) |
+| `GET /api/verify?wallet=&skill=` | x402 USDC | Verified skill lookup (paid) |
+| `GET /api/oracle-info` | none | Oracle config, USDC payment details |
+| `POST /api/registry/register` | none | Validator stakes SOL to vouch for attestation |
+| `POST /api/registry/challenge` | none | Challenger posts bond to dispute attestation |
+| `GET /api/registry/status/:attestation` | none | Dispute status + window remaining |
+| `POST /api/registry/resolve` | none | Resolve dispute after 48h window |
 
-### Example
+### x402 payment flow
 
 ```bash
-curl "http://localhost:3000/api/profile/<wallet>"
-```
+# 1. Call verify — get 402 with payment instructions
+curl -i "http://localhost:3000/api/verify?wallet=<wallet>&skill=react"
 
-```bash
-curl -i "http://localhost:3000/api/verify?wallet=<wallet>&skill=<skill-slug>"
-```
+# Response 402:
+# {
+#   "payment": {
+#     "protocol": "x402",
+#     "token": "USDC",
+#     "mint": "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr",
+#     "recipient": "<oracle-usdc-ata>",
+#     "amount": 250,
+#     "humanAmount": "0.000250 USDC"
+#   }
+# }
 
-```bash
+# 2. Send USDC to the oracle's token account, get tx signature
+# 3. Retry with proof header
 curl -H "X-Payment-Proof: <tx-signature>" \
-  "http://localhost:3000/api/verify?wallet=<wallet>&skill=<skill-slug>"
+  "http://localhost:3000/api/verify?wallet=<wallet>&skill=react"
 ```
 
-## Architecture (current MVP)
+### Validation registry flow
 
-- **Frontend:** static demo UI (`public/index.html`)
-- **API/Oracle:** Hono server (`src/api/oracle.ts`)
-- **Inference:** AI SDK + Anthropic/OpenRouter providers
-- **On-chain anchor:** Solana Attestation Service (SAS) — Credential + Schema + per-skill Attestation accounts
-- **Index layer:** Neon Postgres — `attestations` table + `used_payment_proofs` replay-protection table
+```bash
+# Validator stakes SOL to vouch for an attestation
+curl -X POST http://localhost:3000/api/registry/register \
+  -H "Content-Type: application/json" \
+  -d '{"attestationAddress":"<addr>","validatorWallet":"<wallet>","txSignature":"<stake-tx>"}'
 
-## Why Solana
+# Challenger disputes with bond
+curl -X POST http://localhost:3000/api/registry/challenge \
+  -H "Content-Type: application/json" \
+  -d '{"attestationAddress":"<addr>","challengerWallet":"<wallet>","reason":"...","txSignature":"<bond-tx>"}'
 
-- low transaction costs enable micropayments (`~$0.00025` target lookup fee)
-- fast finality supports realtime verification UX
-- composable public state enables interoperability with future attestation standards
+# Check dispute status
+curl http://localhost:3000/api/registry/status/<attestation-address>
 
-## Business model (early)
-
-- **Usage-based:** per-lookup micropayments for automated agents
-- **B2B SaaS:** recruiter/team plans with API quotas and analytics
-- **Issuer tooling:** institutions/bootcamps issuing high-trust attestations
+# Resolve after 48h window
+curl -X POST http://localhost:3000/api/registry/resolve \
+  -H "Content-Type: application/json" \
+  -d '{"attestationAddress":"<addr>"}'
+```
 
 ## Getting started
 
 ### Prerequisites
 
 - Node.js 20+
-- npm
-- devnet-funded Solana keypair for oracle signing
-- at least one inference key (`ANTHROPIC_API_KEY` or `OPENAI_API_KEY`)
+- Devnet-funded Solana keypair (oracle signing wallet)
+- Neon Postgres database
+- At least one inference key (`ANTHROPIC_API_KEY` or `OPENAI_API_KEY`)
 
 ### Environment
 
@@ -91,90 +117,95 @@ Create `.env`:
 
 ```bash
 SOLANA_RPC_URL=https://api.devnet.solana.com
-SOLANA_PRIVATE_KEY=<base58_private_key_for_oracle_wallet>
+SOLANA_PRIVATE_KEY=<base58_private_key>
+DATABASE_URL=<neon_postgres_connection_string>
 
-# inference provider
+# Inference provider (at least one required)
 ANTHROPIC_API_KEY=<optional>
 OPENAI_API_KEY=<optional>
+OPENROUTER_API_KEY=<optional>
 INFERENCE_MODEL=openai/gpt-4o-mini
 
-# optional GitHub API headroom
+# Optional: increase GitHub API rate limits
 GITHUB_TOKEN=<optional>
 ```
 
-### Install and run
+### First-time setup
+
+Run the SAS setup script once to create the on-chain Credential and Schema:
+
+```bash
+npm run setup-sas
+```
+
+This writes `oracle-config.json` with the Credential and Schema addresses. Do not delete this file.
+
+To create the oracle's USDC token account on devnet (required for x402 payments):
+
+```bash
+spl-token create-account Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr \
+  --url devnet \
+  --owner <oracle-wallet>
+```
+
+### Run
 
 ```bash
 npm install
 npm run oracle
 ```
 
-Open:
+Open `http://localhost:3000` for the demo UI.
 
-- `http://localhost:3000` (demo UI)
-- `http://localhost:3000/health` (service status)
+### Demo pipeline (CLI)
 
-## Deploy on Vercel (demo mode, no database)
+```bash
+# GitHub-based (real or mock data)
+npm run demo -- <canvas-export.zip> <student-wallet>
+npm run demo -- --mock <student-wallet> --skip-mint
+```
 
-This repository is configured to run on Vercel serverless functions without adding a database.
+## On-chain attestations
 
-### What works
+Each skill produces a real SAS Attestation PDA visible in Solana Explorer:
 
-- demo UI at `/`
-- profile and verify APIs under `/api/*`
-- on-chain proof creation and lookup flows
-
-### Important limitation
-
-- `attestation-index.json` writes are not persistent on Vercel instances.
-- data is kept in memory per running instance and may reset on cold starts/redeploys.
-
-This is acceptable for a hackathon demo, but not for production.
-
-### Steps
-
-1. Push this repository to GitHub.
-2. Import the repo into Vercel.
-3. Set these environment variables in Vercel project settings:
-   - `SOLANA_RPC_URL`
-   - `SOLANA_PRIVATE_KEY`
-   - `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`
-   - optional: `INFERENCE_MODEL`
-   - optional: `GITHUB_TOKEN`
-4. Deploy.
-5. Test:
-   - `/health`
-   - `/api/profile/:wallet`
-   - `/api/verify?wallet=<wallet>&skill=<slug>`
+- Program: `FJ8myMh9dRcgc2n8xBrWTbCrFYAbHQZCPtMzhhmvNo4M`
+- Data field: borsh-encoded JSON `{ wallet, skill, score, evidence }`
+- Expiry: 1 year from mint date
+- Nonce: unique keypair per attestation (prevents PDA collision for multi-skill students)
 
 ## Repository map
 
-- `src/api/oracle.ts` - API, payment gating, profile/verify routes
-- `src/pipeline/parseGitHub.ts` - evidence collection from GitHub
-- `src/pipeline/inferSkills.ts` - skill inference schema + model calls
-- `src/pipeline/mintAttestation.ts` - on-chain proof transactions
-- `public/index.html` - end-to-end demo interface
-- `attestation-index.json` - local indexed claim store
+```
+src/
+  api/oracle.ts               — Hono server, x402 gating, all routes
+  pipeline/
+    parseGitHub.ts            — GitHub profile evidence collector
+    parseCanvas.ts            — Canvas LMS ZIP parser
+    inferSkills.ts            — LLM skill inference (AI SDK)
+    mintAttestation.ts        — SAS on-chain attestation writer
+  validation-registry/
+    index.ts                  — Staking, challenge, dispute resolution (Neon DB)
+  scripts/
+    setup-sas.ts              — One-time SAS Credential + Schema initializer
+public/
+  index.html                  — Infrastructure-grade demo UI
+oracle-config.json            — Credential + Schema addresses (generated by setup-sas)
+```
 
-## Known limitations and roadmap
+## Business model
 
-Current build is an MVP and intentionally pragmatic:
-
-- x402 payment is SOL lamports (not USDC) — demonstrates the concept correctly for devnet
-- Validation Registry is TypeScript + SPL escrow simulation (not a full on-chain Anchor program)
-- Canvas ZIP ingestion exists in pipeline but has no HTTP endpoint yet
-
-Next milestone priorities:
-
-1. Canvas ZIP ingestion endpoint (`/api/analyze-canvas`)
-2. Validation Registry — staked validator + optimistic dispute window
-3. x402 USDC upgrade (devnet USDC mint: `Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr`)
-4. Anchor partner integration (Superteam / Helius gated behind `/api/verify`)
-5. ZK privacy layer — prove skill percentile without exposing raw artifacts (post-hackathon)
+| Tier | Who | Price |
+|---|---|---|
+| Student | Developers getting attested | First attestation free, $8/year refresh |
+| Recruiter | Hiring teams + ATS integrations | $29–99/month subscription |
+| Machine | AI agents, automated pipelines | 250 raw USDC per lookup (~$0.00025) via x402 |
 
 ## Troubleshooting
 
-- `EADDRINUSE: 3000` -> stop existing process and restart
-- `402 Payment Required` -> expected when `X-Payment-Proof` is missing
-- GitHub rate-limit errors -> set `GITHUB_TOKEN`
-- inference failures -> verify provider keys and model config
+- `EADDRINUSE: 3000` — stop existing process (`lsof -ti:3000 | xargs kill`) and restart
+- `402 Payment Required` — expected; send 250 raw USDC to the oracle's token account and retry with `X-Payment-Proof`
+- `oracle-config.json not found` — run `npm run setup-sas` first
+- GitHub rate limit errors — set `GITHUB_TOKEN` in `.env`
+- Inference failures — verify provider keys and `INFERENCE_MODEL` value
+- `sas-lib` PDA errors — confirm `oracle-config.json` was created by the same oracle wallet currently in `.env`

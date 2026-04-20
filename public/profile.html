@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="theme-color" content="#080D1A"/>
+  <title>Skill Passport — Proof of Talent</title>
+
+  <!-- Dynamic OG tags (updated by JS after fetch) -->
+  <meta id="og-title"    property="og:title"       content="Skill Passport — Proof of Talent">
+  <meta id="og-desc"     property="og:description" content="On-chain verified skills anchored on Solana">
+  <meta id="tw-title"    name="twitter:title"       content="Skill Passport — Proof of Talent">
+  <meta id="tw-desc"     name="twitter:description" content="On-chain verified skills anchored on Solana">
+  <meta                  name="twitter:card"        content="summary">
+  <meta                  property="og:type"         content="profile">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root{
+      --bg:   #080D1A;
+      --bg2:  #0C1220;
+      --bgc:  #0F1628;
+      --gold: #F59E0B;
+      --goldD:rgba(245,158,11,.12);
+      --vi:   #8B5CF6;
+      --viD:  rgba(139,92,246,.12);
+      --cy:   #22D3EE;
+      --cyD:  rgba(34,211,238,.09);
+      --gr:   #22C55E;
+      --grD:  rgba(34,197,94,.12);
+      --bdr:  rgba(34,211,238,.10);
+      --bdrS: rgba(34,211,238,.22);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{
+      background:var(--bg);
+      color:#E2E8F0;
+      font-family:'JetBrains Mono',monospace;
+      min-height:100dvh;
+      overflow-x:hidden;
+      padding-bottom:40px;
+    }
+
+    /* ── Circuit grid ── */
+    .grid-bg{
+      background-image:
+        linear-gradient(rgba(34,211,238,.04) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(34,211,238,.04) 1px,transparent 1px);
+      background-size:40px 40px;
+    }
+
+    /* ── Scanlines ── */
+    body::after{
+      content:'';position:fixed;inset:0;pointer-events:none;z-index:999;
+      background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);
+    }
+
+    .fo{font-family:'Orbitron',sans-serif}
+    .fm{font-family:'JetBrains Mono',monospace}
+
+    /* ── Chamfer ── */
+    .champ{clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
+    .champ-sm{clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))}
+
+    /* ── Navbar ── */
+    #nav{
+      position:fixed;top:0;left:0;right:0;z-index:100;height:52px;
+      background:rgba(8,13,26,.92);backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--bdr);
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 24px;
+    }
+    .nav-brand{
+      font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;
+      letter-spacing:.13em;color:var(--gold);text-decoration:none;
+    }
+    .live-badge{
+      background:var(--grD);border:1px solid var(--gr);color:var(--gr);
+      font-size:10px;font-weight:600;letter-spacing:.1em;
+      padding:2px 8px;display:flex;align-items:center;gap:5px;
+      clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100% - 4px));
+    }
+    .ldot{width:6px;height:6px;border-radius:50%;background:var(--gr);animation:lpulse 1.6s ease-in-out infinite}
+    @keyframes lpulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.5)}50%{opacity:.7;box-shadow:0 0 0 5px rgba(34,197,94,0)}}
+
+    /* ── Passport header ── */
+    #passport-header{
+      position:relative;
+      background:linear-gradient(135deg,#0C1220 0%,#080D1A 60%,#0A0E1A 100%);
+      border-bottom:1px solid var(--bdrS);
+      padding:88px 0 0;
+      overflow:hidden;
+    }
+    .header-grid{
+      background-image:
+        linear-gradient(rgba(245,158,11,.04) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(245,158,11,.04) 1px,transparent 1px);
+      background-size:28px 28px;
+      position:absolute;inset:0;pointer-events:none;
+    }
+    .watermark{
+      position:absolute;right:-20px;top:50%;transform:translateY(-50%);
+      font-family:'Orbitron',sans-serif;font-size:clamp(100px,15vw,200px);font-weight:900;
+      color:rgba(245,158,11,.03);letter-spacing:-.02em;pointer-events:none;
+      user-select:none;white-space:nowrap;
+    }
+
+    /* Oracle stamp */
+    .oracle-stamp{
+      position:absolute;top:24px;right:28px;
+      width:76px;height:76px;
+      border:2px solid var(--gr);border-radius:50%;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      transform:rotate(12deg);color:var(--gr);
+    }
+    .oracle-stamp::before{
+      content:'';position:absolute;inset:4px;border-radius:50%;
+      border:1px dashed rgba(34,197,94,.4);
+    }
+    .stamp-check{font-size:20px;line-height:1}
+    .stamp-txt{font-size:6.5px;letter-spacing:.13em;font-weight:700;text-align:center;margin-top:2px}
+
+    /* ── Stats bar ── */
+    .stats-bar{
+      border-top:1px solid var(--bdrS);
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr 1fr;
+    }
+    .stat-cell{
+      padding:18px 22px;
+      border-right:1px solid var(--bdrS);
+    }
+    .stat-cell:last-child{border-right:none}
+    .stat-label{font-size:8.5px;letter-spacing:.15em;color:rgba(226,232,240,.35);margin-bottom:7px}
+
+    /* Trust score arc */
+    .arc-wrap{position:relative;width:68px;height:68px}
+    .arc-wrap svg{transform:rotate(-90deg)}
+    .arc-label{
+      position:absolute;inset:0;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+    }
+
+    /* ── MRZ zone ── */
+    .mrz{
+      background:rgba(245,158,11,.03);
+      border-top:1px solid rgba(245,158,11,.14);
+      padding:12px 24px;
+      font-size:10.5px;letter-spacing:.07em;
+      color:rgba(245,158,11,.4);
+      overflow:hidden;white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+
+    /* ── Skill cards ── */
+    .skill-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
+      gap:14px;
+    }
+    .skill-card{
+      position:relative;
+      background:var(--bg2);
+      border:1px solid transparent;
+      clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
+      padding:20px;
+      opacity:0;transform:translateY(18px);
+      animation:cardIn .45s ease forwards;
+      transition:transform .2s ease,box-shadow .2s ease;
+      overflow:hidden;
+    }
+    @keyframes cardIn{to{opacity:1;transform:translateY(0)}}
+
+    /* Tier colours */
+    .t-gold {border-color:rgba(245,158,11,.28);background:linear-gradient(135deg,rgba(245,158,11,.05) 0%,var(--bg2) 45%)}
+    .t-cyan {border-color:rgba(34,211,238,.22);background:linear-gradient(135deg,rgba(34,211,238,.04) 0%,var(--bg2) 45%)}
+    .t-vi   {border-color:rgba(139,92,246,.22);background:linear-gradient(135deg,rgba(139,92,246,.04) 0%,var(--bg2) 45%)}
+
+    /* Top edge accent */
+    .skill-card::before{content:'';position:absolute;top:0;left:0;right:12px;height:2px}
+    .t-gold::before{background:linear-gradient(90deg,var(--gold),transparent)}
+    .t-cyan::before{background:linear-gradient(90deg,var(--cy),transparent)}
+    .t-vi::before  {background:linear-gradient(90deg,var(--vi),transparent)}
+
+    /* Holographic shimmer */
+    .skill-card::after{
+      content:'';position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.07) 50%,transparent 70%);
+      background-size:200% 100%;background-position:200% 0;
+      transition:background-position .55s ease;
+    }
+    .skill-card:hover::after{background-position:-200% 0}
+    .skill-card:hover{transform:translateY(-3px);box-shadow:0 10px 40px rgba(0,0,0,.5)}
+
+    /* Signal bars */
+    .sigbars{display:flex;gap:2px;align-items:flex-end}
+    .sbar{width:4px;border-radius:1px;opacity:.12;transition:opacity .25s}
+    .sbar.on{opacity:1}
+
+    /* Tier badge */
+    .tbadge{
+      font-size:8.5px;font-weight:700;letter-spacing:.14em;
+      padding:2px 7px;
+      clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100% - 4px));
+    }
+    .tb-g{background:var(--goldD);color:var(--gold);border:1px solid rgba(245,158,11,.35)}
+    .tb-c{background:var(--cyD); color:var(--cy); border:1px solid rgba(34,211,238,.28)}
+    .tb-v{background:var(--viD); color:var(--vi); border:1px solid rgba(139,92,246,.28)}
+
+    /* Confidence bar */
+    .cbar-wrap{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;margin:12px 0 14px}
+    .cbar-fill{height:100%;border-radius:2px;width:0;transition:width 1s cubic-bezier(.22,1,.36,1)}
+
+    /* Explorer link */
+    .exlink{
+      font-size:9.5px;color:var(--cy);letter-spacing:.05em;
+      text-decoration:none;display:inline-flex;align-items:center;gap:4px;
+      opacity:.65;transition:opacity .18s;
+    }
+    .exlink:hover{opacity:1}
+
+    /* ── Buttons ── */
+    .btn-gold{
+      font-family:'Orbitron',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.12em;
+      color:#080D1A;background:var(--gold);border:none;cursor:pointer;
+      padding:10px 22px;
+      clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));
+      transition:background .18s,transform .1s;
+      display:inline-flex;align-items:center;gap:8px;
+    }
+    .btn-gold:hover{background:#fbbf24;transform:translateY(-1px)}
+    .btn-gold.copied{background:var(--gr);color:#fff}
+
+    .btn-ghost{
+      font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.07em;
+      background:transparent;color:var(--cy);border:1px solid var(--bdrS);
+      padding:8px 16px;cursor:pointer;transition:all .15s;
+      text-decoration:none;display:inline-block;
+    }
+    .btn-ghost:hover{background:var(--cyD);border-color:var(--cy)}
+
+    /* ── Loading ── */
+    #state-loading{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      min-height:70vh;gap:16px;
+    }
+    .blink{animation:blink .8s steps(1) infinite}
+    @keyframes blink{50%{opacity:0}}
+
+    /* ── Ticker ── */
+    #ticker{
+      position:fixed;bottom:0;left:0;right:0;z-index:100;
+      height:28px;background:rgba(8,13,26,.96);
+      border-top:1px solid var(--bdr);
+      overflow:hidden;display:flex;align-items:center;
+    }
+    .tick-label{
+      flex-shrink:0;padding:0 12px;
+      font-size:8.5px;font-weight:700;letter-spacing:.16em;
+      color:var(--gold);border-right:1px solid var(--bdr);
+    }
+    .ttrack{flex:1;overflow:hidden}
+    .tinner{
+      display:flex;gap:40px;white-space:nowrap;
+      animation:tsroll 32s linear infinite;
+      font-size:9.5px;color:rgba(226,232,240,.38);letter-spacing:.04em;
+    }
+    @keyframes tsroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+    @media(max-width:768px){
+      .skill-grid{grid-template-columns:1fr}
+      .stats-bar{grid-template-columns:1fr 1fr}
+      .stat-cell:nth-child(2){border-right:none}
+      .stat-cell:nth-child(3){border-top:1px solid var(--bdrS)}
+      .watermark{font-size:80px}
+      .oracle-stamp{width:58px;height:58px;top:72px;right:14px}
+      .stamp-check{font-size:15px}
+    }
+    @media(prefers-reduced-motion:reduce){
+      .skill-card,.cbar-fill,.tinner{animation:none!important;transition:none!important}
+      .skill-card{opacity:1;transform:none}
+    }
+  </style>
+</head>
+<body class="grid-bg">
+
+<!-- ── Navbar ── -->
+<nav id="nav">
+  <a href="/" class="nav-brand fo">PROOF OF TALENT</a>
+  <div style="display:flex;gap:14px;align-items:center">
+    <a href="/" class="btn-ghost" style="font-size:9px;padding:5px 12px">← ORACLE</a>
+    <div class="live-badge"><div class="ldot"></div>DEVNET</div>
+  </div>
+</nav>
+
+<!-- ── Loading ── -->
+<div id="state-loading">
+  <div style="font-size:10.5px;letter-spacing:.14em;color:var(--cy)">
+    FETCHING ATTESTATION RECORD<span class="blink">_</span>
+  </div>
+  <div style="width:220px;height:2px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden">
+    <div id="load-bar" style="height:100%;width:0;background:linear-gradient(90deg,var(--vi),var(--cy));border-radius:2px;transition:width .35s ease"></div>
+  </div>
+  <div id="load-stage" style="font-size:9px;letter-spacing:.1em;color:rgba(226,232,240,.3)">CONNECTING TO NEON DB…</div>
+</div>
+
+<!-- ── Error ── -->
+<div id="state-error" style="display:none;text-align:center;padding:120px 24px">
+  <div class="fo" style="font-size:13px;color:rgba(239,68,68,.8);letter-spacing:.1em;margin-bottom:10px">ATTESTATION RECORD NOT FOUND</div>
+  <div style="font-size:11px;color:rgba(226,232,240,.4);margin-bottom:28px">No skill attestations indexed for this wallet address.</div>
+  <a href="/" class="btn-gold" style="text-decoration:none">← RETURN TO ORACLE</a>
+</div>
+
+<!-- ── Passport ── -->
+<div id="state-passport" style="display:none">
+
+  <!-- Header -->
+  <div id="passport-header">
+    <div class="header-grid"></div>
+    <div class="watermark">POT</div>
+
+    <!-- Oracle stamp -->
+    <div class="oracle-stamp">
+      <div class="stamp-check">✓</div>
+      <div class="stamp-txt">ORACLE<br>VERIFIED</div>
+    </div>
+
+    <div style="max-width:1080px;margin:0 auto;padding:0 24px 0;position:relative">
+
+      <!-- Issuer line -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+        <div style="width:2px;height:14px;background:var(--gold);flex-shrink:0"></div>
+        <span style="font-size:8.5px;letter-spacing:.18em;color:var(--gold);font-weight:600">PROOF OF TALENT ORACLE · SOLANA ATTESTATION SERVICE</span>
+      </div>
+
+      <div class="fo" style="font-size:clamp(20px,4vw,34px);font-weight:900;letter-spacing:.07em;color:#fff;line-height:1;margin-bottom:6px">
+        SOVEREIGN SKILL PASSPORT
+      </div>
+      <div style="font-size:10px;letter-spacing:.08em;color:rgba(226,232,240,.35);margin-bottom:28px">
+        CRYPTOGRAPHICALLY ANCHORED · MACHINE-READABLE · PORTABLE
+      </div>
+
+      <!-- Wallet -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;flex-wrap:wrap">
+        <div style="font-size:8.5px;letter-spacing:.14em;color:rgba(226,232,240,.35)">HOLDER</div>
+        <div id="hdr-wallet" class="fm" style="font-size:12px;color:var(--cy);letter-spacing:.04em;word-break:break-all"></div>
+        <button onclick="copyWallet()" id="copy-wallet-btn"
+          style="font-size:8px;padding:2px 7px;background:var(--cyD);border:1px solid rgba(34,211,238,.25);color:var(--cy);cursor:pointer;letter-spacing:.08em;transition:all .15s"
+          class="champ-sm">COPY</button>
+      </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="stats-bar" style="max-width:none">
+      <div class="stat-cell">
+        <div class="stat-label">ATTESTED SKILLS</div>
+        <div id="hdr-count" class="fo" style="font-size:28px;font-weight:700;color:#fff">—</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">AVG TRUST SCORE</div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div class="arc-wrap">
+            <svg width="68" height="68" viewBox="0 0 68 68">
+              <circle cx="34" cy="34" r="28" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="4"/>
+              <circle id="arc-fill" cx="34" cy="34" r="28" fill="none" stroke="var(--gold)" stroke-width="4"
+                stroke-linecap="round"
+                stroke-dasharray="175.9"
+                stroke-dashoffset="175.9"
+                style="transition:stroke-dashoffset 1.3s cubic-bezier(.22,1,.36,1)"/>
+            </svg>
+            <div class="arc-label">
+              <div id="hdr-score" class="fo" style="font-size:15px;font-weight:700;color:var(--gold)">—</div>
+              <div style="font-size:7px;color:rgba(226,232,240,.35);letter-spacing:.06em">AVG%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">SAS PROGRAM</div>
+        <div style="font-size:10.5px;color:var(--vi);letter-spacing:.03em;margin-bottom:4px;word-break:break-all" id="hdr-sas">FJ8m…No4M</div>
+        <a href="https://explorer.solana.com/address/FJ8myMh9dRcgc2n8xBrWTbCrFYAbHQZCPtMzhhmvNo4M?cluster=devnet" target="_blank"
+          class="exlink" style="font-size:8.5px">VIEW PROGRAM ↗</a>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">NETWORK STATUS</div>
+        <div style="font-size:11px;color:var(--gr);letter-spacing:.06em;margin-bottom:6px">● SOLANA DEVNET</div>
+        <div style="font-size:8.5px;color:rgba(226,232,240,.35);letter-spacing:.05em">x402 · USDC MICROPAYMENTS</div>
+      </div>
+    </div>
+
+    <!-- MRZ -->
+    <div class="mrz">
+      <div>P&lt;SOLANA&lt;PROOF&lt;OF&lt;TALENT&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div>
+      <div id="mrz-line2" style="margin-top:2px">—</div>
+    </div>
+  </div>
+
+  <!-- ── Main content ── -->
+  <div style="max-width:1080px;margin:0 auto;padding:48px 24px 100px">
+
+    <!-- Section header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:2px;height:20px;background:var(--gold);flex-shrink:0"></div>
+        <div class="fo" style="font-size:12px;font-weight:700;letter-spacing:.12em;color:#fff">ATTESTED SKILL RECORDS</div>
+        <span style="font-size:9px;letter-spacing:.1em;color:rgba(226,232,240,.3)">
+          <span style="color:var(--gold)">■</span> ≥80% &nbsp;
+          <span style="color:var(--cy)">■</span> 60–79% &nbsp;
+          <span style="color:var(--vi)">■</span> 50–59%
+        </span>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn-gold" id="share-btn" onclick="shareProfile()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+          SHARE PASSPORT
+        </button>
+      </div>
+    </div>
+
+    <!-- Cards -->
+    <div class="skill-grid" id="skill-grid"></div>
+
+    <!-- Empty -->
+    <div id="empty-cards" style="display:none;text-align:center;padding:72px 0">
+      <div style="font-size:10.5px;letter-spacing:.12em;color:rgba(226,232,240,.25)">NO ATTESTED SKILLS ON RECORD</div>
+    </div>
+
+    <!-- Raw API block -->
+    <div style="margin-top:40px;padding:16px 20px;background:rgba(34,211,238,.03);border:1px solid var(--bdr)">
+      <div style="font-size:8.5px;letter-spacing:.14em;color:rgba(226,232,240,.35);margin-bottom:10px">MACHINE-READABLE PROFILE ENDPOINT</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <code id="api-endpoint" class="fm" style="font-size:10.5px;color:var(--cy)">—</code>
+        <a id="api-link" href="#" target="_blank" class="exlink" style="font-size:9.5px">VIEW JSON ↗</a>
+      </div>
+      <div style="margin-top:10px;font-size:9px;color:rgba(226,232,240,.3)">
+        Paid verification: <span style="color:var(--gold)">GET /api/verify?wallet=&lt;wallet&gt;&amp;skill=&lt;slug&gt;</span>
+        · <span style="color:var(--vi)">X-Payment-Proof: &lt;usdc-tx&gt;</span>
+        · <span style="color:rgba(226,232,240,.4)">250 raw USDC ≈ $0.00025</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Ticker ── -->
+<div id="ticker">
+  <div class="tick-label">LIVE</div>
+  <div class="ttrack"><div class="tinner" id="ticker-inner"></div></div>
+</div>
+
+<script>
+// ── Utilities ────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function trunc(addr,n=6){
+  if(!addr||addr.length<n*2+3)return addr??'—';
+  return addr.slice(0,n)+'…'+addr.slice(-n);
+}
+
+function tierOf(score){
+  if(score>=80)return{cls:'t-gold',bdg:'tb-g',label:'TIER I',  color:'#F59E0B'};
+  if(score>=60)return{cls:'t-cyan', bdg:'tb-c',label:'TIER II', color:'#22D3EE'};
+  return             {cls:'t-vi',   bdg:'tb-v',label:'TIER III',color:'#8B5CF6'};
+}
+
+function sigBars(score,color){
+  const lit=Math.round(score/100*8);
+  return [5,6,7,8,9,10,11,12].map((h,i)=>
+    `<div class="sbar${i<lit?' on':''}" style="height:${h}px;background:${color}"></div>`
+  ).join('');
+}
+
+// ── Render ───────────────────────────────────────────────
+function render(data){
+  const wallet=data.wallet??'';
+  const atts=Object.values(data.attestations??{});
+  const count=atts.length;
+  const avgScore=count>0
+    ? Math.round(atts.reduce((s,a)=>s+(a.confidence??0),0)/count)
+    : 0;
+
+  // Header
+  $('hdr-wallet').textContent=wallet;
+  $('hdr-count').textContent=String(count).padStart(2,'0');
+  $('hdr-score').textContent=avgScore;
+
+  // Arc animation — circumference 2π×28 ≈ 175.9
+  const circ=175.9;
+  const col=avgScore>=80?'#F59E0B':avgScore>=60?'#22D3EE':'#8B5CF6';
+  setTimeout(()=>{
+    const arc=$('arc-fill');
+    arc.style.strokeDashoffset=circ-(avgScore/100*circ);
+    arc.style.stroke=col;
+  },350);
+
+  // MRZ
+  const wPad=wallet.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,28).padEnd(28,'<');
+  $('mrz-line2').textContent=wPad+'<<<'+String(avgScore).padStart(3,'0')+'SOL<<<<'+String(count).padStart(2,'0');
+
+  // API block
+  const apiUrl=`/api/profile/${wallet}`;
+  $('api-endpoint').textContent=window.location.origin+apiUrl;
+  $('api-link').href=apiUrl;
+
+  // OG
+  document.title=`Skill Passport · ${trunc(wallet)} — Proof of Talent`;
+  $('og-title').content=$('tw-title').content=document.title;
+  $('og-desc').content=$('tw-desc').content=
+    `${count} on-chain verified skills · Trust score ${avgScore}% · Anchored via SAS on Solana`;
+
+  // Cards
+  const grid=$('skill-grid');grid.innerHTML='';
+  if(!count){$('empty-cards').style.display='block';return}
+
+  const sorted=[...atts].sort((a,b)=>(b.confidence??0)-(a.confidence??0));
+  sorted.forEach((att,i)=>{
+    const score=att.confidence??0;
+    const {cls,bdg,label,color}=tierOf(score);
+    const slug=att.skill??'—';
+    const ev=(att.evidence??'').trim();
+    const addr=att.attestation_address??'';
+    const tx=att.tx_signature??'';
+
+    const card=document.createElement('div');
+    card.className=`skill-card ${cls}`;
+    card.style.animationDelay=`${i*75}ms`;
+
+    card.innerHTML=`
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+        <div class="fo" style="font-size:14px;font-weight:700;letter-spacing:.06em;color:#fff;text-transform:uppercase;line-height:1.2;padding-right:8px">${slug}</div>
+        <div class="sigbars" style="flex-shrink:0">${sigBars(score,color)}</div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span class="tbadge ${bdg}">${label}</span>
+        <span class="fo" style="font-size:22px;font-weight:700;color:${color};line-height:1">${score}<span style="font-size:11px;font-weight:400;color:rgba(226,232,240,.4)">%</span></span>
+      </div>
+
+      <div class="cbar-wrap">
+        <div class="cbar-fill" style="background:${color};width:${score}%;box-shadow:0 0 6px ${color}66"></div>
+      </div>
+
+      ${ev?`<p style="font-size:10px;color:rgba(226,232,240,.5);line-height:1.65;margin-bottom:14px;font-style:italic;border-left:2px solid rgba(255,255,255,.08);padding-left:10px">"${ev.slice(0,150)}${ev.length>150?'…':''}"</p>`:''}
+
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);flex-wrap:wrap;gap:6px">
+        ${addr?`<a href="https://explorer.solana.com/address/${addr}?cluster=devnet" target="_blank" class="exlink">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          ATTESTATION PDA
+        </a>`:'<span></span>'}
+        ${tx?`<a href="https://explorer.solana.com/tx/${tx}?cluster=devnet" target="_blank" class="exlink" style="color:rgba(226,232,240,.28);font-size:8.5px">TX ↗</a>`:''}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // Show
+  $('state-loading').style.display='none';
+  $('state-passport').style.display='block';
+}
+
+// ── Copy wallet ──────────────────────────────────────────
+function copyWallet(){
+  const wallet=$('hdr-wallet').textContent;
+  navigator.clipboard.writeText(wallet).then(()=>{
+    const b=$('copy-wallet-btn');
+    b.textContent='COPIED ✓';b.style.color='var(--gr)';b.style.borderColor='var(--gr)';
+    setTimeout(()=>{b.textContent='COPY';b.style.color='';b.style.borderColor='';},2000);
+  });
+}
+
+// ── Share ────────────────────────────────────────────────
+function shareProfile(){
+  const url=window.location.href;
+  const btn=$('share-btn');
+  if(navigator.share){
+    navigator.share({title:document.title,url}).catch(()=>{});
+    return;
+  }
+  navigator.clipboard.writeText(url).then(()=>{
+    btn.classList.add('copied');
+    btn.innerHTML='✓ LINK COPIED';
+    setTimeout(()=>{
+      btn.classList.remove('copied');
+      btn.innerHTML=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> SHARE PASSPORT`;
+    },2000);
+  });
+}
+
+// ── Ticker ───────────────────────────────────────────────
+(function initTicker(){
+  const items=[
+    'SAS ATTESTATION ANCHORED · react · confidence 92%',
+    'VALIDATOR STAKED · 5.2 SOL · V-7421 · ACTIVE',
+    'x402 LOOKUP · skill: rust · 250 raw USDC settled',
+    'CANVAS ZIP INGESTED · CS450 Full-Stack Web Dev',
+    'CHALLENGE RESOLVED · validator_wins · 82% confidence',
+    'NEW PASSPORT ISSUED · 6 skills attested · SAS PDA live',
+    'AGENT_HELIUS queried 14 profiles · $0.0035 total',
+    'ATTESTATION FINALIZED · python · 48h window closed',
+  ];
+  const inner=$('ticker-inner');
+  [...items,...items].forEach(t=>{
+    const s=document.createElement('span');s.textContent=t;inner.appendChild(s);
+  });
+})();
+
+// ── Loading steps ────────────────────────────────────────
+const STAGES=['CONNECTING TO NEON DB…','RESOLVING ATTESTATIONS…','DECODING SAS PDAS…'];
+let stageI=0;
+const stageInterval=setInterval(()=>{
+  stageI=(stageI+1)%STAGES.length;
+  $('load-stage').textContent=STAGES[stageI];
+},800);
+let loadP=0;
+const loadInterval=setInterval(()=>{
+  loadP=Math.min(loadP+Math.random()*12,80);
+  $('load-bar').style.width=loadP+'%';
+},220);
+
+// ── Fetch ────────────────────────────────────────────────
+const wallet=window.location.pathname.split('/profile/')[1]?.split('?')[0]?.trim();
+if(!wallet){
+  clearInterval(stageInterval);clearInterval(loadInterval);
+  $('state-loading').style.display='none';
+  $('state-error').style.display='block';
+}else{
+  fetch(`/api/profile/${encodeURIComponent(wallet)}`)
+    .then(r=>r.ok?r.json():Promise.reject(r.status))
+    .then(data=>{
+      clearInterval(stageInterval);clearInterval(loadInterval);
+      $('load-bar').style.width='100%';
+      setTimeout(()=>render(data),200);
+    })
+    .catch(()=>{
+      clearInterval(stageInterval);clearInterval(loadInterval);
+      $('state-loading').style.display='none';
+      $('state-error').style.display='block';
+    });
+}
+</script>
+</body>
+</html>
