@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Geist+Mono:wght@300;400;500;600&family=Geist:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/@solana/web3.js@1/lib/index.iife.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
@@ -513,6 +514,14 @@
           <span style="font-size:9.5px;color:var(--gold);letter-spacing:.08em">x402</span>
         </div>
         <div style="padding:18px;display:flex;flex-direction:column;gap:11px">
+          <!-- Phantom wallet row -->
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(232,160,32,.04);border:1px solid rgba(232,160,32,.12)">
+            <div style="flex:1">
+              <div class="clabel" style="margin-bottom:2px">Agent Wallet</div>
+              <div id="phantom-addr" style="font-size:10px;color:var(--white-dim);font-family:'Geist Mono',monospace">Not connected — runs in simulation mode</div>
+            </div>
+            <button id="phantom-btn" onclick="connectPhantom()" class="btn-ghost" style="font-size:9px;padding:6px 12px;flex-shrink:0">CONNECT PHANTOM</button>
+          </div>
           <div>
             <div class="clabel" style="margin-bottom:5px">Target Wallet</div>
             <input id="verify-wallet" type="text" placeholder="Paste analyzed wallet..." class="oinput" />
@@ -521,7 +530,7 @@
             <div class="clabel" style="margin-bottom:5px">Skill Slug</div>
             <input id="verify-skill" type="text" placeholder="e.g. rust, python, react" class="oinput" />
           </div>
-          <button onclick="runVerifyFlow()" class="btn btn-gold" style="width:100%">SIMULATE AGENT LOOKUP →</button>
+          <button id="verify-btn" onclick="runVerifyFlow()" class="btn btn-gold" style="width:100%">SIMULATE AGENT LOOKUP →</button>
           <div>
             <div class="clabel" style="margin-bottom:7px">API Response</div>
             <div class="term" id="verify-output" style="min-height:110px;padding:13px;font-size:11px;line-height:1.8">
@@ -782,13 +791,88 @@
     window.scrollTo({top:0,behavior:'smooth'});
   }
 
+  // ── Phantom wallet ────────────────────────────────────────────
+  let phantomProvider = null;
+  let agentWalletPubkey = null;
+
+  async function connectPhantom() {
+    const btn = document.getElementById('phantom-btn');
+    const addr = document.getElementById('phantom-addr');
+    if (!window.solana?.isPhantom) {
+      addr.innerHTML = '<span style="color:var(--red)">Phantom not detected — install at phantom.com</span>';
+      return;
+    }
+    try {
+      const resp = await window.solana.connect();
+      agentWalletPubkey = resp.publicKey;
+      phantomProvider = window.solana;
+      const addrStr = resp.publicKey.toString();
+      addr.innerHTML = `<span style="color:var(--green)">Connected · </span>${addrStr.slice(0,8)}…${addrStr.slice(-4)}`;
+      btn.textContent = '✓ CONNECTED';
+      btn.style.color = 'var(--green)';
+      document.getElementById('verify-btn').textContent = 'PAY & VERIFY →';
+    } catch(e) {
+      addr.innerHTML = `<span style="color:var(--red)">${e.message || 'Connection rejected'}</span>`;
+    }
+  }
+
+  // Build and send a devnet USDC SPL token transfer via Phantom
+  async function sendUsdcPayment(recipientAta, amountRaw, mintAddress) {
+    const conn = new solanaWeb3.Connection('https://api.devnet.solana.com', 'confirmed');
+    const senderPubkey = agentWalletPubkey;
+    const mintPubkey = new solanaWeb3.PublicKey(mintAddress);
+    const recipientPubkey = new solanaWeb3.PublicKey(recipientAta);
+    const SPL_TOKEN = new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+    const ASSOC_TOKEN = new solanaWeb3.PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1caR');
+
+    const [senderAta] = solanaWeb3.PublicKey.findProgramAddressSync(
+      [senderPubkey.toBuffer(), SPL_TOKEN.toBuffer(), mintPubkey.toBuffer()],
+      ASSOC_TOKEN
+    );
+
+    // SPL Token Transfer instruction: [3 (u8), amount (u64 le)]
+    const data = new Uint8Array(9);
+    data[0] = 3; // Transfer instruction tag
+    const view = new DataView(data.buffer);
+    view.setBigUint64(1, BigInt(amountRaw), true); // little-endian
+
+    const transferIx = new solanaWeb3.TransactionInstruction({
+      programId: SPL_TOKEN,
+      keys: [
+        { pubkey: senderAta, isSigner: false, isWritable: true },
+        { pubkey: recipientPubkey, isSigner: false, isWritable: true },
+        { pubkey: senderPubkey, isSigner: true, isWritable: false },
+      ],
+      data,
+    });
+
+    const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash();
+    const tx = new solanaWeb3.Transaction({ recentBlockhash: blockhash, feePayer: senderPubkey });
+    tx.add(transferIx);
+
+    const { signature } = await phantomProvider.signAndSendTransaction(tx);
+
+    // Wait for confirmation (up to 30s)
+    for (let i = 0; i < 15; i++) {
+      await sleep(2000);
+      const status = await conn.getSignatureStatus(signature);
+      const conf = status?.value?.confirmationStatus;
+      if (conf === 'confirmed' || conf === 'finalized') return signature;
+    }
+    throw new Error('Transaction not confirmed in 30s — try again');
+  }
+
   // ── x402 Simulator ────────────────────────────────────────────
   async function runVerifyFlow(){
     const wallet=document.getElementById('verify-wallet').value.trim();
     const skill=document.getElementById('verify-skill').value.trim().toLowerCase();
     const out=document.getElementById('verify-output');
     if(!wallet||!skill){out.innerHTML='<span class="tw">✗ wallet and skill are required</span>';return}
-    out.innerHTML=`<span class="tp">$</span> <span class="tc">GET /api/verify?wallet=${wallet.slice(0,8)}...&skill=${skill}</span>\n<span class="td">› Sending request without payment proof...</span>`;
+
+    const liveMode = !!(phantomProvider && agentWalletPubkey);
+    const modeTag = liveMode ? '<span style="color:var(--green);font-size:9px">LIVE · REAL USDC</span>' : '<span style="color:var(--gold);font-size:9px">SIM</span>';
+
+    out.innerHTML=`<span class="tp">$</span> <span class="tc">GET /api/verify?wallet=${wallet.slice(0,8)}…&skill=${skill}</span> ${modeTag}\n<span class="td">› Sending request without payment proof...</span>`;
     await sleep(650);
     try{
       const r1=await fetch(`${API_BASE}/api/verify?wallet=${wallet}&skill=${skill}`);
@@ -797,19 +881,60 @@
         out.innerHTML+=`\n<span class="tw">← 402 Payment Required</span>
 <span class="td">  protocol: ${d1.payment?.protocol||'x402'}</span>
 <span class="td">  token: ${d1.payment?.token||'USDC'} · ${d1.payment?.humanAmount||'0.000250 USDC'}</span>
-<span class="td">  recipient: ${(d1.payment?.recipient||'').slice(0,18)}...</span>`;
-        await sleep(700);
-        out.innerHTML+=`\n<span class="tc">› Agent settling payment via x402...</span>`;
+<span class="td">  recipient: ${(d1.payment?.recipient||'').slice(0,18)}…</span>`;
         await sleep(600);
-        out.innerHTML+=`\n<span class="tok">✓ $0.00025 settled · proof attached</span>`;
+
+        let txSig;
+        if (liveMode) {
+          out.innerHTML+=`\n<span class="tc">› Constructing USDC transfer tx…</span>`;
+          await sleep(400);
+          out.innerHTML+=`\n<span class="tw">⬡ Approve in Phantom wallet →</span>`;
+          try {
+            txSig = await sendUsdcPayment(
+              d1.payment.recipient,
+              d1.payment.amount,
+              d1.payment.mint
+            );
+            out.innerHTML+=`\n<span class="tok">✓ tx: ${txSig.slice(0,14)}…${txSig.slice(-6)}</span>`;
+            out.innerHTML+=`\n<span class="td">  <a href="https://explorer.solana.com/tx/${txSig}?cluster=devnet" target="_blank" style="color:var(--gold)">view on explorer ↗</a></span>`;
+            await sleep(400);
+          } catch(payErr) {
+            out.innerHTML+=`\n<span class="tw">✗ Payment failed: ${payErr.message}</span>`;
+            out.innerHTML+=`\n<span class="td">  (Need devnet USDC — get some from a faucet)</span>`;
+            return;
+          }
+        } else {
+          out.innerHTML+=`\n<span class="tc">› [SIM] Agent settling $0.00025 via x402…</span>`;
+          await sleep(600);
+          out.innerHTML+=`\n<span class="tok">✓ [SIM] $0.00025 settled · proof attached</span>`;
+          txSig = 'SIMULATED';
+        }
+
         await sleep(400);
-        out.innerHTML+=`\n<span class="tc">› Retrying with X-Payment-Proof header...</span>`;
+        out.innerHTML+=`\n<span class="tc">› Retrying with X-Payment-Proof header…</span>`;
         await sleep(500);
-        out.innerHTML+=`\n<span class="td">← 200 OK · Attestation verified ✓</span>`;
+
+        if (liveMode) {
+          const r2 = await fetch(`${API_BASE}/api/verify?wallet=${wallet}&skill=${skill}`, {
+            headers: { 'X-Payment-Proof': txSig }
+          });
+          const d2 = await r2.json();
+          if (r2.ok && d2.verified) {
+            out.innerHTML+=`\n<span class="tok">← 200 OK · ATTESTATION VERIFIED ✓</span>`;
+            out.innerHTML+=`\n<span class="td">  confidence: ${d2.attestation?.confidence}%</span>`;
+            out.innerHTML+=`\n<span class="td">  evidence: ${(d2.attestation?.evidence||'').slice(0,60)}…</span>`;
+            out.innerHTML+=`\n<span class="td">  attest: ${(d2.attestation?.address||'').slice(0,16)}…</span>`;
+          } else {
+            out.innerHTML+=`\n<span class="tw">← ${r2.status} ${d2.error||'Verification failed'}</span>`;
+          }
+        } else {
+          out.innerHTML+=`\n<span class="td">← 200 OK · Attestation verified ✓ [SIM]</span>`;
+          out.innerHTML+=`\n<span class="td">  (Connect Phantom for real on-chain payment)</span>`;
+        }
       } else {
         const v=d1.verified;
         out.innerHTML+=`\n<span class="${v?'tok':'tw'}">← ${r1.status} ${v?'VERIFIED':'NOT FOUND'}</span>`;
-        if(v&&d1.attestation) out.innerHTML+=`\n<span class="td">  confidence: ${d1.attestation.confidence}%</span>\n<span class="td">  evidence: ${(d1.attestation.evidence||'').slice(0,55)}...</span>`;
+        if(v&&d1.attestation) out.innerHTML+=`\n<span class="td">  confidence: ${d1.attestation.confidence}%</span>\n<span class="td">  evidence: ${(d1.attestation.evidence||'').slice(0,55)}…</span>`;
       }
     }catch(err){out.innerHTML+=`\n<span class="tw">✗ ${err.message}</span>`}
   }
