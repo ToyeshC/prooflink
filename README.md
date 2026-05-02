@@ -1,6 +1,6 @@
 # Proof of Talent
 
-Decentralized talent oracle — Chainlink for human capital, with an x402 micropayment API for AI hiring agents.
+Decentralized talent oracle on Solana. Verifiable on-chain skill attestations, queryable by AI agents via MCP tools or x402 micropayment API.
 
 ## What it is
 
@@ -8,9 +8,9 @@ Proof of Talent converts developer artifacts (GitHub profiles, Canvas LMS export
 
 ## Problem
 
-- Resumes and transcripts are unstructured, unverifiable trust signals
-- Traditional credential checks are too slow and expensive for AI-native hiring
-- Autonomous recruiting agents need low-latency, machine-readable trust primitives at sub-cent cost
+- Resumes are unverifiable claims — AI hiring agents can't trust them at inference time
+- Traditional credential checks are too slow and expensive for machine-scale workflows
+- No standardized, machine-readable trust primitive exists for developer skills
 
 ## Solution
 
@@ -18,9 +18,29 @@ Proof of Talent converts developer artifacts (GitHub profiles, Canvas LMS export
 |---|---|
 | Evidence ingestion | GitHub profile analysis + Canvas LMS ZIP parsing |
 | Skill inference | LLM analysis → typed skill claims with confidence scores + evidence summaries |
-| On-chain anchoring | SAS Credential + Schema + per-skill Attestation accounts (owned by `FJ8myMh…`) |
+| On-chain anchoring | SAS Credential + Schema + per-skill Attestation PDAs (owned by `FJ8myMh…`) |
+| Agent-native access | MCP tools (`verify_skill`, `get_profile`, `analyze_github`) — call from Claude/Cursor |
 | Verification API | x402 micropayment-gated REST API (`250 raw USDC ≈ $0.00025 per lookup`) |
 | Validation registry | Optimistic staking model — validators stake SOL, challengers post bonds, 48h dispute window |
+
+## MCP integration (coming)
+
+AI agents and Claude Desktop can call the oracle natively via MCP tools:
+
+```json
+// /.well-known/mcp/server-card.json
+{
+  "name": "Proof of Talent Oracle",
+  "tools": ["verify_skill", "get_profile", "analyze_github"],
+  "payment": "x402/usdc"
+}
+```
+
+```typescript
+// Claude / Cursor usage
+await mcp.call("verify_skill", { wallet: "...", skill: "rust" });
+// Returns: { verified: true, confidence: 87, evidence: "...", attestation: "..." }
+```
 
 ## Architecture
 

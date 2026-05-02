@@ -4,43 +4,48 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <meta name="theme-color" content="#080D1A"/>
-  <title>Skill Passport — Proof of Talent</title>
+  <title>Skill Passport — Prooflink</title>
 
   <!-- Dynamic OG tags (updated by JS after fetch) -->
-  <meta id="og-title"    property="og:title"       content="Skill Passport — Proof of Talent">
+  <meta id="og-title"    property="og:title"       content="Skill Passport — Prooflink">
   <meta id="og-desc"     property="og:description" content="On-chain verified skills anchored on Solana">
-  <meta id="tw-title"    name="twitter:title"       content="Skill Passport — Proof of Talent">
+  <meta id="tw-title"    name="twitter:title"       content="Skill Passport — Prooflink">
   <meta id="tw-desc"     name="twitter:description" content="On-chain verified skills anchored on Solana">
   <meta                  name="twitter:card"        content="summary">
   <meta                  property="og:type"         content="profile">
 
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Geist+Mono:wght@300;400;500;600&family=Geist:wght@300;400;500&display=swap" rel="stylesheet"/>
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
     :root{
-      --bg:   #080D1A;
-      --bg2:  #0C1220;
-      --bgc:  #0F1628;
-      --gold: #F59E0B;
-      --goldD:rgba(245,158,11,.12);
-      --vi:   #8B5CF6;
-      --viD:  rgba(139,92,246,.12);
-      --cy:   #22D3EE;
-      --cyD:  rgba(34,211,238,.09);
-      --gr:   #22C55E;
-      --grD:  rgba(34,197,94,.12);
-      --bdr:  rgba(34,211,238,.10);
-      --bdrS: rgba(34,211,238,.22);
+      --ink:       #0C0C0A;
+      --ink2:      #111110;
+      --gold:      #E8A020;
+      --gold-dim:  rgba(232,160,32,0.10);
+      --white:     #F0EDE6;
+      --white-mid: #9A978F;
+      --white-dim: #4A4844;
+      --green:     #4CAF6E;
+      --red:       #C0473A;
+      --rule:      rgba(240,237,230,0.07);
+      --rule-hi:   rgba(240,237,230,0.14);
+      /* legacy shims */
+      --bg:#0C0C0A; --bg2:#111110; --bgc:#111110;
+      --goldD:rgba(232,160,32,0.10);
+      --vi:#E8A020; --viD:rgba(232,160,32,0.10);
+      --cy:#E8A020; --cyD:rgba(232,160,32,0.10);
+      --gr:#4CAF6E; --grD:rgba(76,175,110,.12);
+      --bdr:rgba(240,237,230,0.07); --bdrS:rgba(240,237,230,0.14);
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html{scroll-behavior:smooth}
     body{
-      background:var(--bg);
-      color:#E2E8F0;
-      font-family:'JetBrains Mono',monospace;
+      background:var(--ink);
+      color:var(--white);
+      font-family:'Geist',sans-serif;
       min-height:100dvh;
       overflow-x:hidden;
       padding-bottom:40px;
@@ -49,23 +54,17 @@
     /* ── Circuit grid ── */
     .grid-bg{
       background-image:
-        linear-gradient(rgba(34,211,238,.04) 1px,transparent 1px),
-        linear-gradient(90deg,rgba(34,211,238,.04) 1px,transparent 1px);
-      background-size:40px 40px;
+        linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);
+      background-size:48px 48px;
     }
 
-    /* ── Scanlines ── */
-    body::after{
-      content:'';position:fixed;inset:0;pointer-events:none;z-index:999;
-      background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);
-    }
+    .fo{font-family:'Bebas Neue',sans-serif;letter-spacing:.05em;line-height:1}
+    .fm{font-family:'Geist Mono',monospace}
 
-    .fo{font-family:'Orbitron',sans-serif}
-    .fm{font-family:'JetBrains Mono',monospace}
-
-    /* ── Chamfer ── */
-    .champ{clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
-    .champ-sm{clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))}
+    /* chamfer classes kept but cleared — no more clip-paths */
+    .champ{}
+    .champ-sm{}
 
     /* ── Navbar ── */
     #nav{
@@ -76,14 +75,13 @@
       padding:0 24px;
     }
     .nav-brand{
-      font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;
-      letter-spacing:.13em;color:var(--gold);text-decoration:none;
+      font-family:'Bebas Neue',sans-serif;font-size:18px;
+      letter-spacing:.08em;color:var(--white);text-decoration:none;
     }
     .live-badge{
       background:var(--grD);border:1px solid var(--gr);color:var(--gr);
-      font-size:10px;font-weight:600;letter-spacing:.1em;
+      font-size:10px;letter-spacing:.1em;
       padding:2px 8px;display:flex;align-items:center;gap:5px;
-      clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100% - 4px));
     }
     .ldot{width:6px;height:6px;border-radius:50%;background:var(--gr);animation:lpulse 1.6s ease-in-out infinite}
     @keyframes lpulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.5)}50%{opacity:.7;box-shadow:0 0 0 5px rgba(34,197,94,0)}}
@@ -91,23 +89,10 @@
     /* ── Passport header ── */
     #passport-header{
       position:relative;
-      background:linear-gradient(135deg,#0C1220 0%,#080D1A 60%,#0A0E1A 100%);
+      background:linear-gradient(135deg,#111110 0%,#0C0C0A 60%,#0C0C0A 100%);
       border-bottom:1px solid var(--bdrS);
       padding:88px 0 0;
       overflow:hidden;
-    }
-    .header-grid{
-      background-image:
-        linear-gradient(rgba(245,158,11,.04) 1px,transparent 1px),
-        linear-gradient(90deg,rgba(245,158,11,.04) 1px,transparent 1px);
-      background-size:28px 28px;
-      position:absolute;inset:0;pointer-events:none;
-    }
-    .watermark{
-      position:absolute;right:-20px;top:50%;transform:translateY(-50%);
-      font-family:'Orbitron',sans-serif;font-size:clamp(100px,15vw,200px);font-weight:900;
-      color:rgba(245,158,11,.03);letter-spacing:-.02em;pointer-events:none;
-      user-select:none;white-space:nowrap;
     }
 
     /* Oracle stamp */
@@ -127,13 +112,13 @@
 
     /* ── Stats bar ── */
     .stats-bar{
-      border-top:1px solid var(--bdrS);
+      border-top:1px solid var(--rule-hi);
       display:grid;
       grid-template-columns:1fr 1fr 1fr 1fr;
     }
     .stat-cell{
       padding:18px 22px;
-      border-right:1px solid var(--bdrS);
+      border-right:1px solid var(--rule);
     }
     .stat-cell:last-child{border-right:none}
     .stat-label{font-size:8.5px;letter-spacing:.15em;color:rgba(226,232,240,.35);margin-bottom:7px}
@@ -165,27 +150,26 @@
     }
     .skill-card{
       position:relative;
-      background:var(--bg2);
-      border:1px solid transparent;
-      clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
+      background:var(--ink2);
+      border:1px solid var(--rule);
       padding:20px;
       opacity:0;transform:translateY(18px);
       animation:cardIn .45s ease forwards;
-      transition:transform .2s ease,box-shadow .2s ease;
+      transition:transform .2s ease,border-color .2s ease;
       overflow:hidden;
     }
     @keyframes cardIn{to{opacity:1;transform:translateY(0)}}
 
     /* Tier colours */
-    .t-gold {border-color:rgba(245,158,11,.28);background:linear-gradient(135deg,rgba(245,158,11,.05) 0%,var(--bg2) 45%)}
-    .t-cyan {border-color:rgba(34,211,238,.22);background:linear-gradient(135deg,rgba(34,211,238,.04) 0%,var(--bg2) 45%)}
-    .t-vi   {border-color:rgba(139,92,246,.22);background:linear-gradient(135deg,rgba(139,92,246,.04) 0%,var(--bg2) 45%)}
+    .t-gold {border-color:rgba(232,160,32,.28);background:linear-gradient(135deg,rgba(232,160,32,.05) 0%,var(--ink2) 45%)}
+    .t-cyan {border-color:rgba(240,237,230,.14);background:linear-gradient(135deg,rgba(240,237,230,.03) 0%,var(--ink2) 45%)}
+    .t-vi   {border-color:rgba(240,237,230,.10);background:var(--ink2)}
 
     /* Top edge accent */
-    .skill-card::before{content:'';position:absolute;top:0;left:0;right:12px;height:2px}
+    .skill-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px}
     .t-gold::before{background:linear-gradient(90deg,var(--gold),transparent)}
-    .t-cyan::before{background:linear-gradient(90deg,var(--cy),transparent)}
-    .t-vi::before  {background:linear-gradient(90deg,var(--vi),transparent)}
+    .t-cyan::before{background:linear-gradient(90deg,var(--white-mid),transparent)}
+    .t-vi::before  {background:linear-gradient(90deg,var(--white-dim),transparent)}
 
     /* Holographic shimmer */
     .skill-card::after{
@@ -195,7 +179,7 @@
       transition:background-position .55s ease;
     }
     .skill-card:hover::after{background-position:-200% 0}
-    .skill-card:hover{transform:translateY(-3px);box-shadow:0 10px 40px rgba(0,0,0,.5)}
+    .skill-card:hover{transform:translateY(-2px);border-color:var(--rule-hi)}
 
     /* Signal bars */
     .sigbars{display:flex;gap:2px;align-items:flex-end}
@@ -204,13 +188,12 @@
 
     /* Tier badge */
     .tbadge{
-      font-size:8.5px;font-weight:700;letter-spacing:.14em;
+      font-family:'Geist Mono',monospace;font-size:8.5px;letter-spacing:.14em;
       padding:2px 7px;
-      clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100% - 4px));
     }
-    .tb-g{background:var(--goldD);color:var(--gold);border:1px solid rgba(245,158,11,.35)}
-    .tb-c{background:var(--cyD); color:var(--cy); border:1px solid rgba(34,211,238,.28)}
-    .tb-v{background:var(--viD); color:var(--vi); border:1px solid rgba(139,92,246,.28)}
+    .tb-g{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(232,160,32,.35)}
+    .tb-c{background:rgba(240,237,230,.06);color:var(--white-mid);border:1px solid rgba(240,237,230,.18)}
+    .tb-v{background:rgba(240,237,230,.04);color:var(--white-dim);border:1px solid rgba(240,237,230,.12)}
 
     /* Confidence bar */
     .cbar-wrap{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;margin:12px 0 14px}
@@ -218,7 +201,7 @@
 
     /* Explorer link */
     .exlink{
-      font-size:9.5px;color:var(--cy);letter-spacing:.05em;
+      font-size:9.5px;color:var(--gold);letter-spacing:.05em;
       text-decoration:none;display:inline-flex;align-items:center;gap:4px;
       opacity:.65;transition:opacity .18s;
     }
@@ -226,23 +209,22 @@
 
     /* ── Buttons ── */
     .btn-gold{
-      font-family:'Orbitron',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.12em;
-      color:#080D1A;background:var(--gold);border:none;cursor:pointer;
-      padding:10px 22px;
-      clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));
-      transition:background .18s,transform .1s;
+      font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.12em;
+      color:var(--ink);background:var(--gold);border:none;cursor:pointer;
+      padding:10px 24px;
+      transition:opacity .15s;
       display:inline-flex;align-items:center;gap:8px;
     }
-    .btn-gold:hover{background:#fbbf24;transform:translateY(-1px)}
-    .btn-gold.copied{background:var(--gr);color:#fff}
+    .btn-gold:hover{opacity:.85}
+    .btn-gold.copied{background:var(--green);color:var(--ink)}
 
     .btn-ghost{
-      font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.07em;
-      background:transparent;color:var(--cy);border:1px solid var(--bdrS);
+      font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.07em;
+      background:transparent;color:var(--white-mid);border:1px solid var(--rule-hi);
       padding:8px 16px;cursor:pointer;transition:all .15s;
       text-decoration:none;display:inline-block;
     }
-    .btn-ghost:hover{background:var(--cyD);border-color:var(--cy)}
+    .btn-ghost:hover{border-color:var(--white-mid);color:var(--white)}
 
     /* ── Loading ── */
     #state-loading{
@@ -277,7 +259,6 @@
       .stats-bar{grid-template-columns:1fr 1fr}
       .stat-cell:nth-child(2){border-right:none}
       .stat-cell:nth-child(3){border-top:1px solid var(--bdrS)}
-      .watermark{font-size:80px}
       .oracle-stamp{width:58px;height:58px;top:72px;right:14px}
       .stamp-check{font-size:15px}
     }
@@ -291,7 +272,7 @@
 
 <!-- ── Navbar ── -->
 <nav id="nav">
-  <a href="/" class="nav-brand fo">PROOF OF TALENT</a>
+  <a href="/" class="nav-brand">Prooflink</a>
   <div style="display:flex;gap:14px;align-items:center">
     <a href="/" class="btn-ghost" style="font-size:9px;padding:5px 12px">← ORACLE</a>
     <div class="live-badge"><div class="ldot"></div>DEVNET</div>
@@ -300,11 +281,11 @@
 
 <!-- ── Loading ── -->
 <div id="state-loading">
-  <div style="font-size:10.5px;letter-spacing:.14em;color:var(--cy)">
+  <div style="font-size:10.5px;letter-spacing:.14em;color:var(--white-mid)">
     FETCHING ATTESTATION RECORD<span class="blink">_</span>
   </div>
-  <div style="width:220px;height:2px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden">
-    <div id="load-bar" style="height:100%;width:0;background:linear-gradient(90deg,var(--vi),var(--cy));border-radius:2px;transition:width .35s ease"></div>
+  <div style="width:220px;height:1px;background:var(--rule);overflow:hidden">
+    <div id="load-bar" style="height:100%;width:0;background:var(--gold);transition:width .35s ease"></div>
   </div>
   <div id="load-stage" style="font-size:9px;letter-spacing:.1em;color:rgba(226,232,240,.3)">CONNECTING TO NEON DB…</div>
 </div>
@@ -321,8 +302,6 @@
 
   <!-- Header -->
   <div id="passport-header">
-    <div class="header-grid"></div>
-    <div class="watermark">POT</div>
 
     <!-- Oracle stamp -->
     <div class="oracle-stamp">
@@ -335,7 +314,7 @@
       <!-- Issuer line -->
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
         <div style="width:2px;height:14px;background:var(--gold);flex-shrink:0"></div>
-        <span style="font-size:8.5px;letter-spacing:.18em;color:var(--gold);font-weight:600">PROOF OF TALENT ORACLE · SOLANA ATTESTATION SERVICE</span>
+        <span style="font-size:8.5px;letter-spacing:.18em;color:var(--gold)">PROOFLINK ORACLE · SOLANA ATTESTATION SERVICE</span>
       </div>
 
       <div class="fo" style="font-size:clamp(20px,4vw,34px);font-weight:900;letter-spacing:.07em;color:#fff;line-height:1;margin-bottom:6px">
@@ -347,11 +326,10 @@
 
       <!-- Wallet -->
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;flex-wrap:wrap">
-        <div style="font-size:8.5px;letter-spacing:.14em;color:rgba(226,232,240,.35)">HOLDER</div>
-        <div id="hdr-wallet" class="fm" style="font-size:12px;color:var(--cy);letter-spacing:.04em;word-break:break-all"></div>
+        <div style="font-size:8.5px;letter-spacing:.14em;color:var(--white-dim)">HOLDER</div>
+        <div id="hdr-wallet" class="fm" style="font-size:12px;color:var(--gold);letter-spacing:.04em;word-break:break-all"></div>
         <button onclick="copyWallet()" id="copy-wallet-btn"
-          style="font-size:8px;padding:2px 7px;background:var(--cyD);border:1px solid rgba(34,211,238,.25);color:var(--cy);cursor:pointer;letter-spacing:.08em;transition:all .15s"
-          class="champ-sm">COPY</button>
+          style="font-size:8px;padding:2px 7px;background:var(--gold-dim);border:1px solid rgba(232,160,32,.25);color:var(--gold);cursor:pointer;letter-spacing:.08em;transition:all .15s">COPY</button>
       </div>
     </div>
 
@@ -382,7 +360,7 @@
       </div>
       <div class="stat-cell">
         <div class="stat-label">SAS PROGRAM</div>
-        <div style="font-size:10.5px;color:var(--vi);letter-spacing:.03em;margin-bottom:4px;word-break:break-all" id="hdr-sas">FJ8m…No4M</div>
+        <div style="font-size:10.5px;color:var(--white-mid);letter-spacing:.03em;margin-bottom:4px;word-break:break-all" id="hdr-sas">FJ8m…No4M</div>
         <a href="https://explorer.solana.com/address/FJ8myMh9dRcgc2n8xBrWTbCrFYAbHQZCPtMzhhmvNo4M?cluster=devnet" target="_blank"
           class="exlink" style="font-size:8.5px">VIEW PROGRAM ↗</a>
       </div>
@@ -395,7 +373,7 @@
 
     <!-- MRZ -->
     <div class="mrz">
-      <div>P&lt;SOLANA&lt;PROOF&lt;OF&lt;TALENT&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div>
+      <div>P&lt;SOLANA&lt;PROOFLINK&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div>
       <div id="mrz-line2" style="margin-top:2px">—</div>
     </div>
   </div>
@@ -410,8 +388,8 @@
         <div class="fo" style="font-size:12px;font-weight:700;letter-spacing:.12em;color:#fff">ATTESTED SKILL RECORDS</div>
         <span style="font-size:9px;letter-spacing:.1em;color:rgba(226,232,240,.3)">
           <span style="color:var(--gold)">■</span> ≥80% &nbsp;
-          <span style="color:var(--cy)">■</span> 60–79% &nbsp;
-          <span style="color:var(--vi)">■</span> 50–59%
+          <span style="color:var(--white-mid)">■</span> 60–79% &nbsp;
+          <span style="color:var(--white-dim)">■</span> 50–59%
         </span>
       </div>
       <div style="display:flex;gap:10px;align-items:center">
@@ -435,16 +413,16 @@
     </div>
 
     <!-- Raw API block -->
-    <div style="margin-top:40px;padding:16px 20px;background:rgba(34,211,238,.03);border:1px solid var(--bdr)">
-      <div style="font-size:8.5px;letter-spacing:.14em;color:rgba(226,232,240,.35);margin-bottom:10px">MACHINE-READABLE PROFILE ENDPOINT</div>
+    <div style="margin-top:40px;padding:16px 20px;background:rgba(240,237,230,.02);border:1px solid var(--rule)">
+      <div style="font-size:8.5px;letter-spacing:.14em;color:var(--white-dim);margin-bottom:10px">MACHINE-READABLE PROFILE ENDPOINT</div>
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-        <code id="api-endpoint" class="fm" style="font-size:10.5px;color:var(--cy)">—</code>
+        <code id="api-endpoint" class="fm" style="font-size:10.5px;color:var(--gold)">—</code>
         <a id="api-link" href="#" target="_blank" class="exlink" style="font-size:9.5px">VIEW JSON ↗</a>
       </div>
-      <div style="margin-top:10px;font-size:9px;color:rgba(226,232,240,.3)">
+      <div style="margin-top:10px;font-size:9px;color:var(--white-dim)">
         Paid verification: <span style="color:var(--gold)">GET /api/verify?wallet=&lt;wallet&gt;&amp;skill=&lt;slug&gt;</span>
-        · <span style="color:var(--vi)">X-Payment-Proof: &lt;usdc-tx&gt;</span>
-        · <span style="color:rgba(226,232,240,.4)">250 raw USDC ≈ $0.00025</span>
+        · <span style="color:var(--white-mid)">X-Payment-Proof: &lt;usdc-tx&gt;</span>
+        · <span style="color:var(--white-dim)">250 raw USDC ≈ $0.00025</span>
       </div>
     </div>
 
@@ -468,9 +446,9 @@ function trunc(addr,n=6){
 }
 
 function tierOf(score){
-  if(score>=80)return{cls:'t-gold',bdg:'tb-g',label:'TIER I',  color:'#F59E0B'};
-  if(score>=60)return{cls:'t-cyan', bdg:'tb-c',label:'TIER II', color:'#22D3EE'};
-  return             {cls:'t-vi',   bdg:'tb-v',label:'TIER III',color:'#8B5CF6'};
+  if(score>=80)return{cls:'t-gold',bdg:'tb-g',label:'TIER I',  color:'#E8A020'};
+  if(score>=60)return{cls:'t-cyan', bdg:'tb-c',label:'TIER II', color:'#9A978F'};
+  return             {cls:'t-vi',   bdg:'tb-v',label:'TIER III',color:'#4A4844'};
 }
 
 function sigBars(score,color){
@@ -496,7 +474,7 @@ function render(data){
 
   // Arc animation — circumference 2π×28 ≈ 175.9
   const circ=175.9;
-  const col=avgScore>=80?'#F59E0B':avgScore>=60?'#22D3EE':'#8B5CF6';
+  const col=avgScore>=80?'#E8A020':avgScore>=60?'#9A978F':'#4A4844';
   setTimeout(()=>{
     const arc=$('arc-fill');
     arc.style.strokeDashoffset=circ-(avgScore/100*circ);
@@ -513,7 +491,7 @@ function render(data){
   $('api-link').href=apiUrl;
 
   // OG
-  document.title=`Skill Passport · ${trunc(wallet)} — Proof of Talent`;
+  document.title=`Skill Passport · ${trunc(wallet)} — Prooflink`;
   $('og-title').content=$('tw-title').content=document.title;
   $('og-desc').content=$('tw-desc').content=
     `${count} on-chain verified skills · Trust score ${avgScore}% · Anchored via SAS on Solana`;
@@ -547,7 +525,7 @@ function render(data){
       </div>
 
       <div class="cbar-wrap">
-        <div class="cbar-fill" style="background:${color};width:${score}%;box-shadow:0 0 6px ${color}66"></div>
+        <div class="cbar-fill" style="background:${color};width:${score}%"></div>
       </div>
 
       ${ev?`<p style="font-size:10px;color:rgba(226,232,240,.5);line-height:1.65;margin-bottom:14px;font-style:italic;border-left:2px solid rgba(255,255,255,.08);padding-left:10px">"${ev.slice(0,150)}${ev.length>150?'…':''}"</p>`:''}
@@ -576,7 +554,7 @@ function copyWallet(){
   const wallet=$('hdr-wallet').textContent;
   navigator.clipboard.writeText(wallet).then(()=>{
     const b=$('copy-wallet-btn');
-    b.textContent='COPIED ✓';b.style.color='var(--gr)';b.style.borderColor='var(--gr)';
+    b.textContent='COPIED ✓';b.style.color='var(--green)';b.style.borderColor='var(--green)';
     setTimeout(()=>{b.textContent='COPY';b.style.color='';b.style.borderColor='';},2000);
   });
 }
