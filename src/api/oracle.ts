@@ -162,6 +162,7 @@ async function verifyPaymentProof(txSignature: string): Promise<boolean> {
 export const app = new Hono();
 
 app.use('*', cors());
+app.onError((err, c) => c.json({ error: err.message }, 500));
 
 // Serve index.html for root
 app.get('/', c => {
