@@ -41,13 +41,17 @@ export async function inferSkillsFromExport(exportSummary: string): Promise<Infe
     if (!process.env.INFERENCE_MODEL) throw new Error('INFERENCE ENGINE DOWN: INFERENCE_MODEL not set');
   }
 
+  const prompt = `Analyze this developer's profile and infer their market-ready skills:\n\n${exportSummary}`;
+  const abortSignal = AbortSignal.timeout(55_000);
+
   const { object } = await generateObject(
     useAnthropic
       ? {
           model: anthropic('claude-sonnet-4-6'),
           schema: InferredSkillsSchema,
           system: SYSTEM_PROMPT,
-          prompt: `Analyze this developer's profile and infer their market-ready skills:\n\n${exportSummary}`,
+          prompt,
+          abortSignal,
         }
       : {
           model: createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY! })(
@@ -55,7 +59,8 @@ export async function inferSkillsFromExport(exportSummary: string): Promise<Infe
           ),
           schema: InferredSkillsSchema,
           system: SYSTEM_PROMPT,
-          prompt: `Analyze this developer's profile and infer their market-ready skills:\n\n${exportSummary}`,
+          prompt,
+          abortSignal,
         }
   );
 

@@ -1,5 +1,5 @@
 {
-  "name": "proof-of-talent",
+  "name": "prooflink",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -7,6 +7,7 @@
     "demo:mock": "tsx src/demo.ts --mock",
     "oracle": "tsx src/api/oracle.ts",
     "setup-sas": "tsx src/scripts/setup-sas.ts",
+    "mcp": "tsx src/mcp/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -17,6 +18,7 @@
     "@ai-sdk/anthropic": "^3.0.71",
     "@ai-sdk/openai": "^3.0.53",
     "@hono/node-server": "^1.19.14",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@neondatabase/serverless": "^1.1.0",
     "@openrouter/ai-sdk-provider": "^2.8.0",
     "adm-zip": "^0.5.17",

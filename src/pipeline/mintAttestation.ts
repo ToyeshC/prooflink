@@ -125,17 +125,16 @@ export async function mintAllSkillAttestations(
   studentWalletAddress: string,
   skills: Array<{ slug: string; confidenceScore: number; evidenceSummary: string }>
 ): Promise<AttestationResult[]> {
-  const results: AttestationResult[] = [];
-  for (const skill of skills) {
-    if (skill.confidenceScore < 0.5) continue;
-    console.log(`Minting SAS attestation for ${skill.slug} (${Math.round(skill.confidenceScore * 100)}%)...`);
-    const result = await mintSkillAttestation(
-      studentWalletAddress,
-      skill.slug,
-      skill.confidenceScore,
-      skill.evidenceSummary
-    );
-    results.push(result);
-  }
-  return results;
+  const qualifying = skills.filter(s => s.confidenceScore >= 0.5);
+  qualifying.forEach(s =>
+    console.log(`Minting SAS attestation for ${s.slug} (${Math.round(s.confidenceScore * 100)}%)...`)
+  );
+  const settled = await Promise.allSettled(
+    qualifying.map(skill =>
+      mintSkillAttestation(studentWalletAddress, skill.slug, skill.confidenceScore, skill.evidenceSummary)
+    )
+  );
+  return settled
+    .filter((r): r is PromiseFulfilledResult<AttestationResult> => r.status === 'fulfilled')
+    .map(r => r.value);
 }

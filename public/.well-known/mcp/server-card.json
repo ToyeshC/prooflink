@@ -1,0 +1,31 @@
+{
+  "name": "Prooflink Oracle",
+  "description": "On-chain skill oracle for AI hiring agents. Converts GitHub profiles into verifiable Solana attestations, queryable via MCP tools or x402 micropayment API.",
+  "version": "1.0.0",
+  "tools": [
+    {
+      "name": "verify_skill",
+      "description": "Verify a specific skill is attested on-chain for a wallet",
+      "payment": "free (reads from indexed profile)"
+    },
+    {
+      "name": "get_profile",
+      "description": "Get all attested skills for a Solana wallet",
+      "payment": "free"
+    },
+    {
+      "name": "analyze_github",
+      "description": "Ingest a GitHub profile and mint on-chain SAS attestations",
+      "payment": "free (first attestation)"
+    }
+  ],
+  "payment": {
+    "protocol": "x402",
+    "token": "USDC",
+    "network": "solana-devnet",
+    "feePerLookup": "0.000250 USDC"
+  },
+  "network": "solana-devnet",
+  "attestationService": "FJ8myMh9dRcgc2n8xBrWTbCrFYAbHQZCPtMzhhmvNo4M",
+  "contact": "https://proof-of-talent-silk.vercel.app"
+}

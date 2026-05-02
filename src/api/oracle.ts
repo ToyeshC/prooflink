@@ -165,6 +165,7 @@ app.use('*', cors());
 
 // Serve index.html for root
 app.get('/', c => {
+  c.header('Link', '</.well-known/mcp/server-card.json>; rel="mcp-server-card"');
   const html = fs.readFileSync(path.join(process.cwd(), 'public', 'index.html'), 'utf8');
   return c.html(html);
 });
@@ -173,6 +174,20 @@ app.get('/', c => {
 app.get('/profile/:wallet', c => {
   const html = fs.readFileSync(path.join(process.cwd(), 'public', 'profile.html'), 'utf8');
   return c.html(html);
+});
+
+// Static well-known files for agent discoverability
+app.get('/robots.txt', c => {
+  const txt = fs.readFileSync(path.join(process.cwd(), 'public', 'robots.txt'), 'utf8');
+  return c.text(txt, 200, { 'Content-Type': 'text/plain' });
+});
+
+app.get('/.well-known/mcp/server-card.json', c => {
+  const json = fs.readFileSync(
+    path.join(process.cwd(), 'public', '.well-known', 'mcp', 'server-card.json'),
+    'utf8'
+  );
+  return c.text(json, 200, { 'Content-Type': 'application/json' });
 });
 
 // Health check
@@ -514,6 +529,22 @@ app.get('/api/verify', async c => {
 app.get('/api/profile/:wallet', async c => {
   const wallet = c.req.param('wallet');
   const skills = await getWalletAttestations(wallet);
+  const acceptsMarkdown = c.req.header('accept')?.includes('text/markdown');
+
+  if (acceptsMarkdown) {
+    const entries = Object.values(skills);
+    const lines = [
+      `# Prooflink Profile`,
+      `**Wallet:** ${wallet}`,
+      `**Attested skills:** ${entries.length}`,
+      '',
+      ...entries.map(a =>
+        `## ${a.skill} — ${a.confidence}%\n${a.evidence}\nAttestation: ${a.attestation_address}`
+      ),
+    ];
+    return c.text(lines.join('\n\n'), 200, { 'Content-Type': 'text/markdown; charset=utf-8' });
+  }
+
   return c.json({
     wallet,
     attestedSkills: Object.keys(skills),
@@ -528,15 +559,17 @@ app.get('/api/profile/:wallet', async c => {
 // ---------------------------------------------------------------------------
 
 app.get('/api/oracle-info', c => {
-  const config = fs.existsSync(ORACLE_CONFIG_PATH)
+  const fileConfig = fs.existsSync(ORACLE_CONFIG_PATH)
     ? JSON.parse(fs.readFileSync(ORACLE_CONFIG_PATH, 'utf8'))
     : null;
+  const credentialAddress = process.env.ORACLE_CREDENTIAL_ADDRESS ?? fileConfig?.credentialAddress ?? null;
+  const schemaAddress = process.env.ORACLE_SCHEMA_ADDRESS ?? fileConfig?.schemaAddress ?? null;
 
   return c.json({
     oracle: ORACLE_WALLET,
     sasProgram: 'FJ8myMh9dRcgc2n8xBrWTbCrFYAbHQZCPtMzhhmvNo4M',
-    credential: config?.credentialAddress ?? null,
-    schema: config?.schemaAddress ?? null,
+    credential: credentialAddress,
+    schema: schemaAddress,
     network: process.env.SOLANA_RPC_URL?.includes('devnet') ? 'devnet' : 'mainnet',
     payment: {
       protocol: 'x402',
