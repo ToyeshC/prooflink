@@ -2,7 +2,7 @@
   "functions": {
     "api/[[...route]].ts": {
       "maxDuration": 300,
-      "includeFiles": ["public/**", "oracle-config.json"]
+      "includeFiles": "{public/**,oracle-config.json}"
     }
   },
   "rewrites": [
