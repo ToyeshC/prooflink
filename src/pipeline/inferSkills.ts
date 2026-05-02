@@ -31,7 +31,8 @@ Rules:
 3. A score of 95% on "Introduction to Python" warrants lower confidence than 80% on "Advanced Algorithms"
 4. Assign confidence scores based on: code quality/complexity, grade performance, course level, and number of corroborating signals
 5. Distinguish between "exposure to" (confidence < 0.5) and "demonstrated competence in" (confidence >= 0.7)
-6. Map to industry-recognized skill names, not course names`;
+6. Map to industry-recognized skill names, not course names
+7. Use the shortest canonical slug: 'python' not 'python-programming', 'git' not 'git-github-version-control', 'javascript' not 'javascript-programming'. Never emit two skills that represent the same underlying technology.`;
 
 export async function inferSkillsFromExport(exportSummary: string): Promise<InferredSkills> {
   const useAnthropic = !!process.env.ANTHROPIC_API_KEY;

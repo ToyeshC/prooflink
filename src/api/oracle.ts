@@ -18,6 +18,7 @@ import {
   challengeAttestation,
   getAttestationStatus,
   resolveDispute,
+  getAllValidators,
 } from '../validation-registry/index.js';
 
 dotenv.config({ path: path.join(process.cwd(), '.env') });
@@ -156,6 +157,27 @@ async function verifyPaymentProof(txSignature: string): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
+// Skill deduplication — keeps highest-confidence skill when slugs overlap
+// (e.g. "python" and "python-programming" → keep the higher confidence one)
+// ---------------------------------------------------------------------------
+
+function deduplicateSkills<T extends { slug: string; confidenceScore: number }>(skills: T[]): T[] {
+  const sorted = [...skills].sort((a, b) => b.confidenceScore - a.confidenceScore);
+  const kept: T[] = [];
+  for (const skill of sorted) {
+    const isDuplicate = kept.some(k => {
+      if (k.slug === skill.slug) return true;
+      const [shorter, longer] = k.slug.length <= skill.slug.length
+        ? [k.slug, skill.slug]
+        : [skill.slug, k.slug];
+      return longer.startsWith(shorter + '-');
+    });
+    if (!isDuplicate) kept.push(skill);
+  }
+  return kept;
+}
+
+// ---------------------------------------------------------------------------
 // App
 // ---------------------------------------------------------------------------
 
@@ -220,7 +242,8 @@ app.post('/api/analyze-github', async c => {
   try {
     const exportSummary = await fetchGitHubProfile(githubUsername);
     const inferredSkills = await inferSkillsFromExport(exportSummary);
-    const qualifyingSkills = inferredSkills.skills.filter(s => s.confidenceScore >= 0.5);
+    const dedupedSkills = deduplicateSkills(inferredSkills.skills);
+    const qualifyingSkills = dedupedSkills.filter(s => s.confidenceScore >= 0.5);
 
     const attestations = await mintAllSkillAttestations(
       walletAddress,
@@ -230,6 +253,10 @@ app.post('/api/analyze-github', async c => {
         evidenceSummary: s.evidenceSummary,
       }))
     );
+
+    // Clean slate: delete stale attestations before upserting fresh ones
+    const sql2 = db();
+    await sql2`DELETE FROM attestations WHERE wallet = ${walletAddress}`;
 
     for (const att of attestations) {
       const inferred = qualifyingSkills.find(s => s.slug === att.skill);
@@ -251,6 +278,7 @@ app.post('/api/analyze-github', async c => {
       success: true,
       githubUsername,
       wallet: walletAddress,
+      modelUsed: process.env.ANTHROPIC_API_KEY ? 'claude-sonnet-4-6' : (process.env.INFERENCE_MODEL ?? 'unknown'),
       primaryDomain: inferredSkills.primaryDomain,
       academicLevel: inferredSkills.overallAcademicLevel,
       topSkills: topSkills.map(s => ({
@@ -309,7 +337,8 @@ app.post('/api/analyze-canvas', async c => {
     const parsed = parseCanvasExport(tmpPath);
     const exportSummary = summarizeExport(parsed);
     const inferredSkills = await inferSkillsFromExport(exportSummary);
-    const qualifyingSkills = inferredSkills.skills.filter(s => s.confidenceScore >= 0.5);
+    const dedupedSkills = deduplicateSkills(inferredSkills.skills);
+    const qualifyingSkills = dedupedSkills.filter(s => s.confidenceScore >= 0.5);
 
     const attestations = await mintAllSkillAttestations(
       studentWallet,
@@ -319,6 +348,10 @@ app.post('/api/analyze-canvas', async c => {
         evidenceSummary: s.evidenceSummary,
       }))
     );
+
+    // Clean slate: delete stale attestations before upserting fresh ones
+    const sql2 = db();
+    await sql2`DELETE FROM attestations WHERE wallet = ${studentWallet}`;
 
     for (const att of attestations) {
       const inferred = qualifyingSkills.find(s => s.slug === att.skill);
@@ -341,6 +374,7 @@ app.post('/api/analyze-canvas', async c => {
       source: 'canvas',
       courseNames: parsed.courseNames,
       wallet: studentWallet,
+      modelUsed: process.env.ANTHROPIC_API_KEY ? 'claude-sonnet-4-6' : (process.env.INFERENCE_MODEL ?? 'unknown'),
       primaryDomain: inferredSkills.primaryDomain,
       academicLevel: inferredSkills.overallAcademicLevel,
       topSkills: topSkills.map(s => ({
@@ -408,6 +442,15 @@ app.get('/api/registry/status/:attestation', async c => {
     return c.json(status);
   } catch (err) {
     return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+  }
+});
+
+app.get('/api/registry/list', async c => {
+  try {
+    const validators = await getAllValidators();
+    return c.json({ validators });
+  } catch {
+    return c.json({ validators: [] });
   }
 });
 
@@ -594,7 +637,7 @@ app.get('/api/oracle-info', c => {
 
 export function startOracleServer(port = 3000) {
   serve({ fetch: app.fetch, port }, info => {
-    console.log(`Proof of Talent Oracle running on http://localhost:${info.port}`);
+    console.log(`Prooflink Oracle running on http://localhost:${info.port}`);
     console.log(`Oracle wallet: ${ORACLE_WALLET}`);
     console.log(`x402 lookup endpoint: GET /api/verify?wallet=<address>&skill=<slug>`);
   });

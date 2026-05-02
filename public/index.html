@@ -596,7 +596,7 @@
     {d:400,t:'cmd',s:'Auditing commit density and code depth...'},
     {d:600,t:'data',s:'Language distribution mapped · primary stack identified'},
     {d:450,t:'cmd',s:'Extracting README semantic signals...'},
-    {d:700,t:'cmd',s:'Routing to inference engine (Claude Sonnet 4.6)...'},
+    {d:700,t:'cmd',s:'Routing to inference engine...'},
     {d:1100,t:'data',s:'Denoising surface-level claims · weighting code › syllabi › grades'},
     {d:600,t:'cmd',s:'Applying confidence threshold filter (≥ 50%)...'},
     {d:400,t:'ok', s:'Inference complete · qualifying skills identified'},
@@ -609,7 +609,7 @@
     {d:400,t:'cmd',s:'Auditing syllabus rigor and academic depth...'},
     {d:550,t:'data',s:'Extracting Rust concurrency mastery...'},
     {d:450,t:'data',s:'Denoising letter grade proxies · weighting code › grades'},
-    {d:700,t:'cmd',s:'Routing to inference engine (Claude Sonnet 4.6)...'},
+    {d:700,t:'cmd',s:'Routing to inference engine...'},
     {d:1000,t:'data',s:'Extracting skill mastery signals from artifacts...'},
     {d:500,t:'ok', s:'Inference complete · qualifying skills identified'},
     {d:300,t:'cmd',s:'Initializing SAS attestation pipeline...'},
@@ -640,9 +640,14 @@
     box.appendChild(cur);
   }
 
-  function finishTerminal(n){
+  function finishTerminal(n, model){
     const box=document.getElementById('terminal-output');
     const c=box.querySelector('.tcur')?.parentElement;if(c)c.remove();
+    if(model){
+      const mDiv=document.createElement('div');mDiv.className='tl';mDiv.style.opacity='1';
+      mDiv.innerHTML=`<span class="tc">◆ engine: ${model}</span>`;
+      box.appendChild(mDiv);
+    }
     const div=document.createElement('div');div.className='tl';div.style.opacity='1';
     div.innerHTML=`<span class="tok">✓ ${n} SAS ATTESTATIONS MINTED · PASSPORT ACTIVE</span>`;
     box.appendChild(div);
@@ -664,7 +669,7 @@
       const res=await fetch(`${API_BASE}/api/analyze-github`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({githubUsername:u,studentWallet:w})});
       const data=await res.json();
       if(!res.ok||!data.success)throw new Error(data.error||'Analysis failed');
-      finishTerminal(data.attestationCount);await sleep(1100);
+      finishTerminal(data.attestationCount, data.modelUsed);await sleep(1100);
       hide('loading-section');lastResult=data;renderResult(data);
       setTimeout(()=>document.getElementById('passport').scrollIntoView({behavior:'smooth',block:'start'}),300);
     }catch(err){
@@ -686,7 +691,7 @@
       const res=await fetch(`${API_BASE}/api/analyze-canvas`,{method:'POST',body:fd});
       const data=await res.json();
       if(!res.ok||!data.success)throw new Error(data.error||'Analysis failed');
-      finishTerminal(data.attestationCount);await sleep(1100);
+      finishTerminal(data.attestationCount, data.modelUsed);await sleep(1100);
       hide('loading-section');lastResult=data;renderResult(data);
       setTimeout(()=>document.getElementById('passport').scrollIntoView({behavior:'smooth',block:'start'}),300);
     }catch(err){
@@ -798,14 +803,16 @@
   async function connectPhantom() {
     const btn = document.getElementById('phantom-btn');
     const addr = document.getElementById('phantom-addr');
-    if (!window.solana?.isPhantom) {
-      addr.innerHTML = '<span style="color:var(--red)">Phantom not detected — install at phantom.com</span>';
+    // Phantom injects window.phantom.solana on Firefox; window.solana on Chrome
+    const provider = window.phantom?.solana ?? window.solana;
+    if (!provider?.isPhantom) {
+      addr.innerHTML = '<span style="color:var(--red)">Phantom not detected — install at phantom.com (Chrome/Brave/Firefox)</span>';
       return;
     }
     try {
-      const resp = await window.solana.connect();
+      const resp = await provider.connect();
       agentWalletPubkey = resp.publicKey;
-      phantomProvider = window.solana;
+      phantomProvider = provider;
       const addrStr = resp.publicKey.toString();
       addr.innerHTML = `<span style="color:var(--green)">Connected · </span>${addrStr.slice(0,8)}…${addrStr.slice(-4)}`;
       btn.textContent = '✓ CONNECTED';
@@ -939,29 +946,42 @@
     }catch(err){out.innerHTML+=`\n<span class="tw">✗ ${err.message}</span>`}
   }
 
-  // ── Validator nodes ───────────────────────────────────────────
-  const NODES=[
-    {id:'V-7421',skill:'Rust',staked:'5.2 SOL',status:'ACTIVE',w:72},
-    {id:'V-3819',skill:'Python',staked:'3.8 SOL',status:'ACTIVE',w:45},
-    {id:'V-9204',skill:'Solana',staked:'8.1 SOL',status:'VERIFYING',w:15},
-    {id:'V-5571',skill:'React',staked:'2.5 SOL',status:'ACTIVE',w:88},
-    {id:'V-1132',skill:'SQL',staked:'4.0 SOL',status:'FINALIZED',w:100},
-  ];
-  function renderNodes(){
+  // ── Validator nodes (live from DB) ────────────────────────────
+  async function renderNodes(){
     const c=document.getElementById('validator-nodes');c.innerHTML='';
-    NODES.forEach(v=>{
-      const col=v.status==='FINALIZED'?'var(--green)':v.status==='VERIFYING'?'var(--gold)':'var(--white-mid)';
+    let nodes=[];
+    try{
+      const res=await fetch(`${API_BASE}/api/registry/list`);
+      const d=await res.json();
+      nodes=d.validators??[];
+    }catch{}
+
+    if(!nodes.length){
       const row=document.createElement('div');row.className='nrow';
       row.innerHTML=`
-        <span class="fm" style="font-size:9px;color:var(--white-dim)">${v.id}</span>
-        <span style="font-size:11px;color:var(--white)">${v.skill}</span>
-        <span style="font-size:11px;color:var(--white-mid)">${v.staked}</span>
+        <span class="fm" style="font-size:9px;color:var(--white-dim)">—</span>
+        <span style="font-size:10px;color:var(--white-dim);grid-column:span 3">No validators staked yet</span>
+        <span></span>`;
+      c.appendChild(row);
+      return;
+    }
+
+    nodes.forEach((v,i)=>{
+      const col=v.status==='RESOLVED'?'var(--green)':v.status==='CHALLENGED'?'var(--gold)':'var(--white-mid)';
+      const nodeId='V-'+(v.validatorWallet??'????').slice(0,4).toUpperCase();
+      const skillLabel=v.skill??'—';
+      const stakeLabel=v.stakeSOL>0?v.stakeSOL.toFixed(2)+' SOL':'—';
+      const row=document.createElement('div');row.className='nrow';
+      row.innerHTML=`
+        <span class="fm" style="font-size:9px;color:var(--white-dim)">${nodeId}</span>
+        <span style="font-size:11px;color:var(--white)">${skillLabel}</span>
+        <span style="font-size:11px;color:var(--white-mid)">${stakeLabel}</span>
         <span style="font-size:8.5px;letter-spacing:.08em;color:${col}">${v.status}</span>
         <div style="display:flex;align-items:center;gap:5px">
           <div style="flex:1;height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden">
-            <div style="height:100%;width:${v.w}%;background:${col};border-radius:2px"></div>
+            <div style="height:100%;width:${v.windowPct??0}%;background:${col};border-radius:2px"></div>
           </div>
-          <span style="font-size:8.5px;color:var(--txtM)">${v.w}%</span>
+          <span style="font-size:8.5px;color:var(--txtM)">${v.windowPct??0}%</span>
         </div>`;
       c.appendChild(row);
     });

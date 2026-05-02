@@ -145,6 +145,49 @@ export async function getAttestationStatus(attestationAddress: string): Promise<
   };
 }
 
+export async function getAllValidators(): Promise<Array<{
+  attestationAddress: string;
+  skill: string | null;
+  validatorWallet: string | null;
+  stakeSOL: number;
+  status: string;
+  windowPct: number;
+}>> {
+  await ensureTable();
+  const sql = db();
+  const rows = await sql`
+    SELECT v.attestation_address, v.validator_wallet, v.validator_stake_lamports,
+           v.status, v.challenged_at, a.skill
+    FROM validation_registry v
+    LEFT JOIN attestations a ON v.attestation_address = a.attestation_address
+    ORDER BY v.validator_stake_lamports DESC
+    LIMIT 20
+  ` as Array<{
+    attestation_address: string;
+    validator_wallet: string | null;
+    validator_stake_lamports: number;
+    status: string;
+    challenged_at: string | null;
+    skill: string | null;
+  }>;
+
+  return rows.map(r => {
+    let windowPct = 100;
+    if (r.status === 'challenged' && r.challenged_at) {
+      const elapsed = (Date.now() - new Date(r.challenged_at).getTime()) / (1000 * 3600);
+      windowPct = Math.round(Math.max(0, Math.min(100, (elapsed / 48) * 100)));
+    }
+    return {
+      attestationAddress: r.attestation_address,
+      skill: r.skill ?? null,
+      validatorWallet: r.validator_wallet ?? null,
+      stakeSOL: (Number(r.validator_stake_lamports) ?? 0) / 1e9,
+      status: (r.status ?? 'active').toUpperCase(),
+      windowPct,
+    };
+  });
+}
+
 export async function resolveDispute(attestationAddress: string): Promise<object> {
   await ensureTable();
   const sql = db();
