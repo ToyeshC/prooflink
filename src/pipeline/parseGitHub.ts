@@ -9,7 +9,7 @@ export type GitHubRepo = {
 };
 
 export async function fetchGitHubProfile(username: string): Promise<string> {
-  const headers: Record<string, string> = { 'User-Agent': 'proof-of-talent-oracle' };
+  const headers: Record<string, string> = { 'User-Agent': 'prooflink-oracle' };
   if (process.env.GITHUB_TOKEN) headers['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
 
   const reposRes = await fetch(`https://api.github.com/users/${username}/repos?sort=pushed&per_page=30`, { headers });

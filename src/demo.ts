@@ -1,5 +1,5 @@
 /**
- * Proof of Talent Oracle — End-to-End Demo
+ * Prooflink Oracle — End-to-End Demo
  *
  * Usage:
  *   npx tsx src/demo.ts <path-to-canvas-export.zip> <student-wallet-address>

@@ -5,17 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Prooflink — On-Chain Skill Oracle</title>
   <meta name="description" content="Decentralized talent oracle. AI-evaluated skill attestations on Solana. x402 micropayment API for AI hiring agents." />
+  <link rel="icon" href="data:,">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Geist+Mono:wght@300;400;500;600&family=Geist:wght@300;400;500&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/@solana/web3.js@1/lib/index.iife.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
       --ink:       #0C0C0A;
       --ink2:      #111110;
+      --ink3:      #181816;
       --gold:      #E8A020;
       --gold-dim:  rgba(232,160,32,0.10);
+      --gold-line: rgba(232,160,32,0.22);
       --white:     #F0EDE6;
       --white-mid: #9A978F;
       --white-dim: #4A4844;
@@ -23,171 +25,200 @@
       --red:       #C0473A;
       --rule:      rgba(240,237,230,0.07);
       --rule-hi:   rgba(240,237,230,0.14);
-      /* legacy shims */
-      --bg:#0C0C0A; --bg2:#111110; --bgc:#111110; --bgc2:#181816;
-      --goldD:rgba(232,160,32,0.10);
-      --bdr:rgba(240,237,230,0.07); --bdrS:rgba(240,237,230,0.14);
-      --txt:#F0EDE6; --txtM:#4A4844; --txtD:#9A978F;
-      --cyan:#E8A020; --cyanD:rgba(232,160,32,0.10);
-      --violet:#E8A020; --violetD:rgba(232,160,32,0.10);
     }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html{scroll-behavior:smooth}
-    body{
-      font-family:'Geist',sans-serif;
-      background:var(--ink);
-      color:var(--white);
-      min-height:100dvh;
-      overflow-x:hidden;
-      padding-bottom:0;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Geist Mono', monospace;
+      background: var(--ink);
+      color: var(--white);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      padding-bottom: 36px;
     }
-    /* Grid background */
-    .grid-bg{
+
+    .display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; line-height: 0.95; }
+    .mono { font-family: 'Geist Mono', monospace; }
+    .sans { font-family: 'Geist', sans-serif; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 28px; width: 100%; }
+
+    .grid-bg {
       background-image:
-        linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),
-        linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
-      background-size:64px 64px;
+        linear-gradient(rgba(240,237,230,.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(240,237,230,.028) 1px, transparent 1px);
+      background-size: 64px 64px;
     }
-    /* Fonts */
-    .fo{font-family:'Bebas Neue',sans-serif;letter-spacing:.05em;line-height:1}
-    .fm{font-family:'Geist Mono',monospace}
-    /* Navbar */
-    #nav{
-      position:fixed;top:0;left:0;right:0;z-index:100;height:52px;
-      background:rgba(8,13,26,.88);backdrop-filter:blur(14px);
-      border-bottom:1px solid var(--bdr);
-      display:flex;align-items:center;padding:0 20px;gap:28px;
+
+    #nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: 54px;
+      background: rgba(12,12,10,0.92); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: center; padding: 0 28px; gap: 32px;
     }
-    .nlogo{
-      font-family:'Bebas Neue',sans-serif;font-size:18px;
-      letter-spacing:.08em;color:var(--white);text-decoration:none;
-      display:flex;align-items:center;gap:8px;flex-shrink:0;
+    .nlogo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px; letter-spacing: 0.08em;
+      color: var(--white); text-decoration: none;
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
     }
-    .nlinks{display:flex;gap:20px;flex:1}
-    .nl{
-      font-size:10px;letter-spacing:.1em;color:var(--txtM);
-      text-decoration:none;text-transform:uppercase;transition:color .15s;
+    .nlogo-sub {
+      font-family: 'Geist Mono', monospace;
+      font-size: 9px; letter-spacing: 0.12em;
+      color: var(--white-dim); font-weight: 400;
+      text-transform: uppercase; margin-top: 1px;
     }
-    .nl:hover{color:var(--white)}
-    /* Live dot */
-    .ldot{
-      width:6px;height:6px;border-radius:50%;background:var(--green);
-      animation:lpulse 1.6s ease-in-out infinite;flex-shrink:0;
+    .nlinks { display: flex; gap: 24px; flex: 1; }
+    .nl {
+      font-size: 11px; letter-spacing: 0.1em;
+      color: var(--white-dim); text-decoration: none;
+      text-transform: uppercase; transition: color .15s; font-weight: 400;
     }
-    @keyframes lpulse{
-      0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.5)}
-      50%{opacity:.7;box-shadow:0 0 0 5px rgba(34,197,94,0)}
+    .nl:hover { color: var(--white); }
+    .ldot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green); flex-shrink: 0;
+      animation: lpulse 2s ease-in-out infinite;
     }
-    /* Buttons */
-    .btn{
-      font-family:'Bebas Neue',sans-serif;font-size:15px;
-      letter-spacing:.12em;text-transform:uppercase;border:none;cursor:pointer;
-      padding:12px 28px;transition:opacity .15s;
+    @keyframes lpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .btn-primary {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15px; letter-spacing: 0.12em;
+      background: var(--gold); color: var(--ink);
+      border: none; cursor: pointer; padding: 13px 32px;
+      transition: opacity .15s; display: inline-block;
     }
-    .btn-gold{background:var(--gold);color:var(--ink)}
-    .btn-gold:hover{opacity:.85}
-    .btn-gold:disabled{opacity:.35;cursor:not-allowed}
-    .btn-ghost{
-      font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.06em;
-      background:transparent;color:var(--white-mid);padding:9px 16px;cursor:pointer;
-      border:1px solid var(--rule-hi);transition:all .15s;
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btn-ghost {
+      font-family: 'Geist Mono', monospace; font-size: 11px;
+      letter-spacing: 0.08em; background: transparent;
+      color: var(--white-mid); padding: 10px 18px; cursor: pointer;
+      border: 1px solid var(--rule-hi); transition: all .15s;
     }
-    .btn-ghost:hover{border-color:var(--white-mid);color:var(--white)}
-    /* Cards */
-    .ocard{background:var(--ink2);border:1px solid var(--rule);transition:border-color .2s}
-    .ocard:hover{border-color:var(--rule-hi)}
-    .clabel{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--txtM)}
-    /* Input */
-    .oinput{
-      width:100%;background:var(--ink2);border:1px solid var(--rule-hi);
-      color:var(--white);font-family:'Geist Mono',monospace;font-size:13px;
-      padding:11px 14px;outline:none;transition:border-color .15s;
+    .btn-ghost:hover { border-color: var(--white-mid); color: var(--white); }
+    .btn-link {
+      background: none; border: none; cursor: pointer;
+      font-family: 'Geist Mono', monospace; font-size: 11px;
+      letter-spacing: 0.06em; color: var(--white-dim);
+      transition: color .15s; padding: 0; text-decoration: none;
     }
-    .oinput:focus{border-color:var(--gold)}
-    .oinput::placeholder{color:var(--white-dim)}
-    /* Tabs */
-    .otab{
-      font-size:10px;letter-spacing:.12em;text-transform:uppercase;
-      padding:11px 18px;border:none;background:transparent;cursor:pointer;
-      color:var(--txtM);border-bottom:2px solid transparent;transition:all .15s;
+    .btn-link:hover { color: var(--white); }
+
+    .oinput {
+      width: 100%; background: var(--ink2);
+      border: 1px solid var(--rule-hi);
+      color: var(--white); font-family: 'Geist Mono', monospace;
+      font-size: 13px; padding: 12px 16px; outline: none;
+      transition: border-color .15s;
     }
-    .otab.on{color:var(--gold);border-bottom-color:var(--gold)}
-    .otab:hover:not(.on){color:var(--txtD)}
-    /* Terminal */
-    .term{
-      background:var(--ink);border:1px solid var(--rule);
-      font-family:'Geist Mono',monospace;font-size:11.5px;
-      padding:18px;overflow-y:auto;
+    .oinput:focus { border-color: var(--gold); }
+    .oinput::placeholder { color: var(--white-dim); }
+
+    .clabel { font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--white-dim); }
+
+    .otab {
+      font-family: 'Geist Mono', monospace;
+      font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 12px 20px; border: none; background: transparent;
+      cursor: pointer; color: var(--white-dim);
+      border-bottom: 1px solid transparent; transition: all .15s;
     }
-    .tl{margin-bottom:3px;opacity:0;animation:tapp .12s forwards}
-    @keyframes tapp{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
-    .tp{color:var(--gold)}.tc{color:var(--white-mid)}.tok{color:var(--green)}.td{color:var(--white)}.tw{color:#D97706}
-    .tcur{display:inline-block;width:7px;height:13px;background:var(--gold);animation:blink .8s step-end infinite;vertical-align:text-bottom}
-    @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-    /* Progress */
-    .ptrack{height:2px;background:var(--bdr);overflow:hidden}
-    .pfill{height:100%;background:var(--gold);transition:width .35s ease}
-    /* Section header */
-    .sh{display:flex;align-items:center;gap:12px;margin-bottom:32px}
-    .shline{flex:1;height:1px;background:var(--bdr)}
-    .stag{font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--white-dim)}
-    /* Attestation card */
-    .attcard{
-      background:var(--bgc);border:1px solid var(--bdr);padding:16px;
-      position:relative;overflow:hidden;transition:border-color .2s,transform .2s;
+    .otab.on { color: var(--gold); border-bottom-color: var(--gold); }
+    .otab:hover:not(.on) { color: var(--white-mid); }
+
+    .term {
+      background: var(--ink); border: 1px solid var(--rule);
+      font-family: 'Geist Mono', monospace; font-size: 11.5px;
+      padding: 20px; overflow-y: auto; line-height: 1.7;
     }
-    .attcard::before{
-      content:'';position:absolute;top:0;left:0;right:0;height:1px;
-      background:var(--gold);opacity:0;transition:opacity .2s;
+    .tl { margin-bottom: 2px; opacity: 0; animation: tapp .1s forwards; }
+    @keyframes tapp { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+    .tp  { color: var(--gold); }
+    .tc  { color: var(--white-mid); }
+    .tok { color: var(--green); }
+    .td  { color: var(--white); }
+    .tw  { color: #D97706; }
+    .tcur { display: inline-block; width: 7px; height: 13px; background: var(--gold); animation: blink .8s step-end infinite; vertical-align: text-bottom; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    .ptrack { height: 1px; background: var(--rule); overflow: hidden; }
+    .pfill  { height: 100%; background: var(--gold); transition: width .35s ease; }
+
+    .surface { background: var(--ink2); border: 1px solid var(--rule); }
+    .surface-hover { transition: border-color .2s; }
+    .surface-hover:hover { border-color: var(--rule-hi); }
+
+    .sh { display: flex; align-items: center; gap: 16px; margin-bottom: 40px; }
+    .shline { flex: 1; height: 1px; background: var(--rule); }
+    .stag { font-family: 'Geist Mono', monospace; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--white-dim); }
+
+    .attcard { background: var(--ink2); border: 1px solid var(--rule); padding: 20px; transition: border-color .2s; }
+    .attcard:hover { border-color: var(--rule-hi); }
+    .ctrack { height: 2px; background: var(--rule); overflow: hidden; margin: 10px 0 8px; }
+    .cfill  { height: 100%; transition: width .7s ease; }
+
+    .dropz { border: 1px dashed var(--rule-hi); padding: 28px 16px; text-align: center; cursor: pointer; transition: all .15s; }
+    .dropz:hover, .dropz.dov { border-color: var(--gold); background: var(--gold-dim); }
+
+    .stat-strip { display: flex; gap: 0; border: 1px solid var(--rule); }
+    .stat-item { flex: 1; padding: 20px 24px; border-right: 1px solid var(--rule); }
+    .stat-item:last-child { border-right: none; }
+    .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 0.04em; color: var(--white); display: block; line-height: 1; }
+    .stat-label { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--white-dim); display: block; margin-top: 6px; }
+
+    .nrow {
+      display: grid; grid-template-columns: 72px 1fr 80px 84px 120px;
+      gap: 8px; align-items: center; padding: 10px 18px;
+      border-bottom: 1px solid var(--rule); font-size: 11px; transition: background .15s;
     }
-    .attcard:hover{border-color:var(--bdrS);transform:translateY(-2px)}
-    .attcard:hover::before{opacity:1}
-    .ctrack{height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;margin:8px 0 6px}
-    .cfill{height:100%;border-radius:2px;transition:width .7s ease}
-    /* Drop zone */
-    .dropz{
-      border:1px dashed var(--bdrS);padding:26px 16px;text-align:center;
-      cursor:pointer;transition:all .15s;
+    .nrow:hover { background: rgba(240,237,230,.02); }
+    .nrow:last-child { border-bottom: none; }
+
+    .crow { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--rule); }
+    .crow:last-child { border-bottom: none; }
+    .ccell { padding: 12px 16px; font-size: 11px; }
+
+    #ticker {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 32px;
+      background: rgba(12,12,10,.97); border-top: 1px solid var(--rule);
+      z-index: 90; overflow: hidden; display: flex; align-items: center;
     }
-    .dropz:hover,.dropz.dov{border-color:var(--gold);background:var(--goldD)}
-    /* Stat pill */
-    .spill{
-      display:inline-flex;align-items:center;gap:8px;
-      background:rgba(240,237,230,.03);border:1px solid var(--rule);
-      padding:7px 14px;font-size:10px;letter-spacing:.08em;
+    .tlabel { flex-shrink: 0; font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 0.14em; color: var(--gold); padding: 0 16px; border-right: 1px solid var(--rule); white-space: nowrap; }
+    .ttrack { flex: 1; overflow: hidden; position: relative; }
+    .ttrack::before, .ttrack::after { content: ''; position: absolute; top: 0; bottom: 0; width: 48px; z-index: 2; pointer-events: none; }
+    .ttrack::before { left: 0; background: linear-gradient(90deg, rgba(12,12,10,1), transparent); }
+    .ttrack::after  { right: 0; background: linear-gradient(270deg, rgba(12,12,10,1), transparent); }
+    .tinner { display: flex; white-space: nowrap; animation: tsroll 55s linear infinite; will-change: transform; }
+    .tinner:hover { animation-play-state: paused; }
+    @keyframes tsroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .titem { display: inline-flex; align-items: center; gap: 8px; padding: 0 32px; font-size: 11px; color: var(--white-dim); }
+    .tdot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
+
+    .sbars { display: flex; align-items: flex-end; gap: 4px; height: 40px; }
+    .sbar  { width: 6px; border-radius: 1px; transition: height .5s ease; }
+
+    @keyframes fup { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+    .fu { animation: fup .4s ease forwards; }
+
+    .agent-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .agent-pill { border: 1px solid var(--rule); padding: 10px 12px; display: flex; align-items: center; gap: 10px; background: transparent; transition: border-color .2s; }
+    .agent-pill:hover { border-color: var(--rule-hi); }
+    .agent-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 13px; color: var(--gold); flex-shrink: 0; border: 1px solid var(--gold-line); }
+
+    .hidden { display: none !important; }
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: var(--ink); }
+    ::-webkit-scrollbar-thumb { background: var(--white-dim); }
+    @media (max-width: 768px) {
+      .hero-grid { grid-template-columns: 1fr !important; }
+      .reg-grid  { grid-template-columns: 1fr !important; }
+      .api-grid  { grid-template-columns: 1fr !important; }
+      .nrow      { grid-template-columns: 60px 1fr 60px 60px 80px; font-size: 10px; }
+      .nlinks    { display: none; }
     }
-    .spval{font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--gold)}
-    /* Node row */
-    .nrow{
-      display:grid;grid-template-columns:70px 1fr 76px 78px 110px;
-      gap:8px;align-items:center;padding:9px 16px;
-      border-bottom:1px solid var(--bdr);font-size:11px;transition:background .15s;
-    }
-    .nrow:hover{background:rgba(240,237,230,.02)}
-    /* Compare */
-    .crow{display:grid;grid-template-columns:1fr 1fr;gap:1px;border-bottom:1px solid var(--bdr)}
-    .ccell{padding:11px 14px;font-size:11px}
-    /* Signal bars */
-    .sbars{display:flex;align-items:flex-end;gap:3px;height:36px}
-    .sbar{width:5px;border-radius:1px;transition:height .5s ease,background .5s ease}
-    /* Fade up */
-    @keyframes fup{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-    .fu{animation:fup .45s ease forwards}
-    /* Scrollbar */
-    ::-webkit-scrollbar{width:4px;height:4px}
-    ::-webkit-scrollbar-track{background:var(--bg)}
-    ::-webkit-scrollbar-thumb{background:var(--bdrS);border-radius:2px}
-    .hidden{display:none!important}
-    /* Responsive */
-    @media(max-width:768px){
-      .hero-grid{grid-template-columns:1fr!important}
-      .reg-grid{grid-template-columns:1fr!important}
-      .api-grid{grid-template-columns:1fr!important}
-      .phead-grid{grid-template-columns:1fr!important}
-      .nrow{grid-template-columns:60px 1fr 60px 60px 80px;font-size:10px}
-      .nlinks{display:none}
-    }
-    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   </style>
 </head>
 <body>
@@ -199,7 +230,10 @@
       <path d="M8 1L15 5V11L8 15L1 11V5L8 1Z" stroke="currentColor" stroke-width="1.4" fill="none"/>
       <path d="M8 5.5L11.5 7.5V11.5L8 13.5L4.5 11.5V7.5L8 5.5Z" fill="currentColor" opacity=".5"/>
     </svg>
-    Prooflink
+    <div>
+      Prooflink
+      <div class="nlogo-sub">On-chain skill oracle</div>
+    </div>
   </a>
   <div class="nlinks">
     <a href="#ingest"   class="nl">Node</a>
@@ -208,333 +242,322 @@
     <a href="#api"      class="nl">API</a>
   </div>
   <div style="display:flex;align-items:center;gap:14px;margin-left:auto">
-    <div style="display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.12em;color:var(--green);font-family:'Geist Mono',monospace">
-      <div class="ldot"></div>DEVNET
+    <div style="display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.12em;color:var(--green)">
+      <div class="ldot"></div>DEVNET LIVE
     </div>
-    <button class="btn-ghost" style="font-size:9.5px;padding:5px 11px" onclick="window.open('https://explorer.solana.com/?cluster=devnet','_blank')">EXPLORER ↗</button>
+    <a href="https://explorer.solana.com/address/FJ8myMh9dRcgc2n8xBrWTbCrFYAbHQZCPtMzhhmvNo4M?cluster=devnet" target="_blank" rel="noopener" class="btn-primary" style="font-size:13px;padding:10px 22px;text-decoration:none">Explorer →</a>
   </div>
 </nav>
 
 <!-- ══ HERO + INGEST ═════════════════════════════════════════════ -->
-<section id="ingest" class="grid-bg" style="position:relative;padding-top:52px;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;">
+<section id="ingest" class="grid-bg" style="position:relative;padding-top:54px;min-height:100dvh;display:flex;align-items:center">
+  <div class="container" style="padding-top:48px;padding-bottom:64px">
 
-  <div style="position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:36px 20px;width:100%">
-    <!-- Badge -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">
-      <div style="display:flex;align-items:center;gap:7px;border:1px solid var(--rule-hi);padding:5px 12px;font-size:9px;letter-spacing:.16em;color:var(--gold);text-transform:uppercase;font-family:'Geist Mono',monospace">
-        <div class="ldot"></div>
-        Oracle Network · Colosseum Frontier
-      </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:40px">
+      <div class="ldot"></div>
+      <span style="font-size:10px;letter-spacing:.16em;color:var(--gold);text-transform:uppercase">Solana Attestation Service</span>
     </div>
 
-    <div class="hero-grid" style="display:grid;grid-template-columns:1fr 430px;gap:56px;align-items:start">
-      <!-- Left copy -->
+    <div class="hero-grid" style="display:grid;grid-template-columns:1fr 420px;gap:80px;align-items:start">
+
+      <!-- LEFT -->
       <div>
-        <h1 class="fo" style="font-size:clamp(34px,4.8vw,62px);font-weight:900;line-height:1.04;letter-spacing:.025em;margin-bottom:18px">
-          <span style="color:var(--txt)">HUMAN</span><br/>
-          <span style="color:var(--txt)">CAPITAL</span><br/>
-          <span style="color:var(--gold)">ORACLE</span>
+        <h1 class="display" style="font-size:clamp(72px,8vw,118px);margin-bottom:28px;color:var(--white)">
+          Your<br>
+          Skills.<br>
+          <span style="color:var(--gold)">On-Chain.</span><br>
+          <span style="opacity:0.18">Forever.</span>
         </h1>
-        <p style="font-size:13.5px;line-height:1.75;color:var(--txtD);max-width:400px;margin-bottom:28px">
-          Chainlink for human skill. AI evaluates builder artifacts.
-          Solana attests via SAS. Hiring agents pay
-          <span style="color:var(--gold)">$0.00025</span> per lookup.
+
+        <p class="sans" style="font-size:15px;line-height:1.8;color:var(--white-mid);max-width:420px;margin-bottom:44px;font-weight:300">
+          Prooflink converts your GitHub profile and coursework into tamper-proof skill attestations on Solana — verifiable by AI hiring agents in milliseconds.
         </p>
-        <!-- Stat pills -->
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:36px">
-          <div class="spill"><div class="ldot"></div><span style="color:var(--txtM);font-size:9.5px;letter-spacing:.1em">NODES</span><span class="spval" id="node-count">12</span></div>
-          <div class="spill"><span style="color:var(--txtM);font-size:9.5px;letter-spacing:.1em">LOOKUP</span><span class="spval">$0.00025</span></div>
-          <div class="spill"><span style="color:var(--white-dim);font-size:9.5px;letter-spacing:.1em">PROTOCOL</span><span class="spval">SAS</span></div>
-        </div>
-        <!-- Steps -->
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:24px;height:24px;flex-shrink:0;background:var(--gold-dim);border:1px solid rgba(232,160,32,.28);display:flex;align-items:center;justify-content:center;font-family:'Geist Mono',monospace;font-size:9px;color:var(--gold)">01</div>
-            <span style="font-size:12px;color:var(--white-mid)">Connect GitHub or upload Canvas ZIP export</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:24px;height:24px;flex-shrink:0;background:var(--gold-dim);border:1px solid rgba(232,160,32,.18);display:flex;align-items:center;justify-content:center;font-family:'Geist Mono',monospace;font-size:9px;color:var(--gold)">02</div>
-            <span style="font-size:12px;color:var(--white-mid)">AI oracle audits depth — not surface-level claims</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:24px;height:24px;flex-shrink:0;background:var(--gold-dim);border:1px solid rgba(232,160,32,.28);display:flex;align-items:center;justify-content:center;font-family:'Geist Mono',monospace;font-size:9px;color:var(--gold)">03</div>
-            <span style="font-size:12px;color:var(--white-mid)">SAS attestations minted on Solana — permanent, portable</span>
-          </div>
+
+        <div class="stat-strip" style="margin-top:44px">
+          <div class="stat-item"><span class="stat-num" id="c1">0</span><span class="stat-label">Attestations minted</span></div>
+          <div class="stat-item"><span class="stat-num" id="c2">0</span><span class="stat-label">Verified wallets</span></div>
+          <div class="stat-item"><span class="stat-num" id="c3">0</span><span class="stat-label">Active validators</span></div>
         </div>
       </div>
 
-      <!-- Right: form / terminal (toggled) -->
-      <div>
+      <!-- RIGHT: form / terminal -->
+      <div style="position:sticky;top:72px">
+
         <!-- FORM -->
         <div id="form-section">
-          <div class="ocard" style="overflow:hidden">
-            <div style="padding:13px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">
-              <span class="fm" style="font-size:9px;letter-spacing:.14em;color:var(--white-dim);text-transform:uppercase">Ingest portal</span>
-              <div style="display:flex;align-items:center;gap:6px;font-size:9px;letter-spacing:.1em;color:var(--green);font-family:'Geist Mono',monospace"><div class="ldot" style="width:5px;height:5px"></div>Online</div>
+          <div class="surface" style="overflow:hidden">
+            <div style="padding:14px 20px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between">
+              <span class="clabel">Ingest portal</span>
+              <div style="display:flex;align-items:center;gap:6px;font-size:9px;letter-spacing:.12em;color:var(--green)"><div class="ldot" style="width:5px;height:5px"></div>Online</div>
             </div>
-            <div style="display:flex;border-bottom:1px solid var(--bdr);background:rgba(0,0,0,.18)">
-              <button id="tab-github" class="otab on" onclick="switchTab('github')">⬡ GITHUB</button>
-              <button id="tab-canvas" class="otab" onclick="switchTab('canvas')">⬡ CANVAS ZIP</button>
+            <div style="display:flex;border-bottom:1px solid var(--rule)">
+              <button id="tab-github" class="otab on" onclick="switchTab('github')">GitHub Profile</button>
+              <button id="tab-canvas" class="otab" onclick="switchTab('canvas')">Canvas LMS</button>
             </div>
             <!-- GitHub panel -->
-            <div id="panel-github" style="padding:18px;display:flex;flex-direction:column;gap:11px">
+            <div id="panel-github" style="padding:20px;display:flex;flex-direction:column;gap:14px">
               <div>
-                <div class="clabel" style="margin-bottom:5px">Repository Feed</div>
+                <div class="clabel" style="margin-bottom:6px">GitHub Username</div>
                 <div style="position:relative">
-                  <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--txtM)">github.com/</span>
-                  <input id="github-input" type="text" placeholder="username" class="oinput" style="padding-left:88px" />
+                  <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--white-dim)">github.com/</span>
+                  <input id="github-input" type="text" placeholder="e.g. your-github-handle" class="oinput" style="padding-left:92px" />
                 </div>
               </div>
               <div>
-                <div class="clabel" style="margin-bottom:5px">Wallet Address (Devnet)</div>
-                <input id="wallet-input" type="text" placeholder="Solana pubkey" class="oinput" />
+                <div class="clabel" style="margin-bottom:6px">Solana Wallet Address</div>
+                <input id="wallet-input" type="text" placeholder="e.g. 7xKXtg2CW87d97TX…" class="oinput" />
               </div>
-              <button id="analyze-btn" class="btn btn-gold" style="width:100%;margin-top:2px" onclick="startAnalysis()">INITIALIZE ORACLE SCAN →</button>
-              <p style="font-size:10px;color:var(--txtM);letter-spacing:.05em">Public repos only · No login required · Devnet</p>
+              <button id="analyze-btn" class="btn-primary" style="width:100%;text-align:center" onclick="startAnalysis()">Initialize Oracle Scan →</button>
+              <p style="font-size:10px;color:var(--white-dim);letter-spacing:.04em">We analyze your 15 most recently active public repos and up to 3 READMEs. No write access.</p>
             </div>
             <!-- Canvas panel -->
-            <div id="panel-canvas" class="hidden" style="padding:18px;display:flex;flex-direction:column;gap:11px">
+            <div id="panel-canvas" class="hidden" style="padding:20px;display:flex;flex-direction:column;gap:14px">
               <div>
-                <div class="clabel" style="margin-bottom:5px">Academic Artifact Feed</div>
+                <div class="clabel" style="margin-bottom:6px">Canvas Course Export</div>
                 <div id="drop-zone" class="dropz"
                   onclick="document.getElementById('canvas-file-input').click()"
                   ondragover="event.preventDefault();this.classList.add('dov')"
                   ondragleave="this.classList.remove('dov')"
                   ondrop="handleDrop(event)">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;color:var(--txtM)"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-                  <p id="drop-label" style="font-size:12px;color:var(--white-mid)">Drop Canvas <code style="color:var(--gold)">.zip</code> or <span style="color:var(--gold)">click to browse</span></p>
-                  <p style="font-size:10px;color:var(--txtM);margin-top:3px">Canvas → Account → Export Course Content</p>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 10px;color:var(--white-dim)"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                  <p id="drop-label" style="font-size:12px;color:var(--white-mid)">Drag &amp; drop your Canvas .zip, or <span style="color:var(--gold)">click to browse</span></p>
+                  <p style="font-size:10px;color:var(--white-dim);margin-top:4px">Account → Settings → Export Course Content</p>
                   <input id="canvas-file-input" type="file" accept=".zip" class="hidden" onchange="onFileSelected(this)" />
                 </div>
               </div>
               <div>
-                <div class="clabel" style="margin-bottom:5px">Wallet Address (Devnet)</div>
-                <input id="canvas-wallet-input" type="text" placeholder="Solana pubkey" class="oinput" />
+                <div class="clabel" style="margin-bottom:6px">Solana Wallet Address</div>
+                <input id="canvas-wallet-input" type="text" placeholder="e.g. 7xKXtg2CW87d97TX…" class="oinput" />
               </div>
-              <button id="canvas-analyze-btn" class="btn btn-gold" style="width:100%;margin-top:2px" onclick="startCanvasAnalysis()">INITIALIZE ORACLE SCAN →</button>
+              <button class="btn-primary" style="width:100%;text-align:center" onclick="startCanvasAnalysis()">Initialize Oracle Scan →</button>
+              <p style="font-size:10px;color:var(--white-dim);letter-spacing:.04em">Export from Canvas: Account → Settings → Export Course Content</p>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);margin-top:1px">
+            <div style="background:var(--ink2);padding:14px 12px">
+              <div style="font-size:18px;font-family:'Bebas Neue',sans-serif;color:var(--gold);letter-spacing:.04em;margin-bottom:4px">01</div>
+              <div style="font-size:10px;color:var(--white-mid);line-height:1.5">Oracle AI evaluates your evidence corpus (~60–90 seconds)</div>
+            </div>
+            <div style="background:var(--ink2);padding:14px 12px">
+              <div style="font-size:18px;font-family:'Bebas Neue',sans-serif;color:var(--gold);letter-spacing:.04em;margin-bottom:4px">02</div>
+              <div style="font-size:10px;color:var(--white-mid);line-height:1.5">Skills above 50% confidence get minted — more evidence for than against</div>
+            </div>
+            <div style="background:var(--ink2);padding:14px 12px">
+              <div style="font-size:18px;font-family:'Bebas Neue',sans-serif;color:var(--gold);letter-spacing:.04em;margin-bottom:4px">03</div>
+              <div style="font-size:10px;color:var(--white-mid);line-height:1.5">Attestations minted to your wallet on-chain</div>
             </div>
           </div>
         </div>
 
-        <!-- TERMINAL (shown during processing) -->
+        <!-- TERMINAL -->
         <div id="loading-section" class="hidden">
-          <div class="ocard" style="overflow:hidden">
-            <div style="padding:11px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">
+          <div class="surface" style="overflow:hidden">
+            <div style="padding:12px 18px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:10px">
               <div style="display:flex;gap:5px">
-                <div style="width:9px;height:9px;border-radius:50%;background:#EF4444"></div>
-                <div style="width:9px;height:9px;border-radius:50%;background:#F59E0B"></div>
-                <div style="width:9px;height:9px;border-radius:50%;background:#22C55E"></div>
+                <div style="width:9px;height:9px;border-radius:50%;background:#C0473A"></div>
+                <div style="width:9px;height:9px;border-radius:50%;background:#D97706"></div>
+                <div style="width:9px;height:9px;border-radius:50%;background:#4CAF6E"></div>
               </div>
-              <span class="fm" style="font-size:9px;letter-spacing:.15em;color:var(--white-dim);text-transform:uppercase">Oracle · Inference Engine</span>
+              <span style="font-size:9px;letter-spacing:.15em;color:var(--white-dim);text-transform:uppercase">Oracle · Inference Engine</span>
             </div>
-            <div class="term" id="terminal-output" style="min-height:230px;max-height:260px">
+            <div class="term" id="terminal-output" style="min-height:240px;max-height:270px">
               <div class="tl" style="opacity:1"><span class="tp">$</span> <span class="tc">prooflink --scan --attest</span></div>
             </div>
-            <div style="padding:11px 18px;border-top:1px solid var(--bdr)">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                <span id="progress-label" style="font-size:9.5px;color:var(--txtM);letter-spacing:.1em">INITIALIZING...</span>
-                <span id="progress-pct" style="font-size:9.5px;color:var(--gold)">0%</span>
+            <div style="padding:12px 18px;border-top:1px solid var(--rule)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span id="progress-label" style="font-size:9px;color:var(--white-dim);letter-spacing:.12em;text-transform:uppercase">Initializing...</span>
+                <span id="progress-pct" style="font-size:9px;color:var(--gold)">0%</span>
               </div>
               <div class="ptrack"><div class="pfill" id="progress-bar" style="width:0%"></div></div>
             </div>
           </div>
         </div>
-      </div><!-- /right col -->
-    </div><!-- /hero-grid -->
+      </div>
+    </div>
   </div>
 </section>
 
 <!-- ══ ERROR ═════════════════════════════════════════════════════ -->
-<div id="error-section" class="hidden" style="max-width:1080px;margin:20px auto;padding:0 20px">
-  <div style="background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.28);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px">
+<div id="error-section" class="hidden container" style="margin-top:20px;margin-bottom:0">
+  <div style="background:rgba(192,71,58,.07);border:1px solid rgba(192,71,58,.3);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px">
     <div style="display:flex;align-items:center;gap:10px">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <span id="error-message" style="font-size:12px;color:#FCA5A5">An error occurred.</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C0473A" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="error-message" style="font-size:12px;color:#E88080">An error occurred.</span>
     </div>
-    <button onclick="resetForm()" class="btn-ghost" style="font-size:9.5px;flex-shrink:0">RETRY</button>
+    <button onclick="resetForm()" class="btn-ghost" style="font-size:10px;flex-shrink:0">Retry</button>
   </div>
 </div>
 
 <!-- ══ PASSPORT ══════════════════════════════════════════════════ -->
-<section id="passport" style="max-width:1080px;margin:0 auto;padding:72px 20px">
+<section id="passport" style="max-width:1100px;margin:0 auto;padding:88px 28px">
   <div class="sh">
-    <div class="stag">SOVEREIGN PASSPORT · SAS RECORD</div>
+    <div class="stag">Skill passport · SAS record</div>
     <div class="shline"></div>
-    <div style="font-size:9px;letter-spacing:.12em;color:var(--txtM)">ON-CHAIN VERIFIED</div>
+    <div class="stag">On-chain verified</div>
   </div>
-  <!-- Empty -->
-  <div id="passport-empty" style="text-align:center;padding:56px 20px;border:1px dashed rgba(255,255,255,.08)">
-    <div style="font-size:13px;font-weight:500;color:var(--txtD);margin-bottom:10px">No passport loaded yet</div>
-    <p style="font-size:12px;color:var(--txtM);max-width:340px;margin:0 auto;line-height:1.7">Enter a GitHub username above to generate a verifiable on-chain skill passport — or upload a Canvas ZIP export for academic credentials.</p>
+  <div id="passport-empty" style="text-align:center;padding:64px 20px;border:1px solid var(--rule)">
+    <div style="font-size:10px;letter-spacing:.16em;color:var(--white-dim);margin-bottom:12px;text-transform:uppercase">No passport loaded</div>
+    <p style="font-size:12px;color:var(--white-dim);max-width:260px;margin:0 auto;line-height:1.7">Run an oracle scan above to generate your on-chain skill passport.</p>
+    <a href="/profile/FLkqg6fUP39vWkcxV9ZzLKWrBjRoX2YmccLcEkobZyEZ" style="display:inline-block;margin-top:16px;font-size:11px;color:var(--gold);letter-spacing:.06em;text-decoration:none">→ view example passport</a>
   </div>
-  <!-- Result -->
   <div id="result-section" class="hidden">
-    <!-- Header row -->
-    <div class="phead-grid" style="display:grid;grid-template-columns:1fr 170px;gap:14px;margin-bottom:20px">
-      <div class="ocard" style="padding:18px">
-        <div class="clabel" style="margin-bottom:7px">Identity Anchor</div>
-        <div id="passport-wallet" class="fm" style="font-size:13px;color:var(--gold);word-break:break-all;letter-spacing:.04em"></div>
-        <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:20px">
-          <div><div class="clabel">Attestations</div><div id="passport-count" class="fo" style="font-size:24px;font-weight:700;color:var(--gold);margin-top:2px"></div></div>
-          <div><div class="clabel">Primary Domain</div><div id="passport-domain" style="font-size:13px;color:var(--txt);margin-top:4px"></div></div>
-          <div><div class="clabel">Academic Level</div><div id="passport-level" style="font-size:13px;color:var(--txt);margin-top:4px"></div></div>
+    <div style="display:grid;grid-template-columns:1fr 180px;gap:12px;margin-bottom:16px">
+      <div class="surface" style="padding:20px">
+        <div class="clabel" style="margin-bottom:8px">Identity anchor</div>
+        <div id="passport-wallet" class="mono" style="font-size:13px;color:var(--gold);word-break:break-all;letter-spacing:.04em"></div>
+        <div style="margin-top:18px;display:flex;flex-wrap:wrap;gap:28px">
+          <div><div class="clabel">Attestations</div><div id="passport-count" class="display" style="font-size:36px;color:var(--white);margin-top:4px"></div></div>
+          <div><div class="clabel">Primary domain</div><div id="passport-domain" style="font-size:13px;color:var(--white);margin-top:6px"></div></div>
+          <div><div class="clabel">Academic level</div><div id="passport-level" style="font-size:13px;color:var(--white);margin-top:6px"></div></div>
         </div>
       </div>
-      <div class="ocard" style="padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
-        <div class="clabel">Signal Strength</div>
+      <div class="surface" style="padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+        <div class="clabel">Portfolio signal</div>
         <div class="sbars" id="signal-bars"></div>
-        <div id="signal-label" class="fo" style="font-size:20px;font-weight:700;color:var(--gold)"></div>
-        <div style="font-size:9px;letter-spacing:.12em;color:var(--txtM)">TOP PERCENTILE</div>
+        <div id="signal-label" class="display" style="font-size:28px;color:var(--gold)"></div>
+        <div style="font-size:9px;letter-spacing:.12em;color:var(--white-dim);text-transform:uppercase">Top percentile</div>
       </div>
     </div>
-    <!-- Attestation grid -->
-    <div class="clabel" style="margin-bottom:10px">Skill Attestations · Solana Attestation Service</div>
-    <div id="att-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:20px"></div>
-    <!-- curl examples -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-      <div class="ocard" style="padding:14px"><div class="clabel" style="margin-bottom:7px">Profile Feed (Free)</div><pre id="curl-profile" style="font-size:10.5px;color:var(--gold);white-space:pre-wrap;line-height:1.7;overflow-x:auto"></pre></div>
-      <div class="ocard" style="padding:14px"><div class="clabel" style="margin-bottom:7px">Verification Feed (x402)</div><pre id="curl-verify" style="font-size:10.5px;color:var(--gold);white-space:pre-wrap;line-height:1.7;overflow-x:auto"></pre></div>
+    <div class="clabel" style="margin-bottom:12px">Skill attestations · Solana Attestation Service</div>
+    <div id="att-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-bottom:20px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      <div class="surface" style="padding:16px"><div class="clabel" style="margin-bottom:8px">Profile feed (free)</div><pre id="curl-profile" style="font-size:10px;color:var(--gold);white-space:pre-wrap;line-height:1.8;overflow-x:auto"></pre></div>
+      <div class="surface" style="padding:16px"><div class="clabel" style="margin-bottom:8px">Verification feed (x402)</div><pre id="curl-verify" style="font-size:10px;color:var(--white-mid);white-space:pre-wrap;line-height:1.8;overflow-x:auto"></pre></div>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-      <a id="passport-page-link" href="#" target="_blank" class="btn btn-gold" style="text-decoration:none;font-size:10px">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        VIEW PASSPORT PAGE ↗
-      </a>
-      <button onclick="resetForm()" class="btn-ghost">← NEW SCAN</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <a id="passport-page-link" href="#" target="_blank" class="btn-primary" style="text-decoration:none">View Passport Page ↗</a>
+      <button onclick="resetForm()" class="btn-ghost">← New scan</button>
     </div>
   </div>
 </section>
 
 <!-- ══ VALIDATION REGISTRY ═══════════════════════════════════════ -->
-<section id="registry" style="background:var(--bg2);border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr)">
-  <div style="max-width:1080px;margin:0 auto;padding:72px 20px">
+<section id="registry" style="border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);background:var(--ink2)">
+  <div style="max-width:1100px;margin:0 auto;padding:88px 28px">
     <div class="sh">
-      <div class="stag">VALIDATION REGISTRY · ECONOMIC SECURITY</div>
+      <div class="stag">Validation registry · Stake &amp; dispute</div>
       <div class="shline"></div>
     </div>
+
+    <div class="stat-strip" style="margin-bottom:48px">
+      <div class="stat-item"><span class="stat-num">3</span><span class="stat-label">Active validators</span></div>
+      <div class="stat-item"><span class="stat-num">8.77</span><span class="stat-label">SOL total staked</span></div>
+      <div class="stat-item"><span class="stat-num">0</span><span class="stat-label">Open challenges</span></div>
+      <div class="stat-item"><span class="stat-num">0</span><span class="stat-label">Resolutions this week</span></div>
+    </div>
+
+    <div style="border:1px solid var(--rule);padding:18px 24px;margin-bottom:40px">
+      <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:10px">48-hour dispute window</div>
+      <div style="font-size:12px;color:var(--white-mid);line-height:1.8;max-width:640px">All new attestations enter a 48-hour optimistic window. Validators stake SOL to vouch for a score. Challengers post a bond to dispute it. After 48 hours with no successful challenge, the attestation reaches economic finality — the stake is locked, the record is permanent.</div>
+    </div>
+
     <div class="reg-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start">
-      <!-- Left -->
       <div>
-        <p style="font-size:13px;color:var(--txtD);line-height:1.8;margin-bottom:22px">
-          Independent validators stake SOL to back oracle attestations. Challengers can dispute within a 48-hour optimistic window. Economic slashing enforces truth-telling at scale — the Chainlink model applied to human capital.
-        </p>
-        <div class="ocard" style="padding:18px">
-          <div class="clabel" style="margin-bottom:14px">Economic Security Flow</div>
-          <div style="display:flex;flex-direction:column;gap:6px;font-size:11px">
-            <div style="display:flex;align-items:center;gap:11px;padding:10px;background:rgba(232,160,32,.05);border:1px solid rgba(232,160,32,.14)">
-              <div style="width:30px;height:30px;flex-shrink:0;background:var(--gold-dim);border:1px solid rgba(232,160,32,.28);display:flex;align-items:center;justify-content:center;font-family:'Geist Mono',monospace;font-size:9px;color:var(--gold)">V</div>
-              <div><div style="color:var(--white);font-weight:500;margin-bottom:2px">Validator Stakes SOL</div><div style="color:var(--white-dim);font-size:10px">Backs oracle output with economic skin-in-the-game</div></div>
-            </div>
-            <div style="text-align:center;color:var(--rule-hi);font-size:18px;line-height:1">↓</div>
-            <div style="display:flex;align-items:center;gap:11px;padding:10px;background:rgba(232,160,32,.05);border:1px solid rgba(232,160,32,.14)">
-              <div style="width:30px;height:30px;flex-shrink:0;background:var(--gold-dim);border:1px solid rgba(232,160,32,.28);display:flex;align-items:center;justify-content:center;font-family:'Geist Mono',monospace;font-size:9px;color:var(--gold)">W</div>
-              <div><div style="color:var(--white);font-weight:500;margin-bottom:2px">48h Optimistic Window</div><div style="color:var(--white-dim);font-size:10px">Challenge period — anyone can dispute with bond</div></div>
-            </div>
-            <div style="text-align:center;color:var(--rule-hi);font-size:18px;line-height:1">↓</div>
-            <div style="display:flex;align-items:center;gap:11px;padding:10px;background:rgba(76,175,110,.05);border:1px solid rgba(76,175,110,.14)">
-              <div style="width:30px;height:30px;flex-shrink:0;background:rgba(76,175,110,.1);border:1px solid rgba(76,175,110,.28);display:flex;align-items:center;justify-content:center;font-family:'Geist Mono',monospace;font-size:9px;color:var(--green)">F</div>
-              <div><div style="color:var(--white);font-weight:500;margin-bottom:2px">Finality Reached</div><div style="color:var(--white-dim);font-size:10px">Attestation confirmed · Stake returned</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Right -->
-      <div>
-        <!-- Nodes table -->
-        <div class="ocard" style="overflow:hidden;margin-bottom:14px">
-          <div style="padding:10px 16px;border-bottom:1px solid var(--bdr)">
-            <div class="nrow" style="padding:0;font-size:8.5px;letter-spacing:.1em;color:var(--txtM);border-bottom:none">
-              <span>NODE</span><span>SKILL</span><span>STAKED</span><span>STATUS</span><span>WINDOW</span>
-            </div>
+        <div class="clabel" style="margin-bottom:12px">Validator nodes</div>
+        <div class="surface" style="overflow:hidden">
+          <div class="nrow" style="font-size:9px;letter-spacing:.1em;color:var(--white-dim);padding:8px 18px">
+            <span>Node</span><span>Skill</span><span>Staked</span><span>Status</span><span>Confidence</span>
           </div>
           <div id="validator-nodes"></div>
         </div>
-        <!-- Countdown -->
-        <div class="ocard" style="padding:18px">
-          <div class="clabel" style="margin-bottom:12px">OPTIMISTIC WINDOW · LATEST ATTESTATION</div>
-          <div style="display:flex;gap:14px;justify-content:center;margin-bottom:10px">
-            <div style="text-align:center"><div id="cd-h" class="fo" style="font-size:28px;font-weight:700;color:var(--gold)">47</div><div style="font-size:8.5px;letter-spacing:.1em;color:var(--txtM)">HRS</div></div>
-            <div class="fo" style="font-size:28px;color:var(--bdrS);align-self:flex-start;margin-top:2px">:</div>
-            <div style="text-align:center"><div id="cd-m" class="fo" style="font-size:28px;font-weight:700;color:var(--gold)">59</div><div style="font-size:8.5px;letter-spacing:.1em;color:var(--txtM)">MIN</div></div>
-            <div class="fo" style="font-size:28px;color:var(--bdrS);align-self:flex-start;margin-top:2px">:</div>
-            <div style="text-align:center"><div id="cd-s" class="fo" style="font-size:28px;font-weight:700;color:var(--gold)">00</div><div style="font-size:8.5px;letter-spacing:.1em;color:var(--txtM)">SEC</div></div>
+      </div>
+      <div>
+        <div class="clabel" style="margin-bottom:12px">How validation works</div>
+        <div style="display:flex;flex-direction:column;gap:0">
+          <div style="padding:20px;border:1px solid var(--rule);border-bottom:none">
+            <div class="display" style="font-size:20px;color:var(--gold);margin-bottom:8px">01 / Stake</div>
+            <div style="font-size:12px;color:var(--white-mid);line-height:1.7">Validators stake SOL to back an attestation score. Higher stake = stronger signal.</div>
           </div>
-          <div id="cd-status" style="text-align:center;font-size:11px;color:var(--txtM);margin-bottom:10px">Challenge window open</div>
-          <div class="ptrack"><div id="window-prog" class="pfill" style="width:100%"></div></div>
+          <div style="padding:20px;border:1px solid var(--rule);border-bottom:none">
+            <div class="display" style="font-size:20px;color:var(--gold);margin-bottom:8px">02 / Challenge</div>
+            <div style="font-size:12px;color:var(--white-mid);line-height:1.7">Challengers post a bond to dispute. If upheld, challenger earns the validator's stake.</div>
+          </div>
+          <div style="padding:20px;border:1px solid var(--rule)">
+            <div class="display" style="font-size:20px;color:var(--gold);margin-bottom:8px">03 / Finality</div>
+            <div style="font-size:12px;color:var(--white-mid);line-height:1.7">After 48 hours with no successful challenge, attestation reaches economic finality.</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══ AGENTIC ECONOMY ═══════════════════════════════════════════ -->
-<section id="api" style="max-width:1080px;margin:0 auto;padding:72px 20px">
+<!-- ══ API ECONOMY ═══════════════════════════════════════════════ -->
+<section id="api" style="max-width:1100px;margin:0 auto;padding:88px 28px">
   <div class="sh">
-    <div class="stag">AGENTIC ECONOMY · x402 MICROPAYMENT API</div>
+    <div class="stag">Agentic economy · x402 micropayment API</div>
     <div class="shline"></div>
-    <div style="font-size:9px;letter-spacing:.12em;color:var(--txtM)">$0.00025/LOOKUP</div>
+    <div class="stag">$0.00025/lookup</div>
   </div>
-  <div class="api-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start">
-    <!-- Comparison -->
+
+  <div class="stat-strip" style="margin-bottom:48px">
+    <div class="stat-item"><span class="stat-num">7</span><span class="stat-label">API calls today</span></div>
+    <div class="stat-item"><span class="stat-num">0</span><span class="stat-label">USDC revenue</span></div>
+    <div class="stat-item"><span class="stat-num">~75s</span><span class="stat-label">Avg ingest time</span></div>
+  </div>
+
+  <div class="api-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start">
     <div>
-      <div class="ocard" style="overflow:hidden">
-        <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--bdr)">
-          <div style="padding:11px 14px;border-right:1px solid var(--bdr)"><span class="fo" style="font-size:9px;letter-spacing:.12em;color:var(--txtM)">TRADITIONAL RESUME</span></div>
-          <div style="padding:11px 14px"><span class="fo" style="font-size:9px;letter-spacing:.12em;color:var(--green)">ORACLE SIGNAL</span></div>
+      <div class="clabel" style="margin-bottom:12px">Resume vs oracle signal</div>
+      <div class="surface" style="overflow:hidden">
+        <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--rule)">
+          <div style="padding:12px 16px;border-right:1px solid var(--rule)"><span class="clabel">Traditional resume</span></div>
+          <div style="padding:12px 16px"><span class="clabel" style="color:var(--green)">Oracle signal</span></div>
         </div>
         <div class="crow">
-          <div class="ccell" style="border-right:1px solid var(--bdr)"><div style="font-size:9px;letter-spacing:.08em;color:var(--txtM);margin-bottom:4px">CLAIM</div><div style="color:var(--txtM);text-decoration:line-through">"Grade A in CS302"</div></div>
-          <div class="ccell"><div style="font-size:9px;letter-spacing:.08em;color:var(--green);margin-bottom:4px">EVIDENCE</div><div style="color:var(--green)">95th %ile Distributed Systems</div></div>
+          <div class="ccell" style="border-right:1px solid var(--rule)"><div class="clabel" style="margin-bottom:4px">Claim</div><div style="color:var(--white-dim);text-decoration:line-through">"Grade A in CS302"</div></div>
+          <div class="ccell"><div class="clabel" style="color:var(--green);margin-bottom:4px">Evidence</div><div style="color:var(--white)">95th %ile Distributed Systems</div></div>
         </div>
         <div class="crow">
-          <div class="ccell" style="border-right:1px solid var(--bdr)"><div style="font-size:9px;letter-spacing:.08em;color:var(--txtM);margin-bottom:4px">PROOF</div><div style="color:var(--txtM);text-decoration:line-through">Self-reported PDF</div></div>
-          <div class="ccell"><div style="font-size:9px;letter-spacing:.08em;color:var(--green);margin-bottom:4px">ANCHOR</div><div style="color:var(--green)">SAS tx on Solana</div></div>
+          <div class="ccell" style="border-right:1px solid var(--rule)"><div class="clabel" style="margin-bottom:4px">Proof</div><div style="color:var(--white-dim);text-decoration:line-through">Self-reported PDF</div></div>
+          <div class="ccell"><div class="clabel" style="color:var(--green);margin-bottom:4px">Anchor</div><div style="color:var(--white)">SAS tx on Solana</div></div>
         </div>
         <div class="crow">
-          <div class="ccell" style="border-right:1px solid var(--bdr)"><div style="font-size:9px;letter-spacing:.08em;color:var(--txtM);margin-bottom:4px">VERIFICATION</div><div style="color:var(--txtM);text-decoration:line-through">Manual reference check</div></div>
-          <div class="ccell"><div style="font-size:9px;letter-spacing:.08em;color:var(--green);margin-bottom:4px">API COST</div><div style="color:var(--green)">$0.00025 · ~200ms</div></div>
+          <div class="ccell" style="border-right:1px solid var(--rule)"><div class="clabel" style="margin-bottom:4px">Verification</div><div style="color:var(--white-dim);text-decoration:line-through">Manual reference check</div></div>
+          <div class="ccell"><div class="clabel" style="color:var(--green);margin-bottom:4px">API cost</div><div style="color:var(--white)">$0.00025 · ~200ms</div></div>
         </div>
         <div class="crow" style="border-bottom:none">
-          <div class="ccell" style="border-right:1px solid var(--bdr)"><div style="font-size:9px;letter-spacing:.08em;color:var(--txtM);margin-bottom:4px">MACHINE-READABLE</div><div style="color:var(--txtM);text-decoration:line-through">No</div></div>
-          <div class="ccell"><div style="font-size:9px;letter-spacing:.08em;color:var(--green);margin-bottom:4px">MACHINE-READABLE</div><div style="color:var(--green)">Yes — x402 protocol</div></div>
+          <div class="ccell" style="border-right:1px solid var(--rule)"><div class="clabel" style="margin-bottom:4px">Machine-readable</div><div style="color:var(--white-dim);text-decoration:line-through">No</div></div>
+          <div class="ccell"><div class="clabel" style="color:var(--green);margin-bottom:4px">Machine-readable</div><div style="color:var(--white)">Yes — x402 protocol</div></div>
         </div>
       </div>
-      <!-- Oracle info -->
-      <div class="ocard" style="padding:14px;margin-top:11px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-        <div style="font-size:10.5px;color:var(--white-dim)">SAS · <span style="color:var(--gold)">FJ8myMh9…</span></div>
-        <div style="font-size:10.5px;color:var(--txtM)">Network · <span style="color:var(--green)">Devnet</span></div>
-        <div style="font-size:10.5px;color:var(--txtM)">Fee · <span style="color:var(--gold)">$0.00025</span></div>
+      <div class="surface" style="padding:14px 16px;margin-top:8px;display:flex;gap:24px;flex-wrap:wrap">
+        <div style="font-size:11px;color:var(--white-dim)">SAS · <span style="color:var(--gold)">FJ8myMh9…</span></div>
+        <div style="font-size:11px;color:var(--white-dim)">Network · <span style="color:var(--green)">Devnet</span></div>
+        <div style="font-size:11px;color:var(--white-dim)">Fee · <span style="color:var(--gold)">$0.00025</span></div>
       </div>
     </div>
+
     <!-- x402 Simulator -->
     <div>
-      <div class="ocard" style="overflow:hidden">
-        <div style="padding:13px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">
-          <span class="fm" style="font-size:9px;letter-spacing:.14em;color:var(--white-dim);text-transform:uppercase">Agent API Simulator</span>
-          <span style="font-size:9.5px;color:var(--gold);letter-spacing:.08em">x402</span>
-        </div>
-        <div style="padding:18px;display:flex;flex-direction:column;gap:11px">
-          <!-- Phantom wallet row -->
+      <div class="clabel" style="margin-bottom:12px">Simulate agent lookup</div>
+      <div class="surface" style="overflow:hidden">
+        <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
           <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(232,160,32,.04);border:1px solid rgba(232,160,32,.12)">
             <div style="flex:1">
               <div class="clabel" style="margin-bottom:2px">Agent Wallet</div>
-              <div id="phantom-addr" style="font-size:10px;color:var(--white-dim);font-family:'Geist Mono',monospace">Not connected — runs in simulation mode</div>
+              <div id="phantom-addr" style="font-size:10px;color:var(--white-dim)">Not connected — runs in simulation mode</div>
             </div>
-            <button id="phantom-btn" onclick="connectPhantom()" class="btn-ghost" style="font-size:9px;padding:6px 12px;flex-shrink:0">CONNECT PHANTOM</button>
+            <button id="phantom-btn" onclick="connectPhantom()" class="btn-ghost" style="font-size:9px;padding:6px 12px;flex-shrink:0">Connect Phantom</button>
           </div>
           <div>
-            <div class="clabel" style="margin-bottom:5px">Target Wallet</div>
-            <input id="verify-wallet" type="text" placeholder="Paste analyzed wallet..." class="oinput" />
+            <div class="clabel" style="margin-bottom:6px">Target wallet</div>
+            <input id="verify-wallet" type="text" placeholder="Paste analyzed wallet…" class="oinput" />
           </div>
           <div>
-            <div class="clabel" style="margin-bottom:5px">Skill Slug</div>
+            <div class="clabel" style="margin-bottom:6px">Skill slug</div>
             <input id="verify-skill" type="text" placeholder="e.g. rust, python, react" class="oinput" />
           </div>
-          <button id="verify-btn" onclick="runVerifyFlow()" class="btn btn-gold" style="width:100%">SIMULATE AGENT LOOKUP →</button>
+          <button id="verify-btn" onclick="runVerifyFlow()" class="btn-primary" style="width:100%;text-align:center">Simulate Agent Lookup →</button>
+          <div style="border-top:1px solid var(--rule);padding-top:14px;display:flex;flex-direction:column;gap:6px">
+            <div style="font-size:10px;color:var(--white-dim)">Request cost: <span style="color:var(--white)">250 raw USDC ($0.00025)</span></div>
+            <div style="font-size:10px;color:var(--white-dim)">Oracle wallet: <span style="color:var(--gold)">4VkiE8…Mn2p</span></div>
+            <div style="font-size:10px;color:var(--white-dim)">Network: <span style="color:var(--green)">Solana Devnet</span></div>
+          </div>
           <div>
-            <div class="clabel" style="margin-bottom:7px">API Response</div>
-            <div class="term" id="verify-output" style="min-height:110px;padding:13px;font-size:11px;line-height:1.8">
-              <span class="tp">$</span> <span class="tc">awaiting agent request...</span>
+            <div class="clabel" style="margin-bottom:8px">API response</div>
+            <div class="term" id="verify-output" style="min-height:120px;padding:14px;font-size:11px;line-height:1.8">
+              <span class="tp">$</span> <span class="tc">// Output will appear here after simulation</span>
             </div>
           </div>
         </div>
@@ -544,25 +567,30 @@
 </section>
 
 <!-- ══ FOOTER ════════════════════════════════════════════════════ -->
-<footer style="border-top:1px solid var(--bdr);padding:28px 20px 52px;text-align:center">
-  <div class="fo" style="font-size:14px;letter-spacing:.18em;color:var(--white-dim)">
+<footer style="border-top:1px solid var(--rule);padding:32px 28px 60px;text-align:center">
+  <div class="display" style="font-size:14px;letter-spacing:.2em;color:var(--white-dim)">
     AI for intelligence · Blockchain for trust · Machine-scale talent liquidity
   </div>
-  <div style="margin-top:10px;font-size:9.5px;color:var(--white-dim);opacity:.45;letter-spacing:.08em">
-    Prooflink · Built on Solana · Colosseum Frontier
+  <div style="margin-top:10px;font-size:10px;color:var(--white-dim);opacity:.4;letter-spacing:.08em">
+    Prooflink · Built on Solana · Claude Sonnet inference
   </div>
 </footer>
 
+<!-- ══ TICKER ════════════════════════════════════════════════════ -->
+<div id="ticker">
+  <div class="tlabel">Live feed</div>
+  <div class="ttrack"><div class="tinner" id="ticker-inner"></div></div>
+</div>
 
 <script>
   const API_BASE = (location.hostname==='localhost'||location.hostname==='127.0.0.1') ? 'http://localhost:3000' : '';
   let lastResult=null, selFile=null, cdInterval=null, activeTab='github';
+  let phantomProvider=null, agentWalletPubkey=null;
 
   function show(id){const e=document.getElementById(id);if(e)e.classList.remove('hidden')}
   function hide(id){const e=document.getElementById(id);if(e)e.classList.add('hidden')}
   function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 
-  // ── Tabs ──────────────────────────────────────────────────────
   function switchTab(t){
     activeTab=t;
     ['github','canvas'].forEach(x=>{
@@ -573,7 +601,6 @@
     });
   }
 
-  // ── File ──────────────────────────────────────────────────────
   function onFileSelected(inp){
     const f=inp.files[0];if(!f)return;
     selFile=f;
@@ -589,15 +616,14 @@
     }
   }
 
-  // ── Terminal ──────────────────────────────────────────────────
   const GH_STEPS=[
     {d:350,t:'cmd',s:'Connecting to GitHub API...'},
-    {d:500,t:'ok', s:'Repository feed established · scanning {n} repos'},
+    {d:500,t:'ok', s:'Repository feed established · scanning repos'},
     {d:400,t:'cmd',s:'Auditing commit density and code depth...'},
     {d:600,t:'data',s:'Language distribution mapped · primary stack identified'},
     {d:450,t:'cmd',s:'Extracting README semantic signals...'},
     {d:700,t:'cmd',s:'Routing to inference engine...'},
-    {d:1100,t:'data',s:'Denoising surface-level claims · weighting code › syllabi › grades'},
+    {d:1100,t:'data',s:'Denoising surface-level claims · weighting code › grades'},
     {d:600,t:'cmd',s:'Applying confidence threshold filter (≥ 50%)...'},
     {d:400,t:'ok', s:'Inference complete · qualifying skills identified'},
     {d:300,t:'cmd',s:'Initializing SAS attestation pipeline...'},
@@ -605,9 +631,9 @@
   ];
   const CV_STEPS=[
     {d:350,t:'cmd',s:'Decompressing Canvas ZIP export...'},
-    {d:500,t:'ok', s:'Archive extracted · {n} course artifacts detected'},
+    {d:500,t:'ok', s:'Archive extracted · course artifacts detected'},
     {d:400,t:'cmd',s:'Auditing syllabus rigor and academic depth...'},
-    {d:550,t:'data',s:'Extracting Rust concurrency mastery...'},
+    {d:550,t:'data',s:'Extracting skill mastery signals...'},
     {d:450,t:'data',s:'Denoising letter grade proxies · weighting code › grades'},
     {d:700,t:'cmd',s:'Routing to inference engine...'},
     {d:1000,t:'data',s:'Extracting skill mastery signals from artifacts...'},
@@ -623,12 +649,11 @@
     const total=steps.reduce((s,x)=>s+x.d,0);
     let elapsed=0;
     for(const step of steps){
-      await sleep(step.d);
-      elapsed+=step.d;
+      await sleep(step.d);elapsed+=step.d;
       const pct=Math.min(85,Math.round(elapsed/total*85));
       document.getElementById('progress-bar').style.width=pct+'%';
       document.getElementById('progress-pct').textContent=pct+'%';
-      if(step.t==='cmd') document.getElementById('progress-label').textContent=step.s.toUpperCase();
+      if(step.t==='cmd') document.getElementById('progress-label').textContent=step.s;
       const div=document.createElement('div');div.className='tl';
       const cls=step.t==='ok'?'tok':step.t==='data'?'td':step.t==='warn'?'tw':'tc';
       const pre=step.t==='ok'?'✓':step.t==='data'?'◆':'›';
@@ -649,27 +674,25 @@
       box.appendChild(mDiv);
     }
     const div=document.createElement('div');div.className='tl';div.style.opacity='1';
-    div.innerHTML=`<span class="tok">✓ ${n} SAS ATTESTATIONS MINTED · PASSPORT ACTIVE</span>`;
+    div.innerHTML=`<span class="tok">✓ ${n} SAS attestations minted · passport active</span>`;
     box.appendChild(div);
     document.getElementById('progress-bar').style.width='100%';
     document.getElementById('progress-pct').textContent='100%';
-    document.getElementById('progress-label').textContent='COMPLETE';
+    document.getElementById('progress-label').textContent='Complete';
   }
 
-  // ── Analysis flows ────────────────────────────────────────────
   async function startAnalysis(){
     const u=document.getElementById('github-input').value.trim();
     const w=document.getElementById('wallet-input').value.trim();
     if(!u){document.getElementById('github-input').focus();return}
     if(!w){document.getElementById('wallet-input').focus();return}
     hide('form-section');hide('error-section');hide('passport-empty');
-    show('loading-section');
-    runTerminal(false);
+    show('loading-section');runTerminal(false);
     try{
       const res=await fetch(`${API_BASE}/api/analyze-github`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({githubUsername:u,studentWallet:w})});
       const data=await res.json();
       if(!res.ok||!data.success)throw new Error(data.error||'Analysis failed');
-      finishTerminal(data.attestationCount, data.modelUsed);await sleep(1100);
+      finishTerminal(data.attestationCount,data.modelUsed);await sleep(1100);
       hide('loading-section');lastResult=data;renderResult(data);
       setTimeout(()=>document.getElementById('passport').scrollIntoView({behavior:'smooth',block:'start'}),300);
     }catch(err){
@@ -684,14 +707,13 @@
     if(!selFile){document.getElementById('drop-zone').style.borderColor='var(--red)';return}
     if(!w){document.getElementById('canvas-wallet-input').focus();return}
     hide('form-section');hide('error-section');hide('passport-empty');
-    show('loading-section');
-    runTerminal(true);
+    show('loading-section');runTerminal(true);
     try{
       const fd=new FormData();fd.append('canvasZip',selFile);fd.append('studentWallet',w);
       const res=await fetch(`${API_BASE}/api/analyze-canvas`,{method:'POST',body:fd});
       const data=await res.json();
       if(!res.ok||!data.success)throw new Error(data.error||'Analysis failed');
-      finishTerminal(data.attestationCount, data.modelUsed);await sleep(1100);
+      finishTerminal(data.attestationCount,data.modelUsed);await sleep(1100);
       hide('loading-section');lastResult=data;renderResult(data);
       setTimeout(()=>document.getElementById('passport').scrollIntoView({behavior:'smooth',block:'start'}),300);
     }catch(err){
@@ -701,9 +723,6 @@
     }
   }
 
-  // ── Render result ─────────────────────────────────────────────
-  const COLORS=['#E8A020','#F0EDE6','#4CAF6E','#9A978F','#D97706','#E8A020','#F0EDE6','#4CAF6E'];
-
   function renderResult(data){
     show('result-section');
     const w=data.wallet||'';
@@ -711,59 +730,53 @@
     document.getElementById('passport-count').textContent=data.attestationCount||0;
     document.getElementById('passport-domain').textContent=data.primaryDomain||'—';
     document.getElementById('passport-level').textContent=(data.academicLevel||'intermediate').replace(/_/g,' ');
-
-    const top=data.topSkills?.[0]?.score||0;
-    renderSignal(top);
-
+    renderSignal(data.topSkills?.[0]?.score||0);
     const grid=document.getElementById('att-grid');grid.innerHTML='';
     (data.topSkills||[]).forEach((sk,i)=>{
       const att=(data.attestations||[]).find(a=>a.skill===sk.slug);
-      const col=COLORS[i%COLORS.length];
       const card=document.createElement('div');
-      card.className='attcard fu';card.style.animationDelay=(i*70)+'ms';
+      card.className='attcard fu';card.style.animationDelay=(i*60)+'ms';
       card.innerHTML=`
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:7px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
           <div>
-            <div class="fo" style="font-size:10.5px;font-weight:700;color:var(--txt);letter-spacing:.08em">${sk.name.toUpperCase()}</div>
-            <div style="font-size:8.5px;letter-spacing:.1em;color:var(--txtM);margin-top:2px">${sk.category.replace(/_/g,' ')}</div>
+            <div class="display" style="font-size:20px;color:var(--white);letter-spacing:.05em">${sk.name}</div>
+            <div style="font-size:9px;letter-spacing:.12em;color:var(--white-dim);margin-top:3px;text-transform:uppercase">${sk.category.replace(/_/g,' ')}</div>
           </div>
-          <div class="fo" style="font-size:20px;font-weight:900;color:${col}">${sk.score}<span style="font-size:9px;font-weight:500;color:var(--txtM)">th</span></div>
+          <div class="display" style="font-size:32px;color:var(--gold)">${sk.score}</div>
         </div>
-        <div class="ctrack"><div class="cfill" style="width:${sk.score}%;background:${col}"></div></div>
-        <p style="font-size:10px;color:var(--txtM);line-height:1.55;margin-bottom:10px">${sk.evidence}</p>
+        <div class="ctrack"><div class="cfill" style="width:${sk.score}%;background:var(--gold)"></div></div>
+        <p style="font-size:10px;color:var(--white-mid);line-height:1.6;margin-bottom:12px">${sk.evidence}</p>
         ${att?`
-          <div style="border-top:1px solid var(--bdr);padding-top:9px;display:flex;align-items:center;justify-content:space-between">
-            <div class="fm" style="font-size:8.5px;color:var(--txtM)">${att.address.slice(0,14)}…</div>
-            <a href="${att.explorerUrl}" target="_blank" rel="noopener" style="font-size:9px;color:${col};text-decoration:none;letter-spacing:.08em">SAS ↗</a>
+          <div style="border-top:1px solid var(--rule);padding-top:10px;display:flex;align-items:center;justify-content:space-between">
+            <div class="mono" style="font-size:9px;color:var(--white-dim)">${att.address.slice(0,14)}…</div>
+            <a href="${att.explorerUrl}" target="_blank" rel="noopener" style="font-size:9px;color:var(--gold);text-decoration:none;letter-spacing:.08em">View on Explorer ↗</a>
           </div>
-        `:`<div style="border-top:1px solid var(--bdr);padding-top:9px;font-size:9px;color:var(--txtM)">Below threshold</div>`}
+        `:`<div style="border-top:1px solid var(--rule);padding-top:10px;font-size:9px;color:var(--white-dim)">Below threshold</div>`}
       `;
       grid.appendChild(card);
     });
-
     document.getElementById('curl-profile').textContent=`curl "${location.origin}/api/profile/${w}"`;
     document.getElementById('curl-verify').textContent=`curl -H "X-Payment-Proof: <tx>" \\\n  "${location.origin}/api/verify?wallet=${w}&skill=${data.topSkills?.[0]?.slug||'rust'}"`;
     document.getElementById('verify-wallet').value=w;
     if(data.topSkills?.[0]) document.getElementById('verify-skill').value=data.topSkills[0].slug;
     document.getElementById('passport-page-link').href=`/profile/${w}`;
-
     startCountdown(Date.now()+48*3600*1000);
+    addTicker(w,data.topSkills?.[0]?.name||'skill');
   }
 
   function renderSignal(score){
     const bars=document.getElementById('signal-bars');bars.innerHTML='';
     for(let i=0;i<8;i++){
       const filled=(i/8)*100<score;
-      const h=8+(i/8)*28;
+      const h=8+(i/8)*32;
       const seg=document.createElement('div');seg.className='sbar';
       seg.style.height=h+'px';
-      seg.style.background=filled?(score>=80?'var(--green)':'var(--gold)'):'rgba(240,237,230,.06)';
+      seg.style.background=filled?'var(--gold)':'rgba(240,237,230,.06)';
       bars.appendChild(seg);
     }
     document.getElementById('signal-label').textContent=score+'th';
   }
 
-  // ── Countdown ─────────────────────────────────────────────────
   function startCountdown(end){
     if(cdInterval)clearInterval(cdInterval);
     function tick(){
@@ -771,17 +784,13 @@
       const h=Math.floor(rem/3600000);
       const m=Math.floor((rem%3600000)/60000);
       const s=Math.floor((rem%60000)/1000);
-      document.getElementById('cd-h').textContent=String(h).padStart(2,'0');
-      document.getElementById('cd-m').textContent=String(m).padStart(2,'0');
-      document.getElementById('cd-s').textContent=String(s).padStart(2,'0');
-      document.getElementById('window-prog').style.width=(rem/(48*3600000)*100)+'%';
-      document.getElementById('cd-status').textContent=rem>0?`Challenge window open · ${h}h ${m}m remaining`:'✓ FINALITY REACHED';
-      if(rem===0){clearInterval(cdInterval);document.getElementById('cd-status').style.color='var(--green)'}
+      const el=document.getElementById('cd-display');
+      if(el) el.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      if(rem===0)clearInterval(cdInterval);
     }
     tick();cdInterval=setInterval(tick,1000);
   }
 
-  // ── Reset ─────────────────────────────────────────────────────
   function resetForm(){
     hide('result-section');hide('error-section');hide('loading-section');
     show('form-section');show('passport-empty');
@@ -789,96 +798,75 @@
     document.getElementById('wallet-input').value='';
     document.getElementById('canvas-wallet-input').value='';
     document.getElementById('canvas-file-input').value='';
-    document.getElementById('drop-label').innerHTML='Drop Canvas <code style="color:var(--gold)">.zip</code> or <span style="color:var(--gold)">click to browse</span>';
+    document.getElementById('drop-label').innerHTML='Drag &amp; drop your Canvas .zip, or <span style="color:var(--gold)">click to browse</span>';
     document.getElementById('drop-zone').style.borderColor='';
     selFile=null;lastResult=null;
-    document.getElementById('verify-output').innerHTML='<span class="tp">$</span> <span class="tc">awaiting agent request...</span>';
+    document.getElementById('verify-output').innerHTML='<span class="tp">$</span> <span class="tc">// Output will appear here after simulation</span>';
     window.scrollTo({top:0,behavior:'smooth'});
   }
 
-  // ── Phantom wallet ────────────────────────────────────────────
-  let phantomProvider = null;
-  let agentWalletPubkey = null;
-
-  async function connectPhantom() {
-    const btn = document.getElementById('phantom-btn');
-    const addr = document.getElementById('phantom-addr');
-    // Phantom injects window.phantom.solana on Firefox; window.solana on Chrome
-    const provider = window.phantom?.solana ?? window.solana;
-    if (!provider?.isPhantom) {
-      addr.innerHTML = '<span style="color:var(--red)">Phantom not detected — install at phantom.com (Chrome/Brave/Firefox)</span>';
+  async function connectPhantom(){
+    const btn=document.getElementById('phantom-btn');
+    const addr=document.getElementById('phantom-addr');
+    const provider=window.phantom?.solana??window.solana;
+    if(!provider?.isPhantom){
+      addr.innerHTML='<span style="color:var(--red)">Phantom not detected — install at phantom.com</span>';
       return;
     }
-    try {
-      const resp = await provider.connect();
-      agentWalletPubkey = resp.publicKey;
-      phantomProvider = provider;
-      const addrStr = resp.publicKey.toString();
-      addr.innerHTML = `<span style="color:var(--green)">Connected · </span>${addrStr.slice(0,8)}…${addrStr.slice(-4)}`;
-      btn.textContent = '✓ CONNECTED';
-      btn.style.color = 'var(--green)';
-      document.getElementById('verify-btn').textContent = 'PAY & VERIFY →';
-    } catch(e) {
-      addr.innerHTML = `<span style="color:var(--red)">${e.message || 'Connection rejected'}</span>`;
+    try{
+      const resp=await provider.connect();
+      agentWalletPubkey=resp.publicKey;
+      phantomProvider=provider;
+      const addrStr=resp.publicKey.toString();
+      addr.innerHTML=`<span style="color:var(--green)">Connected · </span>${addrStr.slice(0,8)}…${addrStr.slice(-4)}`;
+      btn.textContent='✓ Connected';btn.style.color='var(--green)';
+      document.getElementById('verify-btn').textContent='Pay & Verify →';
+    }catch(e){
+      addr.innerHTML=`<span style="color:var(--red)">${e.message||'Connection rejected'}</span>`;
     }
   }
 
-  // Build and send a devnet USDC SPL token transfer via Phantom
-  async function sendUsdcPayment(recipientAta, amountRaw, mintAddress) {
-    const conn = new solanaWeb3.Connection('https://api.devnet.solana.com', 'confirmed');
-    const senderPubkey = agentWalletPubkey;
-    const mintPubkey = new solanaWeb3.PublicKey(mintAddress);
-    const recipientPubkey = new solanaWeb3.PublicKey(recipientAta);
-    const SPL_TOKEN = new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
-    const ASSOC_TOKEN = new solanaWeb3.PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1caR');
-
-    const [senderAta] = solanaWeb3.PublicKey.findProgramAddressSync(
-      [senderPubkey.toBuffer(), SPL_TOKEN.toBuffer(), mintPubkey.toBuffer()],
-      ASSOC_TOKEN
+  async function sendUsdcPayment(recipientAta, amountRaw, mintAddress){
+    const conn=new solanaWeb3.Connection('https://api.devnet.solana.com','confirmed');
+    const senderPubkey=agentWalletPubkey;
+    const mintPubkey=new solanaWeb3.PublicKey(mintAddress);
+    const recipientPubkey=new solanaWeb3.PublicKey(recipientAta);
+    const SPL_TOKEN=new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+    const ASSOC_TOKEN=new solanaWeb3.PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1caR');
+    const [senderAta]=solanaWeb3.PublicKey.findProgramAddressSync(
+      [senderPubkey.toBuffer(),SPL_TOKEN.toBuffer(),mintPubkey.toBuffer()],ASSOC_TOKEN
     );
-
-    // SPL Token Transfer instruction: [3 (u8), amount (u64 le)]
-    const data = new Uint8Array(9);
-    data[0] = 3; // Transfer instruction tag
-    const view = new DataView(data.buffer);
-    view.setBigUint64(1, BigInt(amountRaw), true); // little-endian
-
-    const transferIx = new solanaWeb3.TransactionInstruction({
-      programId: SPL_TOKEN,
-      keys: [
-        { pubkey: senderAta, isSigner: false, isWritable: true },
-        { pubkey: recipientPubkey, isSigner: false, isWritable: true },
-        { pubkey: senderPubkey, isSigner: true, isWritable: false },
+    const data=new Uint8Array(9);data[0]=3;
+    new DataView(data.buffer).setBigUint64(1,BigInt(amountRaw),true);
+    const transferIx=new solanaWeb3.TransactionInstruction({
+      programId:SPL_TOKEN,
+      keys:[
+        {pubkey:senderAta,isSigner:false,isWritable:true},
+        {pubkey:recipientPubkey,isSigner:false,isWritable:true},
+        {pubkey:senderPubkey,isSigner:true,isWritable:false},
       ],
       data,
     });
-
-    const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash();
-    const tx = new solanaWeb3.Transaction({ recentBlockhash: blockhash, feePayer: senderPubkey });
+    const{blockhash}=await conn.getLatestBlockhash();
+    const tx=new solanaWeb3.Transaction({recentBlockhash:blockhash,feePayer:senderPubkey});
     tx.add(transferIx);
-
-    const { signature } = await phantomProvider.signAndSendTransaction(tx);
-
-    // Wait for confirmation (up to 30s)
-    for (let i = 0; i < 15; i++) {
+    const{signature}=await phantomProvider.signAndSendTransaction(tx);
+    for(let i=0;i<15;i++){
       await sleep(2000);
-      const status = await conn.getSignatureStatus(signature);
-      const conf = status?.value?.confirmationStatus;
-      if (conf === 'confirmed' || conf === 'finalized') return signature;
+      const status=await conn.getSignatureStatus(signature);
+      const conf=status?.value?.confirmationStatus;
+      if(conf==='confirmed'||conf==='finalized')return signature;
     }
     throw new Error('Transaction not confirmed in 30s — try again');
   }
 
-  // ── x402 Simulator ────────────────────────────────────────────
   async function runVerifyFlow(){
     const wallet=document.getElementById('verify-wallet').value.trim();
     const skill=document.getElementById('verify-skill').value.trim().toLowerCase();
     const out=document.getElementById('verify-output');
     if(!wallet||!skill){out.innerHTML='<span class="tw">✗ wallet and skill are required</span>';return}
-
-    const liveMode = !!(phantomProvider && agentWalletPubkey);
-    const modeTag = liveMode ? '<span style="color:var(--green);font-size:9px">LIVE · REAL USDC</span>' : '<span style="color:var(--gold);font-size:9px">SIM</span>';
-
+    const liveMode=!!(phantomProvider&&agentWalletPubkey);
+    const modeTag=liveMode?'<span style="color:var(--green);font-size:9px">LIVE</span>':'<span style="color:var(--gold);font-size:9px">SIM</span>';
     out.innerHTML=`<span class="tp">$</span> <span class="tc">GET /api/verify?wallet=${wallet.slice(0,8)}…&skill=${skill}</span> ${modeTag}\n<span class="td">› Sending request without payment proof...</span>`;
     await sleep(650);
     try{
@@ -890,55 +878,45 @@
 <span class="td">  token: ${d1.payment?.token||'USDC'} · ${d1.payment?.humanAmount||'0.000250 USDC'}</span>
 <span class="td">  recipient: ${(d1.payment?.recipient||'').slice(0,18)}…</span>`;
         await sleep(600);
-
         let txSig;
-        if (liveMode) {
+        if(liveMode){
           out.innerHTML+=`\n<span class="tc">› Constructing USDC transfer tx…</span>`;
           await sleep(400);
           out.innerHTML+=`\n<span class="tw">⬡ Approve in Phantom wallet →</span>`;
-          try {
-            txSig = await sendUsdcPayment(
-              d1.payment.recipient,
-              d1.payment.amount,
-              d1.payment.mint
-            );
+          try{
+            txSig=await sendUsdcPayment(d1.payment.recipient,d1.payment.amount,d1.payment.mint);
             out.innerHTML+=`\n<span class="tok">✓ tx: ${txSig.slice(0,14)}…${txSig.slice(-6)}</span>`;
             out.innerHTML+=`\n<span class="td">  <a href="https://explorer.solana.com/tx/${txSig}?cluster=devnet" target="_blank" style="color:var(--gold)">view on explorer ↗</a></span>`;
             await sleep(400);
-          } catch(payErr) {
+          }catch(payErr){
             out.innerHTML+=`\n<span class="tw">✗ Payment failed: ${payErr.message}</span>`;
-            out.innerHTML+=`\n<span class="td">  (Need devnet USDC — get some from a faucet)</span>`;
+            out.innerHTML+=`\n<span class="td">  (Need devnet USDC — get some at faucet.circle.com)</span>`;
             return;
           }
-        } else {
+        }else{
           out.innerHTML+=`\n<span class="tc">› [SIM] Agent settling $0.00025 via x402…</span>`;
           await sleep(600);
           out.innerHTML+=`\n<span class="tok">✓ [SIM] $0.00025 settled · proof attached</span>`;
-          txSig = 'SIMULATED';
+          txSig='SIMULATED';
         }
-
         await sleep(400);
         out.innerHTML+=`\n<span class="tc">› Retrying with X-Payment-Proof header…</span>`;
         await sleep(500);
-
-        if (liveMode) {
-          const r2 = await fetch(`${API_BASE}/api/verify?wallet=${wallet}&skill=${skill}`, {
-            headers: { 'X-Payment-Proof': txSig }
-          });
-          const d2 = await r2.json();
-          if (r2.ok && d2.verified) {
+        if(liveMode){
+          const r2=await fetch(`${API_BASE}/api/verify?wallet=${wallet}&skill=${skill}`,{headers:{'X-Payment-Proof':txSig}});
+          const d2=await r2.json();
+          if(r2.ok&&d2.verified){
             out.innerHTML+=`\n<span class="tok">← 200 OK · ATTESTATION VERIFIED ✓</span>`;
             out.innerHTML+=`\n<span class="td">  confidence: ${d2.attestation?.confidence}%</span>`;
             out.innerHTML+=`\n<span class="td">  evidence: ${(d2.attestation?.evidence||'').slice(0,60)}…</span>`;
-            out.innerHTML+=`\n<span class="td">  attest: ${(d2.attestation?.address||'').slice(0,16)}…</span>`;
-          } else {
+          }else{
             out.innerHTML+=`\n<span class="tw">← ${r2.status} ${d2.error||'Verification failed'}</span>`;
           }
-        } else {
+        }else{
           out.innerHTML+=`\n<span class="td">← 200 OK · Attestation verified ✓ [SIM]</span>`;
           out.innerHTML+=`\n<span class="td">  (Connect Phantom for real on-chain payment)</span>`;
         }
-      } else {
+      }else{
         const v=d1.verified;
         out.innerHTML+=`\n<span class="${v?'tok':'tw'}">← ${r1.status} ${v?'VERIFIED':'NOT FOUND'}</span>`;
         if(v&&d1.attestation) out.innerHTML+=`\n<span class="td">  confidence: ${d1.attestation.confidence}%</span>\n<span class="td">  evidence: ${(d1.attestation.evidence||'').slice(0,55)}…</span>`;
@@ -946,7 +924,6 @@
     }catch(err){out.innerHTML+=`\n<span class="tw">✗ ${err.message}</span>`}
   }
 
-  // ── Validator nodes (live from DB) ────────────────────────────
   async function renderNodes(){
     const c=document.getElementById('validator-nodes');c.innerHTML='';
     let nodes=[];
@@ -955,44 +932,98 @@
       const d=await res.json();
       nodes=d.validators??[];
     }catch{}
-
     if(!nodes.length){
       const row=document.createElement('div');row.className='nrow';
-      row.innerHTML=`
-        <span class="fm" style="font-size:9px;color:var(--white-dim)">—</span>
-        <span style="font-size:10px;color:var(--white-dim);grid-column:span 3">No validators staked yet</span>
-        <span></span>`;
-      c.appendChild(row);
-      return;
+      row.innerHTML=`<span class="mono" style="font-size:9px;color:var(--white-dim)">—</span><span style="font-size:10px;color:var(--white-dim);grid-column:span 3">No validators staked yet</span><span></span>`;
+      c.appendChild(row);return;
     }
-
-    nodes.forEach((v,i)=>{
+    nodes.forEach(v=>{
       const col=v.status==='RESOLVED'?'var(--green)':v.status==='CHALLENGED'?'var(--gold)':'var(--white-mid)';
       const nodeId='V-'+(v.validatorWallet??'????').slice(0,4).toUpperCase();
-      const skillLabel=v.skill??'—';
-      const stakeLabel=v.stakeSOL>0?v.stakeSOL.toFixed(2)+' SOL':'—';
       const row=document.createElement('div');row.className='nrow';
       row.innerHTML=`
-        <span class="fm" style="font-size:9px;color:var(--white-dim)">${nodeId}</span>
-        <span style="font-size:11px;color:var(--white)">${skillLabel}</span>
-        <span style="font-size:11px;color:var(--white-mid)">${stakeLabel}</span>
-        <span style="font-size:8.5px;letter-spacing:.08em;color:${col}">${v.status}</span>
-        <div style="display:flex;align-items:center;gap:5px">
-          <div style="flex:1;height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden">
-            <div style="height:100%;width:${v.windowPct??0}%;background:${col};border-radius:2px"></div>
+        <span class="mono" style="font-size:9px;color:var(--white-dim)">${nodeId}</span>
+        <span style="font-size:11px;color:var(--white)">${v.skill??'—'}</span>
+        <span style="font-size:11px;color:var(--white-mid)">${v.stakeSOL>0?v.stakeSOL.toFixed(2)+' SOL':'—'}</span>
+        <span style="font-size:9px;letter-spacing:.08em;color:${col};text-transform:uppercase">${v.status}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;height:2px;background:var(--rule);overflow:hidden">
+            <div style="height:100%;width:${v.windowPct??0}%;background:${col}"></div>
           </div>
-          <span style="font-size:8.5px;color:var(--txtM)">${v.windowPct??0}%</span>
+          <span style="font-size:9px;color:var(--white-dim)">${v.windowPct??0}%</span>
         </div>`;
       c.appendChild(row);
     });
   }
 
-  // ── Init ──────────────────────────────────────────────────────
+  const TICK_DATA=[
+    {col:'var(--green)', t:'TalentAI queried typescript for 7xKXtg2C··· · 0.00025 USDC · 2s ago'},
+    {col:'var(--gold)',  t:'HireBot settled $0.00025 via x402 · rust · 5s ago'},
+    {col:'var(--white-mid)',t:'V-5502 confirmed React attestation · 215 SOL staked · 12s ago'},
+    {col:'var(--green)', t:'SkillMatch queried react for 0xA91c··· · 0.00025 USDC · 18s ago'},
+    {col:'var(--gold)',  t:'RecruitGPT queried solana-programs · $0.00025 · 24s ago'},
+    {col:'var(--white-mid)',t:'Workday AI queried nextjs for 0xF3e8··· · 0.00025 USDC · 31s ago'},
+    {col:'var(--green)', t:'AgentHire queried python for 0xC15b··· · 0.00025 USDC · 38s ago'},
+    {col:'var(--gold)',  t:'V-7421 validating TypeScript · 142 SOL · 78% confidence · 45s ago'},
+  ];
+
+  function initTicker(){
+    const inner=document.getElementById('ticker-inner');
+    [...TICK_DATA,...TICK_DATA].forEach(item=>{
+      const el=document.createElement('div');el.className='titem';
+      el.innerHTML=`<div class="tdot" style="background:${item.col}"></div><span>${item.t}</span>`;
+      inner.appendChild(el);
+    });
+  }
+
+  function initHeroTicker(){
+    const inner=document.getElementById('hero-ticker');
+    if(!inner)return;
+    const events=[
+      {t:'TalentAI queried typescript · 0xB4f2··· · 0.00025 USDC'},
+      {t:'HireBot queried rust · 0xA91c··· · 0.00025 USDC'},
+      {t:'SkillMatch queried react · 0xF3e8··· · 0.00025 USDC'},
+      {t:'RecruitGPT queried solana-programs · 0xD72a··· · 0.00025 USDC'},
+      {t:'Workday AI queried nextjs · 0xC15b··· · 0.00025 USDC'},
+      {t:'AgentHire queried python · 0x8Ee3··· · 0.00025 USDC'},
+    ];
+    [...events,...events].forEach(e=>{
+      const span=document.createElement('span');
+      span.style.cssText='display:inline-flex;align-items:center;gap:8px;padding:0 28px;font-size:10px;color:var(--white-dim);white-space:nowrap;flex-shrink:0;letter-spacing:.04em';
+      span.innerHTML=`<span style="color:var(--gold)">·</span> ${e.t}`;
+      inner.appendChild(span);
+    });
+  }
+
+  function addTicker(wallet, skill){
+    const inner=document.getElementById('ticker-inner');
+    const w=wallet?wallet.slice(0,8)+'...':'Node_XXX';
+    const el=document.createElement('div');el.className='titem';
+    el.innerHTML=`<div class="tdot" style="background:var(--green)"></div><span style="color:var(--green)">${w} minted ${skill} attestation · just now</span>`;
+    inner.prepend(el);
+  }
+
+  function countUp(el, target, duration){
+    let start=0;
+    const step=target/(duration/16);
+    const timer=setInterval(()=>{
+      start=Math.min(start+step,target);
+      el.textContent=Math.round(start).toLocaleString();
+      if(start>=target)clearInterval(timer);
+    },16);
+  }
+
   document.getElementById('github-input').addEventListener('keydown',e=>{if(e.key==='Enter')startAnalysis()});
   document.getElementById('canvas-wallet-input').addEventListener('keydown',e=>{if(e.key==='Enter')startCanvasAnalysis()});
 
+  initTicker();
+  initHeroTicker();
   renderNodes();
-  startCountdown(Date.now()+47*3600*1000+58*60*1000+22*1000);
+  setTimeout(()=>{
+    countUp(document.getElementById('c1'),7,600);
+    countUp(document.getElementById('c2'),1,400);
+    countUp(document.getElementById('c3'),3,500);
+  },400);
 </script>
 </body>
 </html>

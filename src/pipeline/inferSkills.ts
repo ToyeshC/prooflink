@@ -43,7 +43,7 @@ export async function inferSkillsFromExport(exportSummary: string): Promise<Infe
   }
 
   const prompt = `Analyze this developer's profile and infer their market-ready skills:\n\n${exportSummary}`;
-  const abortSignal = AbortSignal.timeout(55_000);
+  const abortSignal = AbortSignal.timeout(120_000);
 
   const { object } = await generateObject(
     useAnthropic
@@ -58,6 +58,7 @@ export async function inferSkillsFromExport(exportSummary: string): Promise<Infe
           model: createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY! })(
             process.env.INFERENCE_MODEL!
           ),
+          mode: 'json',
           schema: InferredSkillsSchema,
           system: SYSTEM_PROMPT,
           prompt,
