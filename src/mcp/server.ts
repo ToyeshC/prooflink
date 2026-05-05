@@ -85,7 +85,10 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
         return { content: [{ type: 'text', text: `Error fetching profile: ${err}` }], isError: true };
       }
       const data = await res.json();
-      if (!data.attestations || data.attestations.length === 0) {
+      const attestationList = data.attestations
+        ? Object.values(data.attestations as Record<string, { skill: string; confidence: number; evidence: string; attestation_address: string }>)
+        : [];
+      if (attestationList.length === 0) {
         return {
           content: [
             {
@@ -95,12 +98,13 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
           ],
         };
       }
+      const sorted = attestationList.sort((a, b) => b.confidence - a.confidence);
       const lines = [
         `**Prooflink Profile — ${wallet.slice(0, 8)}...${wallet.slice(-4)}**`,
         '',
-        ...data.attestations.map(
-          (a: { skill: string; confidence: number; evidence: string; attestationAddress: string }) =>
-            `- **${a.skill}** — ${a.confidence}% confidence\n  ${a.evidence}\n  Attestation: ${a.attestationAddress}`
+        ...sorted.map(
+          (a) =>
+            `- **${a.skill}** — ${a.confidence}% confidence\n  ${a.evidence}\n  Attestation: ${a.attestation_address}`
         ),
       ];
       return { content: [{ type: 'text', text: lines.join('\n') }] };
@@ -116,8 +120,9 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
         return { content: [{ type: 'text', text: `Error fetching profile` }], isError: true };
       }
       const data = await res.json();
-      const match = data.attestations?.find(
-        (a: { skill: string }) => a.skill.toLowerCase() === skill.toLowerCase()
+      const attestationMap = (data.attestations ?? {}) as Record<string, { skill: string; confidence: number; evidence: string; attestation_address: string }>;
+      const match = Object.values(attestationMap).find(
+        (a) => a.skill.toLowerCase() === skill.toLowerCase()
       );
       if (!match) {
         return {
@@ -137,8 +142,8 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
               `✅ Skill "${match.skill}" is VERIFIED on-chain`,
               `Confidence: ${match.confidence}%`,
               `Evidence: ${match.evidence}`,
-              `Attestation: ${match.attestationAddress}`,
-              `Explorer: https://explorer.solana.com/address/${match.attestationAddress}?cluster=devnet`,
+              `Attestation: ${match.attestation_address}`,
+              `Explorer: https://explorer.solana.com/address/${match.attestation_address}?cluster=devnet`,
             ].join('\n'),
           },
         ],
