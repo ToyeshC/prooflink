@@ -10,6 +10,5 @@ oracle-config.json
 src/debug-sas.ts
 TASKS.md
 STRATEGY.md
-ANSWERS.txt
-ANSWERS_2.txt
+ANSWERS/
 .vercel

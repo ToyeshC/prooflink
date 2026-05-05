@@ -6,7 +6,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 const API_URL =
-  process.env.PROOFLINK_API_URL ?? 'https://proof-of-talent-silk.vercel.app';
+  process.env.PROOFLINK_API_URL ?? 'http://localhost:3000';
 
 const server = new Server(
   { name: 'prooflink-oracle', version: '1.0.0' },

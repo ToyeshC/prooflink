@@ -826,16 +826,30 @@
     }
   }
 
-  async function sendUsdcPayment(recipientAta, amountRaw, mintAddress){
+  async function sendUsdcPayment(recipientAta, amountRaw, mintAddress, recipientOwner){
     const conn=new solanaWeb3.Connection('https://api.devnet.solana.com','confirmed');
     const senderPubkey=agentWalletPubkey;
     const mintPubkey=new solanaWeb3.PublicKey(mintAddress);
     const recipientPubkey=new solanaWeb3.PublicKey(recipientAta);
     const SPL_TOKEN=new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
     const ASSOC_TOKEN=new solanaWeb3.PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1caR');
+    const SYSTEM_PROGRAM=new solanaWeb3.PublicKey('11111111111111111111111111111111');
     const [senderAta]=solanaWeb3.PublicKey.findProgramAddressSync(
       [senderPubkey.toBuffer(),SPL_TOKEN.toBuffer(),mintPubkey.toBuffer()],ASSOC_TOKEN
     );
+    // Create oracle's ATA if it doesn't exist yet (idempotent — no-op if already exists)
+    const createAtaIx=new solanaWeb3.TransactionInstruction({
+      programId:ASSOC_TOKEN,
+      keys:[
+        {pubkey:senderPubkey,isSigner:true,isWritable:true},
+        {pubkey:recipientPubkey,isSigner:false,isWritable:true},
+        {pubkey:new solanaWeb3.PublicKey(recipientOwner),isSigner:false,isWritable:false},
+        {pubkey:mintPubkey,isSigner:false,isWritable:false},
+        {pubkey:SYSTEM_PROGRAM,isSigner:false,isWritable:false},
+        {pubkey:SPL_TOKEN,isSigner:false,isWritable:false},
+      ],
+      data:new Uint8Array([1]),
+    });
     const data=new Uint8Array(9);data[0]=3;
     new DataView(data.buffer).setBigUint64(1,BigInt(amountRaw),true);
     const transferIx=new solanaWeb3.TransactionInstruction({
@@ -849,6 +863,7 @@
     });
     const{blockhash}=await conn.getLatestBlockhash();
     const tx=new solanaWeb3.Transaction({recentBlockhash:blockhash,feePayer:senderPubkey});
+    tx.add(createAtaIx);
     tx.add(transferIx);
     const{signature}=await phantomProvider.signAndSendTransaction(tx);
     for(let i=0;i<15;i++){
@@ -884,7 +899,7 @@
           await sleep(400);
           out.innerHTML+=`\n<span class="tw">⬡ Approve in Phantom wallet →</span>`;
           try{
-            txSig=await sendUsdcPayment(d1.payment.recipient,d1.payment.amount,d1.payment.mint);
+            txSig=await sendUsdcPayment(d1.payment.recipient,d1.payment.amount,d1.payment.mint,d1.payment.recipientOwner);
             out.innerHTML+=`\n<span class="tok">✓ tx: ${txSig.slice(0,14)}…${txSig.slice(-6)}</span>`;
             out.innerHTML+=`\n<span class="td">  <a href="https://explorer.solana.com/tx/${txSig}?cluster=devnet" target="_blank" style="color:var(--gold)">view on explorer ↗</a></span>`;
             await sleep(400);

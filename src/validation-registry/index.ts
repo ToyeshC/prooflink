@@ -27,6 +27,7 @@ function getOracleKeypair(): Keypair {
 }
 
 async function getStakeFromTx(txSignature: string, recipientWallet: string): Promise<number> {
+  try {
   const connection = new Connection(process.env.SOLANA_RPC_URL!, 'confirmed');
   const tx = await connection.getTransaction(txSignature, {
     commitment: 'confirmed',
@@ -42,6 +43,9 @@ async function getStakeFromTx(txSignature: string, recipientWallet: string): Pro
   );
   if (idx === -1) return 0;
   return Math.max(0, (tx.meta.postBalances[idx] ?? 0) - (tx.meta.preBalances[idx] ?? 0));
+  } catch {
+    return 0;
+  }
 }
 
 // Ensure DB table exists (idempotent)
