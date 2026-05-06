@@ -58,7 +58,6 @@ export async function inferSkillsFromExport(exportSummary: string): Promise<Infe
           model: createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY! })(
             process.env.INFERENCE_MODEL!
           ),
-          mode: 'json',
           schema: InferredSkillsSchema,
           system: SYSTEM_PROMPT,
           prompt,
