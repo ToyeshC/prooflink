@@ -487,7 +487,7 @@
   <div class="sh">
     <div class="stag">Agentic economy · x402 micropayment API</div>
     <div class="shline"></div>
-    <div class="stag">$0.00025/lookup</div>
+    <div class="stag">$0.01/lookup</div>
   </div>
 
   <div class="stat-strip" style="margin-bottom:48px">
@@ -514,7 +514,7 @@
         </div>
         <div class="crow">
           <div class="ccell" style="border-right:1px solid var(--rule)"><div class="clabel" style="margin-bottom:4px">Verification</div><div style="color:var(--white-dim);text-decoration:line-through">Manual reference check</div></div>
-          <div class="ccell"><div class="clabel" style="color:var(--green);margin-bottom:4px">API cost</div><div style="color:var(--white)">$0.00025 · ~200ms</div></div>
+          <div class="ccell"><div class="clabel" style="color:var(--green);margin-bottom:4px">API cost</div><div style="color:var(--white)">$0.01 · ~200ms</div></div>
         </div>
         <div class="crow" style="border-bottom:none">
           <div class="ccell" style="border-right:1px solid var(--rule)"><div class="clabel" style="margin-bottom:4px">Machine-readable</div><div style="color:var(--white-dim);text-decoration:line-through">No</div></div>
@@ -524,7 +524,7 @@
       <div class="surface" style="padding:14px 16px;margin-top:8px;display:flex;gap:24px;flex-wrap:wrap">
         <div style="font-size:11px;color:var(--white-dim)">SAS · <span style="color:var(--gold)">FJ8myMh9…</span></div>
         <div style="font-size:11px;color:var(--white-dim)">Network · <span style="color:var(--green)">Devnet</span></div>
-        <div style="font-size:11px;color:var(--white-dim)">Fee · <span style="color:var(--gold)">$0.00025</span></div>
+        <div style="font-size:11px;color:var(--white-dim)">Fee · <span style="color:var(--gold)">$0.01</span></div>
       </div>
     </div>
 
@@ -550,7 +550,7 @@
           </div>
           <button id="verify-btn" onclick="runVerifyFlow()" class="btn-primary" style="width:100%;text-align:center">Simulate Agent Lookup →</button>
           <div style="border-top:1px solid var(--rule);padding-top:14px;display:flex;flex-direction:column;gap:6px">
-            <div style="font-size:10px;color:var(--white-dim)">Request cost: <span style="color:var(--white)">250 raw USDC ($0.00025)</span></div>
+            <div style="font-size:10px;color:var(--white-dim)">Request cost: <span style="color:var(--white)">10000 raw USDC ($0.01)</span></div>
             <div style="font-size:10px;color:var(--white-dim)">Oracle wallet: <span style="color:var(--gold)">4VkiE8…Mn2p</span></div>
             <div style="font-size:10px;color:var(--white-dim)">Network: <span style="color:var(--green)">Solana Devnet</span></div>
           </div>
@@ -681,6 +681,19 @@
     document.getElementById('progress-label').textContent='Complete';
   }
 
+  function appendSSELine(type,msg){
+    const box=document.getElementById('terminal-output');
+    const cur=box.querySelector('.tcur')?.parentElement;if(cur)cur.remove();
+    const cls=type==='ok'?'tok':type==='data'?'td':type==='warn'?'tw':'tc';
+    const pre=type==='ok'?'✓':type==='data'?'◆':'›';
+    const div=document.createElement('div');div.className='tl';div.style.opacity='1';
+    div.innerHTML=`<span class="${cls}">${pre} ${msg}</span>`;
+    box.appendChild(div);
+    const nc=document.createElement('div');nc.className='tl';nc.style.opacity='1';
+    nc.innerHTML=`<span class="tp">$</span> <span class="tcur"></span>`;
+    box.appendChild(nc);box.scrollTop=box.scrollHeight;
+  }
+
   async function startAnalysis(){
     const u=document.getElementById('github-input').value.trim();
     const w=document.getElementById('wallet-input').value.trim();
@@ -690,10 +703,37 @@
     show('loading-section');runTerminal(false);
     try{
       const res=await fetch(`${API_BASE}/api/analyze-github`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({githubUsername:u,studentWallet:w})});
-      const data=await res.json();
-      if(!res.ok||!data.success)throw new Error(data.error||'Analysis failed');
-      finishTerminal(data.attestationCount,data.modelUsed);await sleep(1100);
-      hide('loading-section');lastResult=data;renderResult(data);
+      if(!res.ok&&!res.headers.get('content-type')?.includes('text/event-stream')){
+        const data=await res.json();throw new Error(data.error||'Analysis failed');
+      }
+      const reader=res.body.getReader();
+      const dec=new TextDecoder();
+      let buf='';let finalData=null;
+      while(true){
+        const{done,value}=await reader.read();if(done)break;
+        buf+=dec.decode(value,{stream:true});
+        const msgs=buf.split('\n\n');buf=msgs.pop()||'';
+        for(const msg of msgs){
+          const lines=msg.split('\n');let ev='message';let evData='';
+          for(const line of lines){
+            if(line.startsWith('event: '))ev=line.slice(7).trim();
+            if(line.startsWith('data: '))evData=line.slice(6).trim();
+          }
+          if(!evData)continue;
+          const parsed=JSON.parse(evData);
+          if(ev==='complete'){finalData=parsed;}
+          else if(ev==='error'){throw new Error(parsed.error||'Analysis failed');}
+          else if(ev==='progress'){
+            appendSSELine(parsed.type,parsed.message);
+            document.getElementById('progress-bar').style.width=parsed.pct+'%';
+            document.getElementById('progress-pct').textContent=parsed.pct+'%';
+            if(parsed.type!=='data')document.getElementById('progress-label').textContent=parsed.message;
+          }
+        }
+      }
+      if(!finalData)throw new Error('No result received');
+      finishTerminal(finalData.attestationCount,finalData.modelUsed);await sleep(1100);
+      hide('loading-section');lastResult=finalData;renderResult(finalData);
       setTimeout(()=>document.getElementById('passport').scrollIntoView({behavior:'smooth',block:'start'}),300);
     }catch(err){
       hide('loading-section');show('form-section');
@@ -890,7 +930,7 @@
       if(r1.status===402){
         out.innerHTML+=`\n<span class="tw">← 402 Payment Required</span>
 <span class="td">  protocol: ${d1.payment?.protocol||'x402'}</span>
-<span class="td">  token: ${d1.payment?.token||'USDC'} · ${d1.payment?.humanAmount||'0.000250 USDC'}</span>
+<span class="td">  token: ${d1.payment?.token||'USDC'} · ${d1.payment?.humanAmount||'0.010000 USDC'}</span>
 <span class="td">  recipient: ${(d1.payment?.recipient||'').slice(0,18)}…</span>`;
         await sleep(600);
         let txSig;
@@ -909,9 +949,9 @@
             return;
           }
         }else{
-          out.innerHTML+=`\n<span class="tc">› [SIM] Agent settling $0.00025 via x402…</span>`;
+          out.innerHTML+=`\n<span class="tc">› [SIM] Agent settling $0.01 via x402…</span>`;
           await sleep(600);
-          out.innerHTML+=`\n<span class="tok">✓ [SIM] $0.00025 settled · proof attached</span>`;
+          out.innerHTML+=`\n<span class="tok">✓ [SIM] $0.01 settled · proof attached</span>`;
           txSig='SIMULATED';
         }
         await sleep(400);
@@ -972,13 +1012,13 @@
   }
 
   const TICK_DATA=[
-    {col:'var(--green)', t:'TalentAI queried typescript for 7xKXtg2C··· · 0.00025 USDC · 2s ago'},
-    {col:'var(--gold)',  t:'HireBot settled $0.00025 via x402 · rust · 5s ago'},
+    {col:'var(--green)', t:'TalentAI queried typescript for 7xKXtg2C··· · 0.01 USDC · 2s ago'},
+    {col:'var(--gold)',  t:'HireBot settled $0.01 via x402 · rust · 5s ago'},
     {col:'var(--white-mid)',t:'V-5502 confirmed React attestation · 215 SOL staked · 12s ago'},
-    {col:'var(--green)', t:'SkillMatch queried react for 0xA91c··· · 0.00025 USDC · 18s ago'},
-    {col:'var(--gold)',  t:'RecruitGPT queried solana-programs · $0.00025 · 24s ago'},
-    {col:'var(--white-mid)',t:'Workday AI queried nextjs for 0xF3e8··· · 0.00025 USDC · 31s ago'},
-    {col:'var(--green)', t:'AgentHire queried python for 0xC15b··· · 0.00025 USDC · 38s ago'},
+    {col:'var(--green)', t:'SkillMatch queried react for 0xA91c··· · 0.01 USDC · 18s ago'},
+    {col:'var(--gold)',  t:'RecruitGPT queried solana-programs · $0.01 · 24s ago'},
+    {col:'var(--white-mid)',t:'Workday AI queried nextjs for 0xF3e8··· · 0.01 USDC · 31s ago'},
+    {col:'var(--green)', t:'AgentHire queried python for 0xC15b··· · 0.01 USDC · 38s ago'},
     {col:'var(--gold)',  t:'V-7421 validating TypeScript · 142 SOL · 78% confidence · 45s ago'},
   ];
 
@@ -995,12 +1035,12 @@
     const inner=document.getElementById('hero-ticker');
     if(!inner)return;
     const events=[
-      {t:'TalentAI queried typescript · 0xB4f2··· · 0.00025 USDC'},
-      {t:'HireBot queried rust · 0xA91c··· · 0.00025 USDC'},
-      {t:'SkillMatch queried react · 0xF3e8··· · 0.00025 USDC'},
-      {t:'RecruitGPT queried solana-programs · 0xD72a··· · 0.00025 USDC'},
-      {t:'Workday AI queried nextjs · 0xC15b··· · 0.00025 USDC'},
-      {t:'AgentHire queried python · 0x8Ee3··· · 0.00025 USDC'},
+      {t:'TalentAI queried typescript · 0xB4f2··· · 0.01 USDC'},
+      {t:'HireBot queried rust · 0xA91c··· · 0.01 USDC'},
+      {t:'SkillMatch queried react · 0xF3e8··· · 0.01 USDC'},
+      {t:'RecruitGPT queried solana-programs · 0xD72a··· · 0.01 USDC'},
+      {t:'Workday AI queried nextjs · 0xC15b··· · 0.01 USDC'},
+      {t:'AgentHire queried python · 0x8Ee3··· · 0.01 USDC'},
     ];
     [...events,...events].forEach(e=>{
       const span=document.createElement('span');

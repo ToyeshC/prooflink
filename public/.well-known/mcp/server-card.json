@@ -23,7 +23,7 @@
     "protocol": "x402",
     "token": "USDC",
     "network": "solana-devnet",
-    "feePerLookup": "0.000250 USDC"
+    "feePerLookup": "0.010000 USDC"
   },
   "network": "solana-devnet",
   "attestationService": "FJ8myMh9dRcgc2n8xBrWTbCrFYAbHQZCPtMzhhmvNo4M",

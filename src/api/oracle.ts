@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { streamSSE } from 'hono/streaming';
 import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
@@ -26,7 +27,7 @@ dotenv.config({ path: path.join(process.cwd(), '.env') });
 const ORACLE_CONFIG_PATH = path.join(process.cwd(), 'oracle-config.json');
 const LOOKUP_FEE_LAMPORTS = 1667; // kept for reference; actual fee is USDC
 const USDC_DEVNET_MINT = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'; // Circle devnet USDC (faucet.circle.com)
-const LOOKUP_FEE_USDC_RAW = 250; // 0.000250 USDC (6 decimals) ≈ $0.00025
+const LOOKUP_FEE_USDC_RAW = 10_000; // 10000 raw USDC (6 decimals) = $0.01
 const SPL_TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 const ASSOC_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1caR');
 
@@ -264,70 +265,98 @@ app.post('/api/analyze-github', async c => {
     return c.json({ error: 'studentWallet must be a valid Solana wallet address' }, 400);
   }
 
-  try {
-    const exportSummary = await fetchGitHubProfile(githubUsername);
-    const inferredSkills = await inferSkillsFromExport(exportSummary);
-    const dedupedSkills = deduplicateSkills(inferredSkills.skills);
-    const qualifyingSkills = dedupedSkills.filter(s => s.confidenceScore >= 0.5);
+  return streamSSE(c, async (stream) => {
+    const emit = (event: string, data: object) =>
+      stream.writeSSE({ event, data: JSON.stringify(data) });
 
-    const attestations = await mintAllSkillAttestations(
-      walletAddress,
-      qualifyingSkills.map(s => ({
-        slug: s.slug,
-        confidenceScore: s.confidenceScore,
-        evidenceSummary: s.evidenceSummary,
-      }))
-    );
+    try {
+      await emit('progress', { pct: 5, type: 'cmd', message: 'Connecting to GitHub API...' });
 
-    // Clean slate: delete stale attestations before upserting fresh ones
-    const sql2 = db();
-    await sql2`DELETE FROM attestations WHERE wallet = ${walletAddress}`;
+      const exportSummary = await fetchGitHubProfile(githubUsername);
+      await emit('progress', { pct: 20, type: 'ok', message: 'Repository feed established · scanning repos' });
 
-    for (const att of attestations) {
-      const inferred = qualifyingSkills.find(s => s.slug === att.skill);
-      await upsertAttestation(
+      const model = process.env.ANTHROPIC_API_KEY
+        ? 'claude-sonnet-4-6'
+        : (process.env.INFERENCE_MODEL ?? 'unknown');
+      await emit('progress', { pct: 25, type: 'cmd', message: `Routing to inference engine · ${model}` });
+
+      const inferredSkills = await inferSkillsFromExport(exportSummary);
+      const dedupedSkills = deduplicateSkills(inferredSkills.skills);
+      const qualifyingSkills = dedupedSkills.filter(s => s.confidenceScore >= 0.5);
+
+      const skillList = qualifyingSkills.slice(0, 5).map(s => s.slug).join(', ');
+      const extra = qualifyingSkills.length > 5 ? ` +${qualifyingSkills.length - 5} more` : '';
+      await emit('progress', { pct: 55, type: 'data', message: `${qualifyingSkills.length} qualifying skills: ${skillList}${extra}` });
+      await emit('progress', { pct: 60, type: 'cmd', message: `Minting ${qualifyingSkills.length} SAS attestations on-chain...` });
+
+      const attestations = await mintAllSkillAttestations(
         walletAddress,
-        att.skill,
-        att.attestationAddress,
-        att.txSignature,
-        Math.round(att.confidence * 100),
-        inferred?.evidenceSummary ?? ''
+        qualifyingSkills.map(s => ({
+          slug: s.slug,
+          confidenceScore: s.confidenceScore,
+          evidenceSummary: s.evidenceSummary,
+        }))
       );
+
+      for (const att of attestations) {
+        await emit('progress', {
+          pct: 75, type: 'ok',
+          message: `${att.skill} · ${Math.round(att.confidence * 100)}% · ${att.attestationAddress.slice(0, 8)}…`,
+        });
+      }
+
+      await emit('progress', { pct: 88, type: 'cmd', message: 'Indexing to Neon DB...' });
+
+      // Clean slate: delete stale attestations before upserting fresh ones
+      const sql2 = db();
+      await sql2`DELETE FROM attestations WHERE wallet = ${walletAddress}`;
+
+      for (const att of attestations) {
+        const inferred = qualifyingSkills.find(s => s.slug === att.skill);
+        await upsertAttestation(
+          walletAddress,
+          att.skill,
+          att.attestationAddress,
+          att.txSignature,
+          Math.round(att.confidence * 100),
+          inferred?.evidenceSummary ?? ''
+        );
+      }
+
+      const topSkills = [...inferredSkills.skills]
+        .sort((a, b) => b.confidenceScore - a.confidenceScore)
+        .slice(0, 5);
+
+      await emit('complete', {
+        success: true,
+        githubUsername,
+        wallet: walletAddress,
+        modelUsed: model,
+        primaryDomain: inferredSkills.primaryDomain,
+        academicLevel: inferredSkills.overallAcademicLevel,
+        topSkills: topSkills.map(s => ({
+          name: s.name,
+          slug: s.slug,
+          category: s.category,
+          score: Math.round(s.confidenceScore * 100),
+          evidence: s.evidenceSummary,
+        })),
+        attestations: attestations.map(a => ({
+          skill: a.skill,
+          address: a.attestationAddress,
+          txSignature: a.txSignature,
+          confidence: Math.round(a.confidence * 100),
+          evidence: qualifyingSkills.find(s => s.slug === a.skill)?.evidenceSummary ?? '',
+          explorerUrl: `https://explorer.solana.com/tx/${a.txSignature}?cluster=devnet`,
+        })),
+        attestationCount: attestations.length,
+        profileUrl: `/api/profile/${walletAddress}`,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await emit('error', { error: msg });
     }
-
-    const topSkills = [...inferredSkills.skills]
-      .sort((a, b) => b.confidenceScore - a.confidenceScore)
-      .slice(0, 5);
-
-    return c.json({
-      success: true,
-      githubUsername,
-      wallet: walletAddress,
-      modelUsed: process.env.ANTHROPIC_API_KEY ? 'claude-sonnet-4-6' : (process.env.INFERENCE_MODEL ?? 'unknown'),
-      primaryDomain: inferredSkills.primaryDomain,
-      academicLevel: inferredSkills.overallAcademicLevel,
-      topSkills: topSkills.map(s => ({
-        name: s.name,
-        slug: s.slug,
-        category: s.category,
-        score: Math.round(s.confidenceScore * 100),
-        evidence: s.evidenceSummary,
-      })),
-      attestations: attestations.map(a => ({
-        skill: a.skill,
-        address: a.attestationAddress,
-        txSignature: a.txSignature,
-        confidence: Math.round(a.confidence * 100),
-        evidence: qualifyingSkills.find(s => s.slug === a.skill)?.evidenceSummary ?? '',
-        explorerUrl: `https://explorer.solana.com/tx/${a.txSignature}?cluster=devnet`,
-      })),
-      attestationCount: attestations.length,
-      profileUrl: `/api/profile/${walletAddress}`,
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return c.json({ error: msg }, 500);
-  }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -656,7 +685,7 @@ app.get('/api/oracle-info', c => {
     businessModel: {
       tier1_student: 'First attestation free, $8/year refresh',
       tier2_recruiter: '$29-99/month subscription',
-      tier3_machine: `x402 micropayment: ${LOOKUP_FEE_USDC_RAW} raw USDC per lookup (~$0.00025)`,
+      tier3_machine: `x402 micropayment: ${LOOKUP_FEE_USDC_RAW} raw USDC per lookup (~$${(LOOKUP_FEE_USDC_RAW / 1_000_000).toFixed(2)})`,
     },
   });
 });
