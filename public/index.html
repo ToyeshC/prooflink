@@ -704,7 +704,10 @@
     try{
       const res=await fetch(`${API_BASE}/api/analyze-github`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({githubUsername:u,studentWallet:w})});
       if(!res.ok&&!res.headers.get('content-type')?.includes('text/event-stream')){
-        const data=await res.json();throw new Error(data.error||'Analysis failed');
+        let errMsg='Analysis failed';
+        try{const d=await res.json();errMsg=d.error||errMsg;}
+        catch{errMsg=res.status===504?'Request timed out (Vercel 10s limit). Run locally + ngrok for the full demo.':`Server error (${res.status})`;}
+        throw new Error(errMsg);
       }
       const reader=res.body.getReader();
       const dec=new TextDecoder();
@@ -720,7 +723,7 @@
             if(line.startsWith('data: '))evData=line.slice(6).trim();
           }
           if(!evData)continue;
-          const parsed=JSON.parse(evData);
+          let parsed;try{parsed=JSON.parse(evData);}catch{continue;}
           if(ev==='complete'){finalData=parsed;}
           else if(ev==='error'){throw new Error(parsed.error||'Analysis failed');}
           else if(ev==='progress'){
