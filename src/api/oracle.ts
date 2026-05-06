@@ -25,7 +25,7 @@ dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 const ORACLE_CONFIG_PATH = path.join(process.cwd(), 'oracle-config.json');
 const LOOKUP_FEE_LAMPORTS = 1667; // kept for reference; actual fee is USDC
-const USDC_DEVNET_MINT = 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr';
+const USDC_DEVNET_MINT = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'; // Circle devnet USDC (faucet.circle.com)
 const LOOKUP_FEE_USDC_RAW = 250; // 0.000250 USDC (6 decimals) ≈ $0.00025
 const SPL_TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 const ASSOC_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1caR');
@@ -107,6 +107,31 @@ async function getOneAttestation(wallet: string, skill: string): Promise<Attesta
     SELECT * FROM attestations WHERE wallet = ${wallet} AND skill = ${skill} LIMIT 1
   ` as AttestationRecord[];
   return rows[0] ?? null;
+}
+
+async function incrementProfileViews(wallet: string): Promise<number> {
+  if (!process.env.DATABASE_URL) return 0;
+  try {
+    const sql = db();
+    await sql`
+      CREATE TABLE IF NOT EXISTS profile_views (
+        wallet TEXT PRIMARY KEY,
+        view_count INTEGER NOT NULL DEFAULT 0,
+        last_viewed_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `;
+    const rows = await sql`
+      INSERT INTO profile_views (wallet, view_count, last_viewed_at)
+      VALUES (${wallet}, 1, NOW())
+      ON CONFLICT (wallet) DO UPDATE
+        SET view_count = profile_views.view_count + 1,
+            last_viewed_at = NOW()
+      RETURNING view_count
+    ` as { view_count: number }[];
+    return rows[0]?.view_count ?? 0;
+  } catch {
+    return 0;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -572,7 +597,10 @@ app.get('/api/verify', async c => {
 
 app.get('/api/profile/:wallet', async c => {
   const wallet = c.req.param('wallet');
-  const skills = await getWalletAttestations(wallet);
+  const [skills, queryCount] = await Promise.all([
+    getWalletAttestations(wallet),
+    incrementProfileViews(wallet),
+  ]);
   const acceptsMarkdown = c.req.header('accept')?.includes('text/markdown');
 
   if (acceptsMarkdown) {
@@ -581,6 +609,7 @@ app.get('/api/profile/:wallet', async c => {
       `# Prooflink Profile`,
       `**Wallet:** ${wallet}`,
       `**Attested skills:** ${entries.length}`,
+      `**Profile queries:** ${queryCount}`,
       '',
       ...entries.map(a =>
         `## ${a.skill} — ${a.confidence}%\n${a.evidence}\nAttestation: ${a.attestation_address}`
@@ -594,6 +623,7 @@ app.get('/api/profile/:wallet', async c => {
     attestedSkills: Object.keys(skills),
     attestations: skills,
     attestationCount: Object.keys(skills).length,
+    queryCount,
     lookupEndpoint: `/api/verify?wallet=${wallet}&skill=<skill-slug>`,
   });
 });
