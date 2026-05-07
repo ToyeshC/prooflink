@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "dev": "tsx src/api/oracle.ts",
+    "start": "tsx src/api/oracle.ts",
     "demo": "tsx src/demo.ts",
     "demo:mock": "tsx src/demo.ts --mock",
     "oracle": "tsx src/api/oracle.ts",

@@ -694,7 +694,7 @@ app.get('/api/oracle-info', c => {
 // Server entry point
 // ---------------------------------------------------------------------------
 
-export function startOracleServer(port = 3000) {
+export function startOracleServer(port = parseInt(process.env.PORT || '3000', 10)) {
   serve({ fetch: app.fetch, port }, info => {
     console.log(`Prooflink Oracle running on http://localhost:${info.port}`);
     console.log(`Oracle wallet: ${ORACLE_WALLET}`);
