@@ -4,6 +4,7 @@ services:
     runtime: node
     plan: free
     region: oregon
+    repo: https://github.com/ToyeshC/prooflink
     branch: main
     buildCommand: npm install --include=dev
     startCommand: npm start
