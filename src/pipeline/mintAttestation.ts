@@ -102,9 +102,9 @@ export async function mintSkillAttestation(
   const encoded = getBase64EncodedWireTransaction(signed);
   await (rpc as any).sendTransaction(encoded, { encoding: 'base64', skipPreflight: false }).send();
 
-  // Poll for confirmation (up to 60s)
+  // Poll for confirmation (up to 20s — keeps us within Vercel 60s budget)
   let confirmed = false;
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 10; i++) {
     await new Promise(r => setTimeout(r, 2000));
     const { value: statuses } = await (rpc as any).getSignatureStatuses([txSignature]).send();
     const s = statuses[0]?.confirmationStatus;
