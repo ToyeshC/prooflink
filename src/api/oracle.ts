@@ -568,6 +568,9 @@ app.get('/api/verify', async c => {
 
   if (!paymentProof) {
     const oracleAta = getOracleUsdcAta();
+    c.header('WWW-Authenticate', 'x402 realm="Prooflink Oracle"');
+    c.header('X-Payment-Required', 'true');
+    c.header('Cache-Control', 'no-store');
     return c.json({
       error: 'Payment Required',
       payment: {

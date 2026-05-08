@@ -100,6 +100,20 @@ curl -H "X-Payment-Proof: <tx-signature>" \
   "http://localhost:3000/api/verify?wallet=<wallet>&skill=react"
 ```
 
+### Works with pay.sh
+
+[pay.sh](https://pay.sh) (Solana Foundation + Google Cloud) is a CLI/MCP client that auto-handles x402 payments. Since Prooflink implements x402 server-side, it works with pay.sh out of the box:
+
+```bash
+# Install pay.sh
+brew install pay   # or: npm install -g @solana/pay
+
+# pay.sh auto-detects the 402, signs the USDC tx, and retries — no manual steps
+pay curl "https://prooflink-xxx.koyeb.app/api/verify?wallet=<wallet>&skill=python"
+```
+
+AI agents using pay.sh as their payment client will query Prooflink with zero custom integration code.
+
 ### Validation registry flow
 
 ```bash
