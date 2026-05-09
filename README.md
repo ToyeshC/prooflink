@@ -100,19 +100,22 @@ curl -H "X-Payment-Proof: <tx-signature>" \
   "http://localhost:3000/api/verify?wallet=<wallet>&skill=react"
 ```
 
-### Works with pay.sh
+### Works with pay.sh (recommended for agents + live demos)
 
-[pay.sh](https://pay.sh) (Solana Foundation + Google Cloud) is a CLI/MCP client that auto-handles x402 payments. Since Prooflink implements x402 server-side, it works with pay.sh out of the box:
+[pay.sh](https://pay.sh) (Solana Foundation + Google Cloud) is a CLI/MCP client that auto-handles x402 payments. Since Prooflink implements x402 server-side, it works with pay.sh out of the box — no API keys, no accounts, no custom integration code:
 
 ```bash
 # Install pay.sh
 brew install pay   # or: npm install -g @solana/pay
 
-# pay.sh auto-detects the 402, signs the USDC tx, and retries — no manual steps
-pay curl "https://prooflink-xxx.koyeb.app/api/verify?wallet=<wallet>&skill=python"
+# pay.sh auto-detects the 402, signs the USDC tx, and retries — no manual steps needed
+pay curl "http://localhost:3000/api/verify?wallet=<wallet>&skill=python"
+
+# Or via ngrok for remote demos:
+pay curl "https://xxx.ngrok-free.app/api/verify?wallet=<wallet>&skill=python"
 ```
 
-AI agents using pay.sh as their payment client will query Prooflink with zero custom integration code.
+AI agents using pay.sh as their payment client query Prooflink with zero custom integration code. This is the canonical agent-native access pattern for x402-gated APIs.
 
 ### Validation registry flow
 
@@ -190,6 +193,20 @@ npm run oracle
 ```
 
 Open `http://localhost:3000` for the demo UI.
+
+### Demo mode (ngrok)
+
+The GitHub analysis pipeline takes 60–90 seconds. For live demos, run locally with ngrok to avoid cloud timeouts:
+
+```bash
+npm start                          # starts on port 3000
+ngrok http 3000                    # exposes via public HTTPS URL
+
+# For MCP: point the server at the ngrok URL
+PROOFLINK_API_URL=https://xxx.ngrok-free.app npm run mcp
+```
+
+The persistent Vercel deployment (`https://prooflink-five.vercel.app`) is available for judges to browse async but has a 60s function timeout — use ngrok for any live scan demo.
 
 ### Demo pipeline (CLI)
 

@@ -84,18 +84,19 @@
 
     .btn-primary {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 15px; letter-spacing: 0.12em;
+      font-size: 15px; letter-spacing: 0.1em;
       background: var(--gold); color: var(--ink);
-      border: none; cursor: pointer; padding: 13px 32px;
-      transition: opacity .15s; display: inline-block;
+      border: none; cursor: pointer; padding: 14px 32px; min-height: 48px;
+      transition: opacity .15s; display: inline-flex; align-items: center; justify-content: center;
     }
     .btn-primary:hover { opacity: 0.85; }
     .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
     .btn-ghost {
       font-family: 'Geist Mono', monospace; font-size: 11px;
       letter-spacing: 0.08em; background: transparent;
-      color: var(--white-mid); padding: 10px 18px; cursor: pointer;
+      color: var(--white-mid); padding: 11px 18px; min-height: 44px; cursor: pointer;
       border: 1px solid var(--rule-hi); transition: all .15s;
+      display: inline-flex; align-items: center; gap: 6px;
     }
     .btn-ghost:hover { border-color: var(--white-mid); color: var(--white); }
     .btn-link {
@@ -169,12 +170,35 @@
     .stat-label { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--white-dim); display: block; margin-top: 6px; }
 
     .nrow {
-      display: grid; grid-template-columns: 72px 1fr 80px 84px 120px;
+      display: grid; grid-template-columns: 72px 1fr 80px 84px 110px 72px;
       gap: 8px; align-items: center; padding: 10px 18px;
       border-bottom: 1px solid var(--rule); font-size: 11px; transition: background .15s;
     }
     .nrow:hover { background: rgba(240,237,230,.02); }
     .nrow:last-child { border-bottom: none; }
+
+    /* Modal overlay */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(12,12,10,0.88); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-panel {
+      background: var(--ink2); border: 1px solid var(--rule-hi);
+      width: 100%; max-width: 480px; padding: 32px;
+      position: relative; display: flex; flex-direction: column; gap: 20px;
+    }
+    .modal-close {
+      position: absolute; top: 16px; right: 16px;
+      background: none; border: none; color: var(--white-dim);
+      font-size: 18px; cursor: pointer; line-height: 1; transition: color .15s;
+    }
+    .modal-close:hover { color: var(--white); }
+    .modal-field { display: flex; flex-direction: column; gap: 6px; }
+    .modal-resp { font-size: 11px; line-height: 1.7; padding: 12px 14px; min-height: 40px; }
+    .modal-resp.ok  { background: rgba(76,175,110,.08); border: 1px solid rgba(76,175,110,.2); color: var(--green); }
+    .modal-resp.err { background: rgba(192,71,58,.08);  border: 1px solid rgba(192,71,58,.2);  color: #E57368; }
 
     .crow { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--rule); }
     .crow:last-child { border-bottom: none; }
@@ -212,11 +236,21 @@
     ::-webkit-scrollbar-track { background: var(--ink); }
     ::-webkit-scrollbar-thumb { background: var(--white-dim); }
     @media (max-width: 768px) {
-      .hero-grid { grid-template-columns: 1fr !important; }
-      .reg-grid  { grid-template-columns: 1fr !important; }
-      .api-grid  { grid-template-columns: 1fr !important; }
-      .nrow      { grid-template-columns: 60px 1fr 60px 60px 80px; font-size: 10px; }
-      .nlinks    { display: none; }
+      .hero-grid  { grid-template-columns: 1fr !important; }
+      .reg-grid   { grid-template-columns: 1fr !important; }
+      .api-grid   { grid-template-columns: 1fr !important; }
+      .pspot-grid { grid-template-columns: 1fr !important; }
+      .curl-grid  { grid-template-columns: 1fr !important; }
+      .stat-strip { flex-direction: column; }
+      .stat-item  { border-right: none; border-bottom: 1px solid var(--rule); }
+      .stat-item:last-child { border-bottom: none; }
+      .nrow       { grid-template-columns: 60px 1fr 72px; font-size: 10px; }
+      .nrow > :nth-child(3),
+      .nrow > :nth-child(5),
+      .nrow > :nth-child(6) { display: none; }
+      .nlinks     { display: none; }
+      .oinput     { font-size: 16px; }
+      .btn-primary { font-size: 16px; }
     }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
   </style>
@@ -255,7 +289,7 @@
 
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:40px">
       <div class="ldot"></div>
-      <span style="font-size:10px;letter-spacing:.16em;color:var(--gold);text-transform:uppercase">Solana Attestation Service</span>
+      <span style="font-size:10px;letter-spacing:.08em;color:var(--gold);text-transform:uppercase">Solana Attestation Service</span>
     </div>
 
     <div class="hero-grid" style="display:grid;grid-template-columns:1fr 420px;gap:80px;align-items:start">
@@ -269,11 +303,18 @@
           <span style="opacity:0.18">Forever.</span>
         </h1>
 
-        <p class="sans" style="font-size:15px;line-height:1.8;color:var(--white-mid);max-width:420px;margin-bottom:44px;font-weight:300">
-          Prooflink converts your GitHub profile and coursework into tamper-proof skill attestations on Solana — verifiable by AI hiring agents in milliseconds.
+        <p class="sans" style="font-size:15px;line-height:1.8;color:var(--white-mid);max-width:420px;margin-bottom:20px;font-weight:300">
+          Prooflink converts your GitHub history into permanent, on-chain verified skill records. AI hiring agents query them in milliseconds for $0.01 per lookup.
         </p>
 
-        <div class="stat-strip" style="margin-top:44px">
+        <a href="/profile/FLkqg6fUP39vWkcxV9ZzLKWrBjRoX2YmccLcEkobZyEZ" target="_blank"
+          class="sans"
+          style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--gold);letter-spacing:.04em;text-decoration:none;margin-bottom:44px;opacity:.8;transition:opacity .15s;font-weight:400"
+          onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.8'">
+          See example passport ↗
+        </a>
+
+        <div class="stat-strip" style="margin-top:0">
           <div class="stat-item"><span class="stat-num" id="c1">0</span><span class="stat-label">Attestations minted</span></div>
           <div class="stat-item"><span class="stat-num" id="c2">0</span><span class="stat-label">Verified wallets</span></div>
           <div class="stat-item"><span class="stat-num" id="c3">0</span><span class="stat-label">Active validators</span></div>
@@ -308,7 +349,7 @@
                 <input id="wallet-input" type="text" placeholder="e.g. 7xKXtg2CW87d97TX…" class="oinput" />
               </div>
               <button id="analyze-btn" class="btn-primary" style="width:100%;text-align:center" onclick="startAnalysis()">Initialize Oracle Scan →</button>
-              <p style="font-size:10px;color:var(--white-dim);letter-spacing:.04em">We analyze your 15 most recently active public repos and up to 3 READMEs. No write access.</p>
+              <p style="font-size:11px;color:var(--white-dim);letter-spacing:.03em;line-height:1.6">Analyzes your 15 most active public repos. Takes 60–90 seconds. No write access.</p>
             </div>
             <!-- Canvas panel -->
             <div id="panel-canvas" class="hidden" style="padding:20px;display:flex;flex-direction:column;gap:14px">
@@ -382,7 +423,7 @@
   <div style="background:rgba(192,71,58,.07);border:1px solid rgba(192,71,58,.3);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px">
     <div style="display:flex;align-items:center;gap:10px">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C0473A" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <span id="error-message" style="font-size:12px;color:#E88080">An error occurred.</span>
+      <span id="error-message" style="font-size:12px;color:#E57368">An error occurred.</span>
     </div>
     <button onclick="resetForm()" class="btn-ghost" style="font-size:10px;flex-shrink:0">Retry</button>
   </div>
@@ -401,7 +442,7 @@
     <a href="/profile/FLkqg6fUP39vWkcxV9ZzLKWrBjRoX2YmccLcEkobZyEZ" style="display:inline-block;margin-top:16px;font-size:11px;color:var(--gold);letter-spacing:.06em;text-decoration:none">→ view example passport</a>
   </div>
   <div id="result-section" class="hidden">
-    <div style="display:grid;grid-template-columns:1fr 180px;gap:12px;margin-bottom:16px">
+    <div class="pspot-grid" style="display:grid;grid-template-columns:1fr 180px;gap:12px;margin-bottom:16px">
       <div class="surface" style="padding:20px">
         <div class="clabel" style="margin-bottom:8px">Identity anchor</div>
         <div id="passport-wallet" class="mono" style="font-size:13px;color:var(--gold);word-break:break-all;letter-spacing:.04em"></div>
@@ -420,7 +461,7 @@
     </div>
     <div class="clabel" style="margin-bottom:12px">Skill attestations · Solana Attestation Service</div>
     <div id="att-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-bottom:20px"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+    <div class="curl-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
       <div class="surface" style="padding:16px"><div class="clabel" style="margin-bottom:8px">Profile feed (free)</div><pre id="curl-profile" style="font-size:10px;color:var(--gold);white-space:pre-wrap;line-height:1.8;overflow-x:auto"></pre></div>
       <div class="surface" style="padding:16px"><div class="clabel" style="margin-bottom:8px">Verification feed (x402)</div><pre id="curl-verify" style="font-size:10px;color:var(--white-mid);white-space:pre-wrap;line-height:1.8;overflow-x:auto"></pre></div>
     </div>
@@ -456,7 +497,7 @@
         <div class="clabel" style="margin-bottom:12px">Validator nodes</div>
         <div class="surface" style="overflow:hidden">
           <div class="nrow" style="font-size:9px;letter-spacing:.1em;color:var(--white-dim);padding:8px 18px">
-            <span>Node</span><span>Skill</span><span>Staked</span><span>Status</span><span>Confidence</span>
+            <span>Node</span><span>Skill</span><span>Staked</span><span>Status</span><span>Confidence</span><span>Action</span>
           </div>
           <div id="validator-nodes"></div>
         </div>
@@ -479,15 +520,24 @@
         </div>
       </div>
     </div>
+
+    <div style="display:flex;gap:12px;margin-top:28px;flex-wrap:wrap">
+      <button onclick="openModal('register')" class="btn-ghost" style="display:inline-flex;align-items:center;gap:8px">
+        <span style="color:var(--gold)">+</span> Register as Validator
+      </button>
+      <button onclick="openModal('challenge')" class="btn-ghost" style="display:inline-flex;align-items:center;gap:8px">
+        Challenge Attestation <span style="color:var(--white-dim)">→</span>
+      </button>
+    </div>
   </div>
 </section>
 
 <!-- ══ API ECONOMY ═══════════════════════════════════════════════ -->
 <section id="api" style="max-width:1100px;margin:0 auto;padding:88px 28px">
   <div class="sh">
-    <div class="stag">Agentic economy · x402 micropayment API</div>
+    <div class="stag">Agentic economy · $0.01 per AI query</div>
     <div class="shline"></div>
-    <div class="stag">$0.01/lookup</div>
+    <div class="stag">x402 protocol</div>
   </div>
 
   <div class="stat-strip" style="margin-bottom:48px">
@@ -530,7 +580,12 @@
 
     <!-- x402 Simulator -->
     <div>
-      <div class="clabel" style="margin-bottom:12px">Simulate agent lookup</div>
+      <div style="display:flex;border-bottom:1px solid var(--rule);margin-bottom:0">
+        <button class="otab on" id="tab-phantom" onclick="switchVerifyTab('phantom')">Browser / Phantom</button>
+        <button class="otab" id="tab-paysh" onclick="switchVerifyTab('paysh')">CLI / pay.sh</button>
+      </div>
+      <div id="panel-phantom">
+      <div class="clabel" style="margin-bottom:12px;margin-top:16px">Simulate agent lookup</div>
       <div class="surface" style="overflow:hidden">
         <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
           <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(232,160,32,.04);border:1px solid rgba(232,160,32,.12)">
@@ -562,13 +617,113 @@
           </div>
         </div>
       </div>
+      </div><!-- /panel-phantom -->
+      <div id="panel-paysh" style="display:none;margin-top:16px">
+        <div class="clabel" style="margin-bottom:12px">Agent-native access · zero integration code</div>
+        <div class="surface" style="padding:24px;display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div class="clabel" style="color:var(--green);margin-bottom:10px">01 — Install pay.sh</div>
+            <div class="term" style="padding:12px 16px;font-size:12px">
+              <span class="tp">$</span> <span class="tc">brew install pay</span><span class="tc" style="color:var(--white-dim)">  # or: npm install -g @solana/pay</span>
+            </div>
+          </div>
+          <div>
+            <div class="clabel" style="color:var(--green);margin-bottom:10px">02 — Query the oracle</div>
+            <div class="term" style="padding:12px 16px;font-size:12px;position:relative">
+              <span class="tp">$</span> <span id="paysh-cmd" class="td">pay curl "http://localhost:3000/api/verify?wallet=<span class="tp">[wallet]</span>&amp;skill=<span class="tp">[skill]</span>"</span>
+              <button onclick="copyPayshCmd()" style="position:absolute;top:10px;right:10px;background:none;border:1px solid var(--rule);color:var(--white-dim);font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.08em;padding:4px 8px;cursor:pointer;transition:all .15s" id="paysh-copy-btn">COPY</button>
+            </div>
+          </div>
+          <div>
+            <div class="clabel" style="color:var(--green);margin-bottom:10px">03 — pay.sh handles everything</div>
+            <div class="term" style="padding:12px 16px;font-size:11px;line-height:1.9">
+              <div class="tl" style="opacity:1"><span class="tc">→ 402 detected · payment instructions received</span></div>
+              <div class="tl" style="opacity:1"><span class="tc">→ signing USDC transfer · 10000 raw ($0.01)</span></div>
+              <div class="tl" style="opacity:1"><span class="tc">→ tx confirmed · retrying with X-Payment-Proof header</span></div>
+              <div class="tl" style="opacity:1"><span class="tok">✓ verified: true · confidence: 90 · attestation: 3xY8…</span></div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--white-dim);line-height:1.7;border-top:1px solid var(--rule);padding-top:14px">
+            pay.sh (Solana Foundation + Google Cloud) auto-detects the 402, signs the USDC tx, and retries; no API key, no account, no custom code. AI agents query Prooflink natively.
+          </div>
+        </div>
+      </div><!-- /panel-paysh -->
     </div>
   </div>
 </section>
 
+<!-- ══ MODALS ════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-register" onclick="closeModalOnOverlay(event,'modal-register')">
+  <div class="modal-panel">
+    <button class="modal-close" onclick="closeModal('modal-register')">×</button>
+    <div>
+      <div class="display" style="font-size:28px;color:var(--gold);margin-bottom:4px">Register as Validator</div>
+      <div style="font-size:11px;color:var(--white-dim);line-height:1.7">Stake SOL to back an attestation score. Validators earn from honest claims; stakers with wrong claims are slashed.</div>
+    </div>
+    <div style="background:rgba(76,175,110,.06);border:1px solid rgba(76,175,110,.18);padding:12px 16px;display:flex;align-items:center;gap:12px">
+      <div id="reg-phantom-status" style="font-size:10px;color:var(--white-mid);flex:1">Connect Phantom to sign the stake transaction automatically · Oracle: <span id="reg-oracle-wallet" style="color:var(--gold)">loading…</span></div>
+      <button id="reg-phantom-btn" onclick="connectPhantomModal('reg-phantom-status','reg-phantom-btn')" class="btn-ghost" style="font-size:9px;padding:6px 12px;flex-shrink:0">Connect Phantom</button>
+    </div>
+    <div class="modal-field">
+      <label class="clabel">Attestation address</label>
+      <input class="oinput" id="reg-attestation" placeholder="From the skill card on a passport page…" />
+    </div>
+    <div class="modal-field">
+      <label class="clabel">Stake amount (SOL)</label>
+      <input class="oinput" id="reg-amount" type="number" min="0.1" step="0.1" placeholder="e.g. 1.0" />
+    </div>
+    <div class="modal-field">
+      <label class="clabel">Your validator wallet <span style="color:var(--white-dim);font-size:9px">(auto-filled from Phantom)</span></label>
+      <input class="oinput" id="reg-wallet" placeholder="Auto-filled on connect…" readonly style="opacity:.6;cursor:default" />
+    </div>
+    <div class="modal-field">
+      <label class="clabel">Stake tx signature <span style="color:var(--white-dim);font-size:9px">(auto-filled after Phantom approval)</span></label>
+      <input class="oinput" id="reg-txsig" placeholder="Auto-filled after Phantom approval…" readonly style="opacity:.6;cursor:default" />
+    </div>
+    <button class="btn-primary" style="width:100%;text-align:center" onclick="submitRegister()">Stake via Phantom →</button>
+    <div id="reg-resp" class="modal-resp" style="display:none"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-challenge" onclick="closeModalOnOverlay(event,'modal-challenge')">
+  <div class="modal-panel">
+    <button class="modal-close" onclick="closeModal('modal-challenge')">×</button>
+    <div>
+      <div class="display" style="font-size:28px;color:var(--gold);margin-bottom:4px">Challenge Attestation</div>
+      <div style="font-size:11px;color:var(--white-dim);line-height:1.7">Post a bond to dispute an attestation. If your challenge is upheld after the 48h window, you earn the validator's stake. If not, you lose your bond.</div>
+    </div>
+    <div style="background:rgba(192,71,58,.06);border:1px solid rgba(192,71,58,.18);padding:12px 16px;display:flex;align-items:center;gap:12px">
+      <div id="chal-phantom-status" style="font-size:10px;color:var(--white-mid);flex:1">Connect Phantom to sign the bond transaction automatically · Oracle: <span id="chal-oracle-wallet" style="color:var(--gold)">loading…</span></div>
+      <button id="chal-phantom-btn" onclick="connectPhantomModal('chal-phantom-status','chal-phantom-btn')" class="btn-ghost" style="font-size:9px;padding:6px 12px;flex-shrink:0">Connect Phantom</button>
+    </div>
+    <div class="modal-field">
+      <label class="clabel">Attestation address to challenge</label>
+      <input class="oinput" id="chal-attestation" placeholder="Attestation PDA address…" />
+    </div>
+    <div class="modal-field">
+      <label class="clabel">Bond amount (SOL)</label>
+      <input class="oinput" id="chal-amount" type="number" min="0.1" step="0.1" placeholder="e.g. 0.5" />
+    </div>
+    <div class="modal-field">
+      <label class="clabel">Reason for challenge</label>
+      <textarea class="oinput" id="chal-reason" rows="3" placeholder="Why is this claim inaccurate? Cite specific evidence…" style="resize:vertical"></textarea>
+    </div>
+    <div class="modal-field">
+      <label class="clabel">Your challenger wallet <span style="color:var(--white-dim);font-size:9px">(auto-filled from Phantom)</span></label>
+      <input class="oinput" id="chal-wallet" placeholder="Auto-filled on connect…" readonly style="opacity:.6;cursor:default" />
+    </div>
+    <div class="modal-field">
+      <label class="clabel">Bond tx signature <span style="color:var(--white-dim);font-size:9px">(auto-filled after Phantom approval)</span></label>
+      <input class="oinput" id="chal-txsig" placeholder="Auto-filled after Phantom approval…" readonly style="opacity:.6;cursor:default" />
+    </div>
+    <button class="btn-primary" style="width:100%;text-align:center" onclick="submitChallenge()">Submit Challenge →</button>
+    <div id="chal-resp" class="modal-resp" style="display:none"></div>
+  </div>
+</div>
+
 <!-- ══ FOOTER ════════════════════════════════════════════════════ -->
 <footer style="border-top:1px solid var(--rule);padding:32px 28px 60px;text-align:center">
-  <div class="display" style="font-size:14px;letter-spacing:.2em;color:var(--white-dim)">
+  <div class="display" style="font-size:14px;letter-spacing:.06em;color:var(--white-dim)">
     AI for intelligence · Blockchain for trust · Machine-scale talent liquidity
   </div>
   <div style="margin-top:10px;font-size:10px;color:var(--white-dim);opacity:.4;letter-spacing:.08em">
@@ -585,7 +740,7 @@
 <script>
   const API_BASE = (location.hostname==='localhost'||location.hostname==='127.0.0.1') ? 'http://localhost:3000' : '';
   let lastResult=null, selFile=null, cdInterval=null, activeTab='github';
-  let phantomProvider=null, agentWalletPubkey=null;
+  let phantomProvider=null, agentWalletPubkey=null, _oracleWalletFull='';
 
   function show(id){const e=document.getElementById(id);if(e)e.classList.remove('hidden')}
   function hide(id){const e=document.getElementById(id);if(e)e.classList.add('hidden')}
@@ -706,7 +861,15 @@
       if(!res.ok&&!res.headers.get('content-type')?.includes('text/event-stream')){
         let errMsg='Analysis failed';
         try{const d=await res.json();errMsg=d.error||errMsg;}
-        catch{errMsg=res.status===504?'Request timed out (Vercel 10s limit). Run locally + ngrok for the full demo.':`Server error (${res.status})`;}
+        catch{
+          const statusMsgs={
+            504:'GitHub analysis timed out. Run locally with ngrok for the full demo (analysis takes 60–90s).',
+            400:'Check the GitHub username. It may be private or misspelled.',
+            429:'Rate limit hit. Add GITHUB_TOKEN to your .env or wait 60 seconds.',
+            500:'Server error. Check your inference API key in .env.',
+          };
+          errMsg=statusMsgs[res.status]||`Unexpected error (${res.status}). Try again or run locally.`;
+        }
         throw new Error(errMsg);
       }
       const reader=res.body.getReader();
@@ -755,7 +918,7 @@
       const fd=new FormData();fd.append('canvasZip',selFile);fd.append('studentWallet',w);
       const res=await fetch(`${API_BASE}/api/analyze-canvas`,{method:'POST',body:fd});
       const data=await res.json();
-      if(!res.ok||!data.success)throw new Error(data.error||'Analysis failed');
+      if(!res.ok||!data.success)throw new Error(data.error||'Canvas analysis failed. Verify the ZIP is a valid Canvas course export (Account → Settings → Export Course Content).');
       finishTerminal(data.attestationCount,data.modelUsed);await sleep(1100);
       hide('loading-section');lastResult=data;renderResult(data);
       setTimeout(()=>document.getElementById('passport').scrollIntoView({behavior:'smooth',block:'start'}),300);
@@ -869,6 +1032,52 @@
     }
   }
 
+  async function connectPhantomModal(statusId, btnId){
+    const provider=window.phantom?.solana??window.solana;
+    if(!provider?.isPhantom){
+      document.getElementById(statusId).innerHTML='<span style="color:var(--red)">Phantom not found — install at phantom.com</span>';
+      return false;
+    }
+    try{
+      const resp=await provider.connect();
+      agentWalletPubkey=resp.publicKey;
+      phantomProvider=provider;
+      const s=resp.publicKey.toString();
+      document.getElementById(statusId).innerHTML=`<span style="color:var(--green)">✓ ${s.slice(0,8)}…${s.slice(-4)}</span>`;
+      const btn=document.getElementById(btnId);
+      btn.textContent='✓ Connected';btn.style.color='var(--green)';
+      return true;
+    }catch(e){
+      document.getElementById(statusId).innerHTML=`<span style="color:var(--red)">${e.message||'Rejected'}</span>`;
+      return false;
+    }
+  }
+
+  async function sendSolToOracle(amountSOL){
+    if(!phantomProvider||!agentWalletPubkey)throw new Error('Phantom not connected');
+    if(!_oracleWalletFull){
+      const d=await fetch(`${API_BASE}/api/oracle-info`).then(r=>r.json());
+      _oracleWalletFull=d.oracle??d.oracleWallet??d.wallet??'';
+    }
+    if(!_oracleWalletFull)throw new Error('Oracle wallet not loaded — reopen modal');
+    const conn=new solanaWeb3.Connection('https://api.devnet.solana.com','confirmed');
+    const fromPubkey=agentWalletPubkey;
+    const toPubkey=new solanaWeb3.PublicKey(_oracleWalletFull);
+    const lamports=Math.round(amountSOL*1_000_000_000);
+    const ix=solanaWeb3.SystemProgram.transfer({fromPubkey,toPubkey,lamports});
+    const{blockhash}=await conn.getLatestBlockhash();
+    const tx=new solanaWeb3.Transaction({recentBlockhash:blockhash,feePayer:fromPubkey});
+    tx.add(ix);
+    const{signature}=await phantomProvider.signAndSendTransaction(tx);
+    for(let i=0;i<15;i++){
+      await sleep(2000);
+      const st=await conn.getSignatureStatus(signature);
+      const conf=st?.value?.confirmationStatus;
+      if(conf==='confirmed'||conf==='finalized')return signature;
+    }
+    throw new Error('Transaction not confirmed in 30s — check Solana Explorer');
+  }
+
   async function sendUsdcPayment(recipientAta, amountRaw, mintAddress, recipientOwner){
     const conn=new solanaWeb3.Connection('https://api.devnet.solana.com','confirmed');
     const senderPubkey=agentWalletPubkey;
@@ -948,7 +1157,7 @@
             await sleep(400);
           }catch(payErr){
             out.innerHTML+=`\n<span class="tw">✗ Payment failed: ${payErr.message}</span>`;
-            out.innerHTML+=`\n<span class="td">  (Need devnet USDC — get some at faucet.circle.com)</span>`;
+            out.innerHTML+=`\n<span class="td">  To demo live: get devnet USDC at <a href="https://faucet.circle.com" target="_blank" style="color:var(--gold)">faucet.circle.com</a>, or switch to Simulation mode (no wallet needed)</span>`;
             return;
           }
         }else{
@@ -998,6 +1207,9 @@
     nodes.forEach(v=>{
       const col=v.status==='RESOLVED'?'var(--green)':v.status==='CHALLENGED'?'var(--gold)':'var(--white-mid)';
       const nodeId='V-'+(v.validatorWallet??'????').slice(0,4).toUpperCase();
+      const actionHtml=v.status==='CHALLENGED'
+        ?`<button onclick="resolveDispute('${v.attestationAddress??''}')" class="btn-ghost" style="font-size:9px;padding:4px 8px;letter-spacing:.06em">Resolve</button>`
+        :`<span style="font-size:9px;color:var(--white-dim)">—</span>`;
       const row=document.createElement('div');row.className='nrow';
       row.innerHTML=`
         <span class="mono" style="font-size:9px;color:var(--white-dim)">${nodeId}</span>
@@ -1009,7 +1221,8 @@
             <div style="height:100%;width:${v.windowPct??0}%;background:${col}"></div>
           </div>
           <span style="font-size:9px;color:var(--white-dim)">${v.windowPct??0}%</span>
-        </div>`;
+        </div>
+        <div>${actionHtml}</div>`;
       c.appendChild(row);
     });
   }
@@ -1082,6 +1295,127 @@
     countUp(document.getElementById('c2'),1,400);
     countUp(document.getElementById('c3'),3,500);
   },400);
+
+  // ── Modal helpers ─────────────────────────────────────────────
+  function openModal(type){
+    document.getElementById('modal-'+type).classList.add('open');
+    fetch(`${API_BASE}/api/oracle-info`).then(r=>r.json()).then(d=>{
+      _oracleWalletFull=d.oracle??d.oracleWallet??d.wallet??'';
+      const w=_oracleWalletFull||'(see /health)';
+      const el1=document.getElementById('reg-oracle-wallet');
+      const el2=document.getElementById('chal-oracle-wallet');
+      if(el1)el1.textContent=w.slice(0,8)+'…'+w.slice(-4);
+      if(el2)el2.textContent=w.slice(0,8)+'…'+w.slice(-4);
+    }).catch(()=>{});
+  }
+  function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+  function closeModalOnOverlay(e,id){ if(e.target===e.currentTarget)closeModal(id); }
+
+  async function submitRegister(){
+    const attestation=document.getElementById('reg-attestation').value.trim();
+    const amount=parseFloat(document.getElementById('reg-amount').value)||0;
+    const resp=document.getElementById('reg-resp');
+    if(!attestation){resp.style.display='block';resp.className='modal-resp err';resp.textContent='✗ Attestation address required';return;}
+    if(!amount||amount<0.01){resp.style.display='block';resp.className='modal-resp err';resp.textContent='✗ Stake must be ≥ 0.01 SOL';return;}
+    resp.style.display='block';resp.className='modal-resp';resp.textContent='Connecting Phantom…';
+    if(!phantomProvider||!agentWalletPubkey){
+      const ok=await connectPhantomModal('reg-phantom-status','reg-phantom-btn');
+      if(!ok){resp.className='modal-resp err';resp.textContent='✗ Phantom required to sign stake tx';return;}
+    }
+    const validatorWallet=agentWalletPubkey.toString();
+    document.getElementById('reg-wallet').value=validatorWallet;
+    resp.textContent='⬡ Approve '+amount+' SOL transfer in Phantom…';
+    let txSignature;
+    try{
+      txSignature=await sendSolToOracle(amount);
+      document.getElementById('reg-txsig').value=txSignature;
+      resp.textContent='✓ '+amount+' SOL sent · registering…';
+    }catch(e){resp.className='modal-resp err';resp.textContent='✗ '+e.message;return;}
+    try{
+      const r=await fetch(`${API_BASE}/api/registry/register`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({attestationAddress:attestation,validatorWallet,txSignature})
+      });
+      const d=await r.json();
+      if(r.ok){
+        resp.className='modal-resp ok';
+        resp.textContent='✓ Registered. Vouching for this attestation. 48h dispute window active.';
+        renderNodes();
+      }else{
+        resp.className='modal-resp err';
+        resp.textContent='✗ '+(d.error??JSON.stringify(d));
+      }
+    }catch(err){resp.className='modal-resp err';resp.textContent='✗ '+err.message;}
+  }
+
+  async function submitChallenge(){
+    const attestation=document.getElementById('chal-attestation').value.trim();
+    const reason=document.getElementById('chal-reason').value.trim();
+    const bondAmount=parseFloat(document.getElementById('chal-amount').value)||0;
+    const resp=document.getElementById('chal-resp');
+    if(!attestation){resp.style.display='block';resp.className='modal-resp err';resp.textContent='✗ Attestation address required';return;}
+    if(!bondAmount||bondAmount<0.01){resp.style.display='block';resp.className='modal-resp err';resp.textContent='✗ Bond must be ≥ 0.01 SOL';return;}
+    resp.style.display='block';resp.className='modal-resp';resp.textContent='Connecting Phantom…';
+    if(!phantomProvider||!agentWalletPubkey){
+      const ok=await connectPhantomModal('chal-phantom-status','chal-phantom-btn');
+      if(!ok){resp.className='modal-resp err';resp.textContent='✗ Phantom required to sign bond tx';return;}
+    }
+    const challengerWallet=agentWalletPubkey.toString();
+    document.getElementById('chal-wallet').value=challengerWallet;
+    resp.textContent='⬡ Approve '+bondAmount+' SOL bond in Phantom…';
+    let txSignature;
+    try{
+      txSignature=await sendSolToOracle(bondAmount);
+      document.getElementById('chal-txsig').value=txSignature;
+      resp.textContent='✓ '+bondAmount+' SOL bond sent · submitting challenge…';
+    }catch(e){resp.className='modal-resp err';resp.textContent='✗ '+e.message;return;}
+    try{
+      const r=await fetch(`${API_BASE}/api/registry/challenge`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({attestationAddress:attestation,challengerWallet,reason,txSignature})
+      });
+      const d=await r.json();
+      if(r.ok){
+        resp.className='modal-resp ok';
+        resp.textContent='✓ Challenge submitted. 48h re-evaluation window started.';
+        renderNodes();
+      }else{
+        resp.className='modal-resp err';
+        resp.textContent='✗ '+(d.error??JSON.stringify(d));
+      }
+    }catch(err){resp.className='modal-resp err';resp.textContent='✗ '+err.message;}
+  }
+
+  async function resolveDispute(attestationAddress){
+    if(!attestationAddress){alert('No attestation address found.');return;}
+    if(!confirm('Resolve dispute for '+attestationAddress+'?'))return;
+    try{
+      const r=await fetch(`${API_BASE}/api/registry/resolve`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({attestationAddress})
+      });
+      const d=await r.json();
+      if(r.ok){ alert('✓ Dispute resolved.'); renderNodes(); }
+      else alert('✗ '+(d.error??JSON.stringify(d)));
+    }catch(err){ alert('✗ '+err.message); }
+  }
+
+  // ── pay.sh tab switcher ───────────────────────────────────────
+  function switchVerifyTab(tab){
+    document.getElementById('panel-phantom').style.display=tab==='phantom'?'block':'none';
+    document.getElementById('panel-paysh').style.display=tab==='paysh'?'block':'none';
+    document.getElementById('tab-phantom').className='otab'+(tab==='phantom'?' on':'');
+    document.getElementById('tab-paysh').className='otab'+(tab==='paysh'?' on':'');
+  }
+
+  function copyPayshCmd(){
+    const cmd=`pay curl "${API_BASE}/api/verify?wallet=FLkqg6fUP39vWkcxV9ZzLKWrBjRoX2YmccLcEkobZyEZ&skill=python"`;
+    navigator.clipboard.writeText(cmd).then(()=>{
+      const btn=document.getElementById('paysh-copy-btn');
+      btn.textContent='COPIED'; btn.style.color='var(--green)';
+      setTimeout(()=>{ btn.textContent='COPY'; btn.style.color=''; },1500);
+    }).catch(()=>{});
+  }
 </script>
 </body>
 </html>
