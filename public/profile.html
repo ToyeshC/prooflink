@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <meta name="theme-color" content="#080D1A"/>
+  <meta name="theme-color" content="#0C0C0A"/>
   <title>Skill Passport — Prooflink</title>
 
   <!-- Dynamic OG tags (updated by JS after fetch) -->
@@ -53,8 +53,8 @@
     /* ── Circuit grid ── */
     .grid-bg{
       background-image:
-        linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),
-        linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);
+        linear-gradient(rgba(240,237,230,.015) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(240,237,230,.015) 1px,transparent 1px);
       background-size:48px 48px;
     }
 
@@ -107,7 +107,7 @@
       border:1px dashed rgba(34,197,94,.4);
     }
     .stamp-check{font-size:20px;line-height:1}
-    .stamp-txt{font-size:6.5px;letter-spacing:.13em;font-weight:700;text-align:center;margin-top:2px}
+    .stamp-txt{font-size:7.5px;letter-spacing:.1em;font-weight:700;text-align:center;margin-top:2px}
 
     /* ── Stats bar ── */
     .stats-bar{
@@ -120,7 +120,7 @@
       border-right:1px solid var(--rule);
     }
     .stat-cell:last-child{border-right:none}
-    .stat-label{font-size:8.5px;letter-spacing:.15em;color:rgba(226,232,240,.35);margin-bottom:7px}
+    .stat-label{font-size:10px;letter-spacing:.12em;color:rgba(240,237,230,.5);margin-bottom:7px}
 
     /* Trust score arc */
     .arc-wrap{position:relative;width:68px;height:68px}
@@ -195,8 +195,8 @@
     .tb-v{background:rgba(240,237,230,.04);color:var(--white-dim);border:1px solid rgba(240,237,230,.12)}
 
     /* Confidence bar */
-    .cbar-wrap{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;margin:12px 0 14px}
-    .cbar-fill{height:100%;border-radius:2px;width:0;transition:width 1s cubic-bezier(.22,1,.36,1)}
+    .cbar-wrap{height:3px;background:rgba(240,237,230,.07);border-radius:2px;overflow:hidden;margin:12px 0 14px}
+    .cbar-fill{height:100%;border-radius:2px;width:100%;transform:scaleX(0);transform-origin:left center;transition:transform 1s cubic-bezier(.22,1,.36,1)}
 
     /* Explorer link */
     .exlink{
@@ -205,12 +205,19 @@
       opacity:.65;transition:opacity .18s;
     }
     .exlink:hover{opacity:1}
+    .cinput{
+      width:100%;background:rgba(240,237,230,.04);border:1px solid rgba(240,237,230,.1);
+      color:var(--white);font-family:'Geist Mono',monospace;font-size:11px;
+      padding:8px 12px;outline:none;transition:border-color .15s;
+    }
+    .cinput:focus{border-color:var(--gold);}
+    .cinput::placeholder{color:rgba(240,237,230,.25);}
 
     /* ── Buttons ── */
     .btn-gold{
-      font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.12em;
+      font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:.1em;
       color:var(--ink);background:var(--gold);border:none;cursor:pointer;
-      padding:10px 24px;
+      padding:12px 24px;min-height:48px;
       transition:opacity .15s;
       display:inline-flex;align-items:center;gap:8px;
     }
@@ -220,8 +227,8 @@
     .btn-ghost{
       font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:.07em;
       background:transparent;color:var(--white-mid);border:1px solid var(--rule-hi);
-      padding:8px 16px;cursor:pointer;transition:all .15s;
-      text-decoration:none;display:inline-block;
+      padding:10px 16px;min-height:44px;cursor:pointer;transition:all .15s;
+      text-decoration:none;display:inline-flex;align-items:center;
     }
     .btn-ghost:hover{border-color:var(--white-mid);color:var(--white)}
 
@@ -238,7 +245,7 @@
       .skill-grid{grid-template-columns:1fr}
       .stats-bar{grid-template-columns:1fr 1fr}
       .stat-cell:nth-child(2){border-right:none}
-      .stat-cell:nth-child(3){border-top:1px solid var(--bdrS)}
+      .stat-cell:nth-child(3),.stat-cell:nth-child(4){border-top:1px solid var(--bdrS)}
       .oracle-stamp{width:58px;height:58px;top:72px;right:14px}
       .stamp-check{font-size:15px}
     }
@@ -267,13 +274,13 @@
   <div style="width:220px;height:1px;background:var(--rule);overflow:hidden">
     <div id="load-bar" style="height:100%;width:0;background:var(--gold);transition:width .35s ease"></div>
   </div>
-  <div id="load-stage" style="font-size:9px;letter-spacing:.1em;color:rgba(226,232,240,.3)">CONNECTING TO NEON DB…</div>
+  <div id="load-stage" style="font-size:10px;letter-spacing:.08em;color:rgba(240,237,230,.45)">CONNECTING TO NEON DB…</div>
 </div>
 
 <!-- ── Error ── -->
 <div id="state-error" style="display:none;text-align:center;padding:120px 24px">
   <div class="fo" style="font-size:13px;color:rgba(239,68,68,.8);letter-spacing:.1em;margin-bottom:10px">ATTESTATION RECORD NOT FOUND</div>
-  <div style="font-size:11px;color:rgba(226,232,240,.4);margin-bottom:28px">No skill attestations indexed for this wallet address.</div>
+  <div style="font-size:11px;color:rgba(240,237,230,.4);margin-bottom:28px">No skill attestations indexed for this wallet address.</div>
   <a href="/" class="btn-gold" style="text-decoration:none">← RETURN TO ORACLE</a>
 </div>
 
@@ -294,19 +301,19 @@
       <!-- Issuer line -->
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
         <div style="width:2px;height:14px;background:var(--gold);flex-shrink:0"></div>
-        <span style="font-size:8.5px;letter-spacing:.18em;color:var(--gold)">PROOFLINK ORACLE · SOLANA ATTESTATION SERVICE</span>
+        <span style="font-size:9.5px;letter-spacing:.12em;color:var(--gold)">PROOFLINK ORACLE · SOLANA ATTESTATION SERVICE</span>
       </div>
 
-      <div class="fo" style="font-size:clamp(20px,4vw,34px);font-weight:900;letter-spacing:.07em;color:#fff;line-height:1;margin-bottom:6px">
+      <div class="fo" style="font-size:clamp(20px,4vw,34px);font-weight:900;letter-spacing:.07em;color:var(--white);line-height:1;margin-bottom:6px">
         SOVEREIGN SKILL PASSPORT
       </div>
-      <div style="font-size:10px;letter-spacing:.08em;color:rgba(226,232,240,.35);margin-bottom:28px">
+      <div style="font-size:11px;letter-spacing:.06em;color:rgba(240,237,230,.45);margin-bottom:28px">
         CRYPTOGRAPHICALLY ANCHORED · MACHINE-READABLE · PORTABLE
       </div>
 
       <!-- Wallet -->
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;flex-wrap:wrap">
-        <div style="font-size:8.5px;letter-spacing:.14em;color:var(--white-dim)">HOLDER</div>
+        <div style="font-size:10px;letter-spacing:.1em;color:var(--white-mid)">HOLDER</div>
         <div id="hdr-wallet" class="fm" style="font-size:12px;color:var(--gold);letter-spacing:.04em;word-break:break-all"></div>
         <button onclick="copyWallet()" id="copy-wallet-btn"
           style="font-size:8px;padding:2px 7px;background:var(--gold-dim);border:1px solid rgba(232,160,32,.25);color:var(--gold);cursor:pointer;letter-spacing:.08em;transition:all .15s">COPY</button>
@@ -317,14 +324,14 @@
     <div class="stats-bar" style="max-width:none">
       <div class="stat-cell">
         <div class="stat-label">ATTESTED SKILLS</div>
-        <div id="hdr-count" class="fo" style="font-size:28px;font-weight:700;color:#fff">—</div>
+        <div id="hdr-count" class="fo" style="font-size:28px;font-weight:700;color:var(--white)">—</div>
       </div>
       <div class="stat-cell">
         <div class="stat-label">AVG TRUST SCORE</div>
         <div style="display:flex;align-items:center;gap:14px">
           <div class="arc-wrap">
             <svg width="68" height="68" viewBox="0 0 68 68">
-              <circle cx="34" cy="34" r="28" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="4"/>
+              <circle cx="34" cy="34" r="28" fill="none" stroke="rgba(240,237,230,.07)" stroke-width="4"/>
               <circle id="arc-fill" cx="34" cy="34" r="28" fill="none" stroke="var(--gold)" stroke-width="4"
                 stroke-linecap="round"
                 stroke-dasharray="175.9"
@@ -333,25 +340,26 @@
             </svg>
             <div class="arc-label">
               <div id="hdr-score" class="fo" style="font-size:15px;font-weight:700;color:var(--gold)">—</div>
-              <div style="font-size:7px;color:rgba(226,232,240,.35);letter-spacing:.06em">AVG%</div>
+              <div style="font-size:9px;color:rgba(240,237,230,.5);letter-spacing:.04em">AVG%</div>
             </div>
           </div>
         </div>
       </div>
       <div class="stat-cell">
-        <div class="stat-label">SAS PROGRAM</div>
+        <div class="stat-label">ON-CHAIN ANCHOR</div>
         <div style="font-size:10.5px;color:var(--white-mid);letter-spacing:.03em;margin-bottom:4px;word-break:break-all" id="hdr-sas">FJ8m…No4M</div>
         <a href="https://explorer.solana.com/address/FJ8myMh9dRcgc2n8xBrWTbCrFYAbHQZCPtMzhhmvNo4M?cluster=devnet" target="_blank"
-          class="exlink" style="font-size:8.5px">VIEW PROGRAM ↗</a>
+          class="exlink" style="font-size:8.5px">VERIFY ON EXPLORER ↗</a>
       </div>
       <div class="stat-cell">
         <div class="stat-label">AGENT QUERIES</div>
-        <div id="hdr-queries" class="fo" style="font-size:28px;font-weight:700;color:#fff">—</div>
-        <div style="font-size:8.5px;color:rgba(226,232,240,.35);letter-spacing:.05em;margin-top:4px">TIMES QUERIED BY AI</div>
+        <div id="hdr-queries" class="fo" style="font-size:28px;font-weight:700;color:var(--white)">—</div>
+        <div style="font-size:10px;color:rgba(240,237,230,.5);letter-spacing:.04em;margin-top:4px">TIMES QUERIED BY AI</div>
       </div>
     </div>
 
     <!-- MRZ -->
+    <div style="font-size:8px;letter-spacing:.14em;color:rgba(232,160,32,.45);padding:8px 24px 2px;text-transform:uppercase;font-family:'Geist Mono',monospace">Machine-readable zone · ISO 7501 · For automated API readers</div>
     <div class="mrz">
       <div>P&lt;SOLANA&lt;PROOFLINK&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div>
       <div id="mrz-line2" style="margin-top:2px">—</div>
@@ -365,8 +373,8 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
       <div style="display:flex;align-items:center;gap:12px">
         <div style="width:2px;height:20px;background:var(--gold);flex-shrink:0"></div>
-        <div class="fo" style="font-size:12px;font-weight:700;letter-spacing:.12em;color:#fff">ATTESTED SKILL RECORDS</div>
-        <span style="font-size:9px;letter-spacing:.1em;color:rgba(226,232,240,.3)">
+        <div class="fo" style="font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--white)">ATTESTED SKILL RECORDS</div>
+        <span style="font-size:9px;letter-spacing:.1em;color:rgba(240,237,230,.3)">
           <span style="color:var(--gold)">■</span> ≥80% &nbsp;
           <span style="color:var(--white-mid)">■</span> 60–79% &nbsp;
           <span style="color:var(--white-dim)">■</span> 50–59%
@@ -389,47 +397,47 @@
 
     <!-- Empty -->
     <div id="empty-cards" style="display:none;text-align:center;padding:72px 0">
-      <div style="font-size:10.5px;letter-spacing:.12em;color:rgba(226,232,240,.25)">NO ATTESTED SKILLS ON RECORD</div>
+      <div style="font-size:12px;letter-spacing:.08em;color:rgba(240,237,230,.4)">NO ATTESTED SKILLS ON RECORD</div>
     </div>
 
     <!-- Confidence score methodology -->
     <div style="margin-top:36px;padding:20px 24px;background:rgba(240,237,230,.02);border:1px solid var(--rule)">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
         <div style="width:2px;height:16px;background:var(--gold);flex-shrink:0"></div>
-        <div class="fo" style="font-size:11px;font-weight:700;letter-spacing:.12em;color:#fff">HOW CONFIDENCE SCORES ARE ASSIGNED</div>
+        <div class="fo" style="font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--white)">HOW CONFIDENCE SCORES ARE ASSIGNED</div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:18px">
         <div style="padding:12px 14px;border:1px solid rgba(232,160,32,.2);background:rgba(232,160,32,.04)">
           <div class="fo" style="font-size:11px;letter-spacing:.1em;color:var(--gold);margin-bottom:6px">TIER I · ≥70%</div>
-          <div style="font-size:10px;color:rgba(226,232,240,.55);line-height:1.6">Demonstrated competence — verified by actual code or project work</div>
+          <div style="font-size:11px;color:rgba(240,237,230,.65);line-height:1.6">Demonstrated competence; verified by actual code or project work</div>
         </div>
         <div style="padding:12px 14px;border:1px solid rgba(240,237,230,.1);background:rgba(240,237,230,.03)">
-          <div class="fo" style="font-size:11px;letter-spacing:.1em;color:var(--white-mid);margin-bottom:6px">TIER II · 50–69%</div>
-          <div style="font-size:10px;color:rgba(226,232,240,.55);line-height:1.6">Working knowledge — course completion with assignments as evidence</div>
+          <div class="fo" style="font-size:11px;letter-spacing:.08em;color:var(--white-mid);margin-bottom:6px">TIER II · 50–69%</div>
+          <div style="font-size:11px;color:rgba(240,237,230,.65);line-height:1.6">Working knowledge; course completion with assignments as evidence</div>
         </div>
         <div style="padding:12px 14px;border:1px solid rgba(240,237,230,.07);background:rgba(240,237,230,.02)">
-          <div class="fo" style="font-size:11px;letter-spacing:.1em;color:var(--white-dim);margin-bottom:6px">EXPOSURE · &lt;50%</div>
-          <div style="font-size:10px;color:rgba(226,232,240,.55);line-height:1.6">Introductory exposure — course mention without deep evidence</div>
+          <div class="fo" style="font-size:11px;letter-spacing:.08em;color:var(--white-dim);margin-bottom:6px">EXPOSURE · &lt;50%</div>
+          <div style="font-size:11px;color:rgba(240,237,230,.65);line-height:1.6">Introductory exposure; course mention without deep evidence</div>
         </div>
       </div>
-      <div style="padding:10px 14px;background:rgba(240,237,230,.02);border-left:2px solid rgba(232,160,32,.3)">
-        <div style="font-size:9px;letter-spacing:.1em;color:rgba(226,232,240,.35);margin-bottom:4px">SIGNAL HIERARCHY</div>
-        <div style="font-size:10px;color:rgba(226,232,240,.5);line-height:1.6">
+      <div style="padding:10px 14px;background:rgba(232,160,32,.05);border:1px solid rgba(232,160,32,.2)">
+        <div style="font-size:10px;letter-spacing:.08em;color:rgba(240,237,230,.5);margin-bottom:4px">SIGNAL HIERARCHY</div>
+        <div style="font-size:11px;color:rgba(240,237,230,.6);line-height:1.6">
           Code evidence (primary) &gt; course descriptions (secondary) &gt; grades (tertiary).
           LLM is instructed to only claim a skill when actual code proof exists.
-          Validators stake SOL to back each claim — 48h optimistic dispute window adds economic accountability on top of AI inference.
+          Validators stake SOL to back each claim. 48h optimistic dispute window adds economic accountability on top of AI inference.
         </div>
       </div>
     </div>
 
     <!-- Raw API block -->
     <div style="margin-top:20px;padding:16px 20px;background:rgba(240,237,230,.02);border:1px solid var(--rule)">
-      <div style="font-size:8.5px;letter-spacing:.14em;color:var(--white-dim);margin-bottom:10px">MACHINE-READABLE PROFILE ENDPOINT</div>
+      <div style="font-size:10px;letter-spacing:.1em;color:var(--white-mid);margin-bottom:10px">MACHINE-READABLE PROFILE ENDPOINT</div>
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
         <code id="api-endpoint" class="fm" style="font-size:10.5px;color:var(--gold)">—</code>
         <a id="api-link" href="#" target="_blank" class="exlink" style="font-size:9.5px">VIEW JSON ↗</a>
       </div>
-      <div style="margin-top:10px;font-size:9px;color:var(--white-dim)">
+      <div style="margin-top:10px;font-size:11px;color:var(--white-dim)">
         Paid verification: <span style="color:var(--gold)">GET /api/verify?wallet=&lt;wallet&gt;&amp;skill=&lt;slug&gt;</span>
         · <span style="color:var(--white-mid)">X-Payment-Proof: &lt;usdc-tx&gt;</span>
         · <span style="color:var(--white-dim)">10000 raw USDC ≈ $0.01</span>
@@ -520,22 +528,22 @@ function render(data){
 
     card.innerHTML=`
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
-        <div class="fo" style="font-size:14px;font-weight:700;letter-spacing:.06em;color:#fff;text-transform:uppercase;line-height:1.2;padding-right:8px">${slug}</div>
+        <div class="fo" style="font-size:14px;font-weight:700;letter-spacing:.06em;color:var(--white);text-transform:uppercase;line-height:1.2;padding-right:8px">${slug}</div>
         <div class="sigbars" style="flex-shrink:0">${sigBars(score,color)}</div>
       </div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
         <span class="tbadge ${bdg}">${label}</span>
-        <span class="fo" style="font-size:22px;font-weight:700;color:${color};line-height:1">${score}<span style="font-size:11px;font-weight:400;color:rgba(226,232,240,.4)">%</span></span>
+        <span class="fo" style="font-size:22px;font-weight:700;color:${color};line-height:1">${score}<span style="font-size:11px;font-weight:400;color:rgba(240,237,230,.4)">%</span></span>
       </div>
 
       <div class="cbar-wrap">
-        <div class="cbar-fill" style="background:${color};width:${score}%"></div>
+        <div class="cbar-fill" style="background:${color};transform:scaleX(${score/100})"></div>
       </div>
 
-      ${ev?`<p style="font-size:10px;color:rgba(226,232,240,.5);line-height:1.65;margin-bottom:14px;font-style:italic;border-left:2px solid rgba(255,255,255,.08);padding-left:10px">"${ev.slice(0,150)}${ev.length>150?'…':''}"</p>`:''}
+      ${ev?`<p style="font-size:10px;color:rgba(240,237,230,.5);line-height:1.65;margin-bottom:14px;font-style:italic;padding:6px 10px;background:rgba(240,237,230,.03)">"${ev.slice(0,150)}${ev.length>150?'…':''}"</p>`:''}
 
-      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);flex-wrap:wrap;gap:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid rgba(240,237,230,.07);flex-wrap:wrap;gap:6px">
         ${addr?`<a href="https://explorer.solana.com/address/${addr}?cluster=devnet" target="_blank" class="exlink">
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -543,8 +551,22 @@ function render(data){
           </svg>
           ATTESTATION PDA
         </a>`:'<span></span>'}
-        ${tx?`<a href="https://explorer.solana.com/tx/${tx}?cluster=devnet" target="_blank" class="exlink" style="color:rgba(226,232,240,.28);font-size:8.5px">TX ↗</a>`:''}
+        <div style="display:flex;align-items:center;gap:10px">
+          ${tx?`<a href="https://explorer.solana.com/tx/${tx}?cluster=devnet" target="_blank" class="exlink" style="color:rgba(240,237,230,.28);font-size:8.5px">TX ↗</a>`:''}
+          ${addr?`<button onclick="toggleChallenge(this,'${addr}')" style="background:none;border:none;cursor:pointer;font-family:'Geist Mono',monospace;font-size:8.5px;letter-spacing:.1em;color:rgba(240,237,230,.3);padding:0;transition:color .15s;text-transform:uppercase" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='rgba(240,237,230,.3)'">Challenge →</button>`:''}
+        </div>
       </div>
+      ${addr?`
+      <div class="challenge-form" id="cf-${addr}" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid rgba(232,160,32,.2)">
+        <div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px">Dispute this attestation</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input class="cinput" placeholder="Your Solana wallet address…" id="cf-wallet-${addr}" />
+          <textarea class="cinput" rows="2" placeholder="Why is this claim inaccurate? Cite evidence…" id="cf-reason-${addr}" style="resize:none"></textarea>
+          <input class="cinput" placeholder="Bond tx signature (send SOL to oracle wallet first)…" id="cf-txsig-${addr}" />
+          <button onclick="submitChallengeProfile('${addr}')" style="background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.25);color:var(--gold);font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:.1em;padding:8px;cursor:pointer;text-transform:uppercase;transition:all .15s" onmouseover="this.style.background='rgba(232,160,32,.15)'" onmouseout="this.style.background='rgba(232,160,32,.08)'">Submit Challenge</button>
+          <div id="cf-resp-${addr}" style="font-size:10px;line-height:1.6;display:none"></div>
+        </div>
+      </div>`:''}
     `;
     grid.appendChild(card);
   });
@@ -614,6 +636,41 @@ if(!wallet){
       $('state-loading').style.display='none';
       $('state-error').style.display='block';
     });
+}
+
+// ── Challenge form helpers ────────────────────────────────
+function toggleChallenge(btn, addr){
+  const form=document.getElementById('cf-'+addr);
+  if(!form)return;
+  const open=form.style.display==='block';
+  form.style.display=open?'none':'block';
+  btn.style.color=open?'rgba(240,237,230,.3)':'var(--gold)';
+}
+
+async function submitChallengeProfile(addr){
+  const wallet=document.getElementById('cf-wallet-'+addr)?.value.trim();
+  const reason=document.getElementById('cf-reason-'+addr)?.value.trim();
+  const txSig=document.getElementById('cf-txsig-'+addr)?.value.trim();
+  const resp=document.getElementById('cf-resp-'+addr);
+  if(!resp)return;
+  resp.style.display='block'; resp.style.color='rgba(240,237,230,.5)'; resp.textContent='Submitting…';
+  try{
+    const r=await fetch('/api/registry/challenge',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({attestationAddress:addr,challengerWallet:wallet,reason,txSignature:txSig})
+    });
+    const d=await r.json();
+    if(r.ok){
+      resp.style.color='#4CAF6E';
+      resp.textContent='✓ Challenge submitted. 48h re-evaluation window started.';
+    }else{
+      resp.style.color='#E57368';
+      resp.textContent='✗ '+(d.error??JSON.stringify(d));
+    }
+  }catch(err){
+    resp.style.color='#E57368';
+    resp.textContent='✗ '+err.message;
+  }
 }
 </script>
 </body>

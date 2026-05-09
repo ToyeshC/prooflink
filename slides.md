@@ -6,6 +6,36 @@
 
 ---
 
+## Video Pitch (2-min format — Superteam template)
+
+> **Format:** 5 slides · 2-minute video · Template from https://nl.superteam.fun/pitch-deck
+> The team slide is the most important — judges need faith that YOU are the people to build this.
+
+| Slide | Time | Content | Maps to |
+|-------|------|---------|---------|
+| **V1 — Hook** | 0:00–0:15 | "The resume is a lie. And AI agents know it." Sub: Prooflink is a decentralized oracle that converts work evidence into verifiable skill claims at $0.01/lookup. | Slide 1 |
+| **V2 — Problem** | 0:15–0:35 | **Pool:** $10B+ skills verification market. **Gap:** No machine-readable trust primitive AI agents can query at inference time. **Friction:** Checkr costs $29.99–$200/check — doesn't work at 100,000 decisions/night. | Slide 2 |
+| **V3 — Solution** | 0:35–0:55 | An oracle that: takes GitHub evidence → AI scores skill at 91% confidence → SAS anchors it on Solana → agents pay $0.01 per lookup via x402 or `pay curl`. Live on devnet. MCP-native. | Slides 3+4 |
+| **V4 — Team** | 0:55–1:55 | *See Team Slide below — 60 seconds, the most important slide* | Team slide |
+| **V5 — Traction** | 1:55–2:00 | Real SAS attestations on devnet · x402 payment rail live · MCP server callable from Claude Desktop · 3 staked validators · 7 attested skills on demo wallet | Slide 8 |
+
+---
+
+## Team Slide (V4 — fill before recording)
+
+**Headline:** We are the people to build this because [X].
+
+**Talking points to cover (60 seconds):**
+- **Who you are:** Name, current role/background
+- **Why you specifically:** What relevant experience do you have with Solana, AI/LLMs, or hiring/credentialing that others don't?
+- **Why this problem:** Personal connection to skills verification being broken — have you hired, been hired, been misjudged by a resume?
+- **Why now:** What made you build this at this exact moment (e.g., saw AI hiring agents proliferate, SAS launched, x402 emerged)?
+- **Credibility signal:** Any Solana projects shipped, previous builds, or domain expertise that de-risks execution
+
+> ⚠️ Per the Superteam template: "judges need to gain faith that you are the people to build this idea." This is the make-or-break slide. Spend more prep time here than any other slide.
+
+---
+
 ## Slide 1 — Hook
 
 **Headline:** The resume is a lie. And AI agents know it.
@@ -16,6 +46,9 @@
 
 **One-liner for the deck:**
 > AI audits raw evidence → SAS anchors the claim → agents pay $0.01 per lookup
+
+**The analogy judges need:**
+> Chainlink is a data oracle for DeFi protocols. Prooflink is a skill oracle for AI hiring agents.
 
 **Badge:** `Solana · SAS · x402 · MCP · LIVE ON DEVNET`
 
@@ -183,6 +216,14 @@ await mcp.call("verify_skill", { wallet: "...", skill: "rust" });
 // → { verified: true, confidence: 91, evidence: "...", attestation: "3xY8..." }
 ```
 
+**CLI / pay.sh access:** AI agents auto-pay with one command — no API key, no account, no integration code.
+```bash
+pay curl "https://[ngrok-or-deployed-url]/api/verify?wallet=...&skill=python"
+# pay.sh detects the 402, signs the USDC tx, retries automatically
+# → { verified: true, confidence: 90, attestation: "..." }
+```
+> pay.sh (Solana Foundation + Google Cloud) is the canonical agent-native payment client for x402-gated APIs. Zero custom code from the agent side.
+
 ---
 
 ## Slide 7 — Confidence Score Methodology
@@ -239,9 +280,11 @@ The LLM is explicitly instructed: **"Only claim skills where you can cite actual
 - **x402 payment flow:** working end-to-end — send 10000 raw USDC, get verified claim
 - **MCP server:** 3 tools callable from Claude Desktop + Cursor
 - **Validation registry:** 3 staked validators (python: 5.2 SOL, ML: 2.15 SOL, openai: 1.42 SOL)
+- **Phantom wallet signing:** one-click SOL stake/bond via wallet extension — no manual tx copy-paste
 
 ### Demo URLs
-- Live: `https://proof-of-talent-silk.vercel.app/`
+- **Live demo (ngrok):** `http://localhost:3000` + `ngrok http 3000` — use this for the live pitch (avoids 60s cloud timeout)
+- **Persistent judge URL:** `https://prooflink-five.vercel.app/` — always on, 60s timeout, suitable for async review
 - Oracle info: `GET /api/oracle-info`
 - Sample profile: `GET /api/profile/FLkqg6fUP39vWkcxV9ZzLKWrBjRoX2YmccLcEkobZyEZ`
 
@@ -319,10 +362,10 @@ x402 is the **agent-native entry point**, not the primary revenue model. It esta
 *Note: Per judge feedback (May 5) — focus is on polish and cleanup, not new features.*
 
 ### Immediate (before mainnet)
-1. **Fix Vercel timeout** — async job queue so `/api/analyze-github` returns a `jobId` in <5s, polls for result
-2. **Confidence score transparency UI** — methodology tooltip on every attestation, `/methodology` page
-3. **"Profile queried X times" stat** — surface query count on passport page for retention loop
-4. **Security audit** (`/cso`) — before handling real money on mainnet
+1. **Confidence score transparency UI** — methodology tooltip on every attestation, `/methodology` page ✅ done
+2. **"Profile queried X times" stat** — surface query count on passport page for retention loop ✅ done
+3. **Security audit** (`/cso`) — before handling real money on mainnet
+4. **Demo infrastructure** — run locally + ngrok for live demo (avoids cloud timeout) ✅ done
 
 ### Near-term (post-hackathon)
 - Mainnet deployment after security audit
