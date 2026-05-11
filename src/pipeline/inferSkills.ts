@@ -7,7 +7,7 @@ export const SkillSchema = z.object({
   name: z.string().describe('Canonical skill name, e.g. "React Hooks", "Binary Search Trees"'),
   slug: z.string().describe('URL-safe lowercase slug, e.g. "react-hooks"'),
   category: z.enum(['programming_language', 'framework', 'data_structures', 'algorithms', 'domain_knowledge', 'tool', 'soft_skill']),
-  confidenceScore: z.number().min(0).max(1).describe('0.0–1.0 based on depth of evidence'),
+  confidenceScore: z.number().describe('0.0–1.0 based on depth of evidence'),
   evidenceSummary: z.string().describe('One sentence explaining what evidence supports this skill claim'),
   gradeContext: z.string().nullable().describe('Relevant grade/assignment context, or null'),
 });
@@ -15,7 +15,7 @@ export const SkillSchema = z.object({
 export type Skill = z.infer<typeof SkillSchema>;
 
 export const InferredSkillsSchema = z.object({
-  skills: z.array(SkillSchema).min(1).max(20),
+  skills: z.array(SkillSchema),
   overallAcademicLevel: z.enum(['introductory', 'intermediate', 'advanced', 'graduate']),
   primaryDomain: z.string().describe('The main technical domain, e.g. "full-stack web development"'),
   gradeValidityAssessment: z.string().describe('Brief assessment of whether grades reflect actual skill depth'),

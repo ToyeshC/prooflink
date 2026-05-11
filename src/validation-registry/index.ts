@@ -163,7 +163,8 @@ export async function getAllValidators(): Promise<Array<{
     SELECT v.attestation_address, v.validator_wallet, v.validator_stake_lamports,
            v.status, v.challenged_at, a.skill
     FROM validation_registry v
-    LEFT JOIN attestations a ON v.attestation_address = a.attestation_address
+    INNER JOIN attestations a ON v.attestation_address = a.attestation_address
+    WHERE v.status = 'active'
     ORDER BY v.validator_stake_lamports DESC
     LIMIT 20
   ` as Array<{

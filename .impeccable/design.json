@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-09T00:00:00Z",
+  "title": "Design System: Prooflink",
+  "extensions": {
+    "colorMeta": {
+      "ink":           { "role": "neutral",  "displayName": "Ink",           "canonical": "oklch(8% 0.003 92)",   "tonalRamp": ["#0C0C0A", "#111110", "#181816", "#211F1D", "#2A2825", "#38352F", "#4A4844", "#615E57"] },
+      "ink-surface":   { "role": "neutral",  "displayName": "Ink Surface",   "canonical": "oklch(10% 0.003 90)",  "tonalRamp": ["#0C0C0A", "#111110", "#181816", "#1E1C1A", "#252220", "#302E2B", "#3D3A36", "#4E4B46"] },
+      "ink-raised":    { "role": "neutral",  "displayName": "Ink Raised",    "canonical": "oklch(13% 0.004 90)",  "tonalRamp": ["#0A0908", "#111110", "#181816", "#211F1D", "#2A2825", "#38352F", "#484540", "#5C5955"] },
+      "oracle-amber":  { "role": "primary",  "displayName": "Oracle Amber",  "canonical": "oklch(72% 0.17 72)",   "tonalRamp": ["#261200", "#4A2300", "#6D3600", "#914C00", "#B46500", "#D88010", "#E8A020", "#F5CC80"] },
+      "archive-cream": { "role": "neutral",  "displayName": "Archive Cream", "canonical": "oklch(95% 0.008 88)",  "tonalRamp": ["#1A1917", "#302E2B", "#484540", "#615E57", "#7A7770", "#9A978F", "#C8C4BC", "#F0EDE6"] },
+      "cream-mid":     { "role": "neutral",  "displayName": "Cream Mid",     "canonical": "oklch(62% 0.007 88)",  "tonalRamp": ["#1A1917", "#302E2B", "#484540", "#615E57", "#7A7770", "#9A978F", "#B8B5AE", "#D4D0C8"] },
+      "cream-dim":     { "role": "neutral",  "displayName": "Cream Dim",     "canonical": "oklch(34% 0.006 89)",  "tonalRamp": ["#0F0E0D", "#1A1917", "#252220", "#302E2B", "#3D3A36", "#4A4844", "#615E57", "#7A7770"] },
+      "signal-green":  { "role": "tertiary", "displayName": "Signal Green",  "canonical": "oklch(68% 0.13 152)",  "tonalRamp": ["#0A1F10", "#133A1E", "#1D562C", "#27713A", "#318D48", "#3DA85A", "#4CAF6E", "#8CD4A3"] },
+      "dispute-red":   { "role": "secondary","displayName": "Dispute Red",   "canonical": "oklch(48% 0.15 27)",   "tonalRamp": ["#1A0705", "#330D0A", "#4D140F", "#661A14", "#802119", "#9A271D", "#C0473A", "#D98580"] }
+    },
+    "typographyMeta": {
+      "display":  { "displayName": "Display",  "purpose": "Hero headings, oracle name, section titles. Bebas Neue compressed line-height (0.95) creates monumental density." },
+      "headline": { "displayName": "Headline", "purpose": "Subsection headers, feature headings. Scaled-down display authority." },
+      "title":    { "displayName": "Stat Title","purpose": "Oracle statistics, numerical verdicts, credential counts." },
+      "body":     { "displayName": "Body",     "purpose": "Table cells, terminal output, body copy. Max line length 65-75ch." },
+      "label":    { "displayName": "Label",    "purpose": "Micro-labels, stat descriptors, column headers. All-caps + 0.14-0.18em tracking." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "state-transition", "value": "0.15s ease",                       "purpose": "Color, opacity, border changes on hover/focus." },
+      { "name": "card-hover",       "value": "0.2s ease",                        "purpose": "Card border brightening and translateY(-2px) lift." },
+      { "name": "confidence-bar",   "value": "1s cubic-bezier(0.22, 1, 0.36, 1)","purpose": "Confidence bar scaleX() entrance. Ease-out expo, no layout thrash." },
+      { "name": "terminal-line",    "value": "0.1s ease forwards",               "purpose": "Terminal line opacity + translateY(2px) entrance." },
+      { "name": "section-entrance", "value": "0.4s ease forwards",               "purpose": "Section reveal: opacity 0→1 + translateY(16px)→0." },
+      { "name": "ticker-scroll",    "value": "55s linear infinite",              "purpose": "Live attestation ticker horizontal scroll." },
+      { "name": "status-pulse",     "value": "2s ease-in-out infinite",          "purpose": "Live indicator dot opacity pulse 1→0.4→1." },
+      { "name": "cursor-blink",     "value": "0.8s step-end infinite",           "purpose": "Terminal cursor blink." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "768px", "note": "Input font-size bumped to 16px at this breakpoint to prevent iOS Safari auto-zoom." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary CTA. Oracle Amber background, Ink text, zero radius. Stamp-ready.",
+      "html": "<button class=\"ds-btn-primary\">ANALYZE GITHUB</button>",
+      "css": ".ds-btn-primary { font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 0.1em; background: #E8A020; color: #0C0C0A; border: none; cursor: pointer; padding: 14px 32px; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; border-radius: 0; transition: opacity 0.15s ease; } .ds-btn-primary:hover { opacity: 0.85; } .ds-btn-primary:focus-visible { outline: 2px solid #E8A020; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary action. Transparent, rule-hi border. Becomes Archive Cream on hover.",
+      "html": "<button class=\"ds-btn-ghost\">VIEW PROFILE</button>",
+      "css": ".ds-btn-ghost { font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.08em; background: transparent; color: #9A978F; padding: 11px 18px; min-height: 44px; cursor: pointer; border: 1px solid rgba(240,237,230,0.14); border-radius: 0; transition: border-color 0.15s ease, color 0.15s ease; display: inline-flex; align-items: center; gap: 6px; } .ds-btn-ghost:hover { border-color: #9A978F; color: #F0EDE6; } .ds-btn-ghost:focus-visible { outline: 2px solid #E8A020; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Form field. Ink Surface background, gold focus border. Machine-native.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"github-username\" />",
+      "css": ".ds-input { width: 100%; background: #111110; border: 1px solid rgba(240,237,230,0.14); color: #F0EDE6; font-family: 'Geist Mono', monospace; font-size: 13px; padding: 12px 16px; outline: none; border-radius: 0; transition: border-color 0.15s ease; } .ds-input:focus { border-color: #E8A020; } .ds-input::placeholder { color: #4A4844; }"
+    },
+    {
+      "name": "Surface Card",
+      "kind": "card",
+      "refersTo": "button-ghost",
+      "description": "Standard surface container. Ink Surface background, rule border. Hover brightens border.",
+      "html": "<div class=\"ds-surface\"><span style=\"font-family:Geist Mono,monospace;font-size:11px;color:#F0EDE6\">Skill attestation content</span></div>",
+      "css": ".ds-surface { background: #111110; border: 1px solid rgba(240,237,230,0.07); padding: 20px; transition: border-color 0.2s ease; border-radius: 0; } .ds-surface:hover { border-color: rgba(240,237,230,0.14); }"
+    },
+    {
+      "name": "Skill Attestation Card",
+      "kind": "card",
+      "refersTo": "button-ghost",
+      "description": "Skill credential card with confidence bar. Hover lifts 2px. Gold bar fill via scaleX transform.",
+      "html": "<div class=\"ds-attcard\"><div style=\"display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px\"><span style=\"font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.06em;color:#F0EDE6\">RUST</span><span style=\"font-family:'Geist Mono',monospace;font-size:9px;color:#E8A020;letter-spacing:0.14em\">87%</span></div><div class=\"ds-ctrack\"><div class=\"ds-cfill\" style=\"background:#E8A020;transform:scaleX(0.87)\"></div></div><span style=\"font-family:'Geist Mono',monospace;font-size:9px;color:#4A4844;letter-spacing:0.12em;text-transform:uppercase\">VERIFIED · ON-CHAIN</span></div>",
+      "css": ".ds-attcard { background: #111110; border: 1px solid rgba(240,237,230,0.07); padding: 20px; transition: border-color 0.2s ease, transform 0.2s ease; border-radius: 0; cursor: default; } .ds-attcard:hover { border-color: rgba(240,237,230,0.14); transform: translateY(-2px); } .ds-ctrack { height: 2px; background: rgba(240,237,230,0.07); overflow: hidden; margin: 10px 0 8px; } .ds-cfill { height: 100%; width: 100%; transform-origin: left center; transition: transform 1s cubic-bezier(0.22, 1, 0.36, 1); }"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "button-ghost",
+      "description": "Tabbed navigation. Oracle Amber underline for active state, no background fill.",
+      "html": "<div class=\"ds-tabbar\"><button class=\"ds-tab ds-tab-active\">GITHUB</button><button class=\"ds-tab\">CANVAS LMS</button></div>",
+      "css": ".ds-tabbar { display: flex; border-bottom: 1px solid rgba(240,237,230,0.07); } .ds-tab { font-family: 'Geist Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px 20px; border: none; border-bottom: 1px solid transparent; background: transparent; cursor: pointer; color: #4A4844; transition: color 0.15s ease, border-bottom-color 0.15s ease; margin-bottom: -1px; } .ds-tab:hover { color: #9A978F; } .ds-tab-active { color: #E8A020; border-bottom-color: #E8A020; }"
+    },
+    {
+      "name": "Stat Strip",
+      "kind": "custom",
+      "refersTo": "button-ghost",
+      "description": "Horizontal oracle statistics. Bebas Neue numbers, mono uppercase labels. Real data only.",
+      "html": "<div class=\"ds-stat-strip\"><div class=\"ds-stat-item\"><span class=\"ds-stat-num\">47</span><span class=\"ds-stat-label\">ATTESTATIONS MINTED</span></div><div class=\"ds-stat-item\"><span class=\"ds-stat-num\">12</span><span class=\"ds-stat-label\">ACTIVE WALLETS</span></div><div class=\"ds-stat-item\" style=\"border-right:none\"><span class=\"ds-stat-num\">3</span><span class=\"ds-stat-label\">VALIDATORS</span></div></div>",
+      "css": ".ds-stat-strip { display: flex; border: 1px solid rgba(240,237,230,0.07); } .ds-stat-item { flex: 1; padding: 20px 24px; border-right: 1px solid rgba(240,237,230,0.07); } .ds-stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 0.04em; color: #F0EDE6; display: block; line-height: 1; } .ds-stat-label { font-family: 'Geist Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: #4A4844; display: block; margin-top: 6px; }"
+    },
+    {
+      "name": "Terminal Output",
+      "kind": "custom",
+      "refersTo": "button-ghost",
+      "description": "Oracle analysis log. Gold prompts, green verified lines, cream-mid comments. Lines appear sequentially.",
+      "html": "<div class=\"ds-term\"><div class=\"ds-tl\"><span class=\"ds-tp\">oracle@prooflink</span><span style=\"color:#F0EDE6\"> analyzing rust_expertise…</span></div><div class=\"ds-tl\"><span class=\"ds-tok\">✓ verified</span><span style=\"color:#9A978F\"> 23 repos · 47k+ lines · confidence 87%</span></div></div>",
+      "css": ".ds-term { background: #0C0C0A; border: 1px solid rgba(240,237,230,0.07); font-family: 'Geist Mono', monospace; font-size: 11.5px; padding: 20px; line-height: 1.7; } .ds-tl { margin-bottom: 2px; opacity: 0; animation: ds-tapp 0.1s ease forwards; } @keyframes ds-tapp { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } } .ds-tp { color: #E8A020; } .ds-tok { color: #4CAF6E; }"
+    },
+    {
+      "name": "Navigation Bar",
+      "kind": "nav",
+      "refersTo": "button-ghost",
+      "description": "Fixed top nav. Near-opaque backdrop blur. Bebas Neue logo, mono links, green live dot.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nlogo\" href=\"#\">PROOFLINK<span class=\"ds-nlogo-sub\">SKILL ORACLE</span></a><div class=\"ds-nlinks\"><a class=\"ds-nl\" href=\"#\">ORACLE</a><a class=\"ds-nl\" href=\"#\">API</a></div><div style=\"display:flex;align-items:center;gap:8px\"><div class=\"ds-ldot\"></div><span style=\"font-family:Geist Mono,monospace;font-size:9px;letter-spacing:0.12em;color:#4A4844\">DEVNET</span></div></nav>",
+      "css": ".ds-nav { position: relative; height: 54px; background: rgba(12,12,10,0.92); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(240,237,230,0.07); display: flex; align-items: center; padding: 0 28px; gap: 32px; } .ds-nlogo { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.08em; color: #F0EDE6; text-decoration: none; display: flex; align-items: center; gap: 10px; } .ds-nlogo-sub { font-family: 'Geist Mono', monospace; font-size: 9px; letter-spacing: 0.12em; color: #4A4844; font-weight: 400; text-transform: uppercase; } .ds-nlinks { display: flex; gap: 24px; flex: 1; } .ds-nl { font-size: 11px; letter-spacing: 0.1em; color: #4A4844; text-decoration: none; text-transform: uppercase; transition: color 0.15s ease; font-family: 'Geist Mono', monospace; } .ds-nl:hover { color: #F0EDE6; } .ds-ldot { width: 6px; height: 6px; border-radius: 50%; background: #4CAF6E; animation: ds-lpulse 2s ease-in-out infinite; } @keyframes ds-lpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Signal Oracle",
+    "overview": "Prooflink is the API endpoint that hiring AI agents hit at 2am. No human in the loop. The interface reads clean because machines read it first — and humans who trust machines can read it too. Every design decision serves one directive: make a trust primitive legible at machine speed and human glance simultaneously.\n\nThe system is built from institutional restraint and metrological precision. Surfaces are dark not because tools are dark, but because this is infrastructure: the SRE console, the certificate authority interface, the verification terminal. Nothing decorative survives this scene.\n\nTypography is the primary carrier of weight. Bebas Neue for names and verdicts — compressed, permanent, unapologetic. Geist Mono for evidence and data — calibrated, machine-native, honest. No warmth is performed. Trust is earned through precision.",
+    "keyCharacteristics": [
+      "Sharp corners everywhere. Zero border-radius signals precision, not softness.",
+      "Tonal depth via background steps (ink → ink-surface → ink-raised), never shadows.",
+      "Oracle Amber as the sole accent — active states, verdicts, CTAs. Rarity is the point.",
+      "Border opacity ramp (7% → 14%) as the only elevation signal at rest.",
+      "Monospace-first: the credential system speaks in machine-readable formats."
+    ],
+    "rules": [
+      { "name": "The One Signal Rule",        "body": "Oracle Amber is used on at most 10-15% of any given screen surface. Its scarcity is what makes it the oracle's voice.", "section": "colors" },
+      { "name": "The Warm Void Rule",          "body": "Every neutral is tinted toward the amber hue (chroma 0.003–0.008). No pure black. No pure white.", "section": "colors" },
+      { "name": "The Mono Default Rule",       "body": "When in doubt, use Geist Mono. The system speaks in machine-readable formats. Geist sans is the exception.", "section": "typography" },
+      { "name": "The Scale Discipline Rule",   "body": "Never use font sizes below 9px for any text that carries meaning. Critical content floors at 11px.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule",    "body": "Surfaces are flat at rest. The only motion elevation is translateY(-2px) on skill card hover. No box-shadow additions.", "section": "elevation" },
+      { "name": "The Tonal Stacking Rule",     "body": "Never use a darker background for a higher surface. Elevation always moves from ink (darkest) to ink-raised (lightest).", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Oracle Amber for CTAs, active states, and verification signals only. Rarity is the mechanism of trust.",
+      "Do use zero border-radius on all rectangular UI elements. Curved corners belong in a different product category.",
+      "Do use Bebas Neue for verdicts and names; Geist Mono for evidence and data.",
+      "Do layer depth through background tonal steps: ink → ink-surface → ink-raised. Never shadows.",
+      "Do set font-size: 16px minimum on form inputs in mobile breakpoints to prevent iOS Safari auto-zoom.",
+      "Do use transform: scaleX() (not width) for progress bar animations to avoid layout thrash.",
+      "Do keep body line-length at 65-75ch maximum.",
+      "Do write copy in the oracle's voice: terse, infrastructure-confident, no hype."
+    ],
+    "donts": [
+      "Don't use generic crypto aesthetics: neon-on-black, laser grids, coin-ticker iconography, meme vibes.",
+      "Don't use SaaS cream: purple gradients, Stripe-clone hero metrics, Tailwind defaults, floating orbs.",
+      "Don't use hacker terminal aesthetics: green-on-black, ASCII art as decoration, monospace as personality.",
+      "Don't use gradient text (background-clip: text). Emphasis via weight or size only.",
+      "Don't use side-stripe borders (border-left > 1px as a colored accent).",
+      "Don't use glassmorphism decoratively.",
+      "Don't add box shadows. The system has no shadow vocabulary.",
+      "Don't use the hero-metric template: big number, small label, gradient accent.",
+      "Don't animate CSS layout properties. transform and opacity only.",
+      "Don't use Bebas Neue below 12px.",
+      "Don't use Dispute Red for challenge or dispute actions. Oracle Amber for legitimate user actions; red for genuine system errors only."
+    ]
+  }
+}

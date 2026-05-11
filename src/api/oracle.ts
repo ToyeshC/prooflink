@@ -560,18 +560,33 @@ app.post('/api/submit', async c => {
 app.get('/api/verify', async c => {
   const walletParam = c.req.query('wallet');
   const skill = c.req.query('skill');
-  const paymentProof = c.req.header('X-Payment-Proof');
+  // Accept X-Payment (x402 spec) and X-Payment-Proof (legacy Phantom UI flow)
+  const rawProof = c.req.header('X-Payment') || c.req.header('X-Payment-Proof');
 
   if (!walletParam || !skill) {
     return c.json({ error: 'wallet and skill query params required' }, 400);
   }
 
-  if (!paymentProof) {
+  if (!rawProof) {
     const oracleAta = getOracleUsdcAta();
+    // x402 spec format — what pay.sh and compliant clients parse
+    const paymentRequirements = {
+      scheme: 'exact',
+      network: 'solana-devnet',
+      maxAmountRequired: String(LOOKUP_FEE_USDC_RAW),
+      resource: c.req.url,
+      description: `Verified skill lookup: ${skill} for ${walletParam}`,
+      mimeType: 'application/json',
+      payTo: oracleAta,
+      maxTimeoutSeconds: 300,
+      asset: USDC_DEVNET_MINT,
+    };
     c.header('WWW-Authenticate', 'x402 realm="Prooflink Oracle"');
-    c.header('X-Payment-Required', 'true');
+    c.header('X-PAYMENT-REQUIRED', JSON.stringify({ accepts: [paymentRequirements] }));
     c.header('Cache-Control', 'no-store');
     return c.json({
+      accepts: [paymentRequirements],
+      // Legacy fields kept for Phantom UI backward compat
       error: 'Payment Required',
       payment: {
         protocol: 'x402',
@@ -587,11 +602,18 @@ app.get('/api/verify', async c => {
         description: `Verified skill lookup: ${skill} for ${walletParam}`,
         callbackUrl: c.req.url,
       },
-      instructions: `Send ${LOOKUP_FEE_USDC_RAW} raw USDC (${(LOOKUP_FEE_USDC_RAW / 1_000_000).toFixed(6)} USDC) to token account ${oracleAta} on devnet and include the tx signature in X-Payment-Proof header`,
+      instructions: `Send ${LOOKUP_FEE_USDC_RAW} raw USDC (${(LOOKUP_FEE_USDC_RAW / 1_000_000).toFixed(6)} USDC) to token account ${oracleAta} on devnet and include the tx signature in X-Payment-Proof or X-Payment header`,
     }, 402);
   }
 
-  const paymentValid = await verifyPaymentProof(paymentProof);
+  // X-Payment (x402 spec) may carry a JSON payload — extract the signature
+  let txSignature = rawProof;
+  try {
+    const parsed = JSON.parse(rawProof);
+    txSignature = parsed.payload ?? parsed.signature ?? parsed.x402Signature ?? rawProof;
+  } catch { /* raw string signature from Phantom UI, use as-is */ }
+
+  const paymentValid = await verifyPaymentProof(txSignature);
   if (!paymentValid) {
     return c.json({ error: 'Invalid, insufficient, or already-used payment proof' }, 402);
   }
